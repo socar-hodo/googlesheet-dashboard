@@ -71,14 +71,12 @@
 |---------|--------|
 | 데이터 편집/입력 | 대시보드는 읽기 전용; 시트 직접 편집 |
 | 자동 새로고침 (polling) | 페이지 접속 시 fetch로 충분; API 호출 최소화 |
-| 멀티팀/지역 지원 | 경남울산사업팀 전용 — 다른 팀은 별도 프로젝트 |
+| 멀티팀/지역 지원 | 경남울산사업팀 전용 -- 다른 팀은 별도 프로젝트 |
 | 알림/Push 기능 | 조회 전용 v1 범위 초과 |
 | 실시간 WebSocket | Google Sheets는 준실시간 수준이면 충분 |
 | 사용자별 레이아웃 커스터마이징 | 고정 레이아웃이 팀 전체 일관성 보장 |
 
 ## Traceability
-
-요구사항별 담당 Phase (로드맵 생성 후 업데이트 예정)
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
@@ -111,8 +109,8 @@
 **Coverage:**
 - v1 requirements: 24 total
 - Mapped to phases: 24
-- Unmapped: 0 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-21*
-*Last updated: 2026-02-21 after initial definition*
+*Last updated: 2026-02-21 after roadmap creation*
