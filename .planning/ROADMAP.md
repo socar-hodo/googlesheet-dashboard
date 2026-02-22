@@ -46,11 +46,12 @@ Plans:
   3. 각 KPI 카드에 기간 비교 델타(이번 주 vs 지난 주 / 이번 달 vs 지난 달 증감)가 표시된다
   4. 달성률에 따라 KPI 카드 색상이 조건부로 적용된다 (80%+ 녹색, 60-80% 주황, 60% 미만 빨간)
   5. 데이터 로딩 중 스켈레턴 플레이스홀더가 표시된다
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md — shadcn 컴포넌트 설치 + KPI 유틸리티 (lib/kpi-utils.ts) + KpiCardsSkeleton
+- [ ] 02-02-PLAN.md — TabNav Client Component + KpiCard + KpiCards Server Component
+- [ ] 02-03-PLAN.md — page.tsx 교체 (getTeamDashboardData + Suspense 탭 분기) + 브라우저 검증
 
 ### Phase 3: Chart Components
 **Goal**: 매출, 손익, 가동률, 이용 추이를 차트로 시각화하여 데이터 트렌드를 한눈에 파악할 수 있다
@@ -103,7 +104,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Layer Foundation | 2/2 | Complete    | 2026-02-22 |
-| 2. Dashboard Shell + KPI Cards | 0/TBD | Not started | - |
+| 2. Dashboard Shell + KPI Cards | 0/3 | Not started | - |
 | 3. Chart Components | 0/TBD | Not started | - |
 | 4. Data Table + Polish | 0/TBD | Not started | - |
 | 5. Cleanup + Migration | 0/TBD | Not started | - |
