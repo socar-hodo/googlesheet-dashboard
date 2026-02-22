@@ -16,10 +16,10 @@
 ### KPI Cards
 
 - [ ] **KPI-01**: 매출, 손익, 이용건수, 가동률, 이용시간 총 5개 KPI 카드를 표시한다
-- [ ] **KPI-02**: 각 KPI 카드에 목표 대비 달성률(%)을 숫자로 표시한다
-- [ ] **KPI-03**: 각 KPI 카드에 목표 달성 프로그레스 바(0~100% 게이지)를 표시한다
-- [ ] **KPI-04**: 각 KPI 카드에 기간 비교 델타(이번 주 vs 지난 주 또는 이번 달 vs 지난 달 증감)를 표시한다
-- [ ] **KPI-05**: 달성률에 따라 KPI 카드 색상이 조건부로 적용된다 (80%+ 녹색, 60~80% 주황, 60% 미만 빨간)
+- [x] **KPI-02**: 각 KPI 카드에 목표 대비 달성률(%)을 숫자로 표시한다
+- [x] **KPI-03**: 각 KPI 카드에 목표 달성 프로그레스 바(0~100% 게이지)를 표시한다
+- [x] **KPI-04**: 각 KPI 카드에 기간 비교 델타(이번 주 vs 지난 주 또는 이번 달 vs 지난 달 증감)를 표시한다
+- [x] **KPI-05**: 달성률에 따라 KPI 카드 색상이 조건부로 적용된다 (80%+ 녹색, 60~80% 주황, 60% 미만 빨간)
 
 ### Tab Navigation
 
@@ -43,7 +43,7 @@
 
 ### UX
 
-- [ ] **UX-01**: 데이터 로딩 중 스켈레턴 플레이스홀더를 표시한다
+- [x] **UX-01**: 데이터 로딩 중 스켈레턴 플레이스홀더를 표시한다
 - [x] **UX-02**: 페이지 접속 및 새로고침 시 Google Sheets에서 최신 데이터를 가져온다
 - [ ] **UX-03**: 대시보드 상단에 마지막 데이터 업데이트 타임스탬프를 표시한다
 - [ ] **UX-04**: 기존 스타터킷 범용 컴포넌트(revenue-chart, category-chart, recent-orders-table)를 삭제하고 팀 전용 컴포넌트로 교체한다
@@ -86,10 +86,10 @@
 | DATA-04 | Phase 1 | Complete |
 | DATA-05 | Phase 1 | Complete |
 | KPI-01 | Phase 2 | Pending |
-| KPI-02 | Phase 2 | Pending |
-| KPI-03 | Phase 2 | Pending |
-| KPI-04 | Phase 2 | Pending |
-| KPI-05 | Phase 2 | Pending |
+| KPI-02 | Phase 2 | Complete |
+| KPI-03 | Phase 2 | Complete |
+| KPI-04 | Phase 2 | Complete |
+| KPI-05 | Phase 2 | Complete |
 | TAB-01 | Phase 2 | Pending |
 | TAB-02 | Phase 2 | Pending |
 | TAB-03 | Phase 2 | Pending |
@@ -101,7 +101,7 @@
 | TABLE-01 | Phase 4 | Pending |
 | TABLE-02 | Phase 4 | Pending |
 | TABLE-03 | Phase 4 | Pending |
-| UX-01 | Phase 2 | Pending |
+| UX-01 | Phase 2 | Complete |
 | UX-02 | Phase 1 | Complete |
 | UX-03 | Phase 4 | Pending |
 | UX-04 | Phase 5 | Pending |

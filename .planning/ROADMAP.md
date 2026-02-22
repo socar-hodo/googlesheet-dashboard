@@ -49,7 +49,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — shadcn 컴포넌트 설치 + KPI 유틸리티 (lib/kpi-utils.ts) + KpiCardsSkeleton
+- [x] 02-01-PLAN.md — shadcn 컴포넌트 설치 + KPI 유틸리티 (lib/kpi-utils.ts) + KpiCardsSkeleton
 - [ ] 02-02-PLAN.md — TabNav Client Component + KpiCard + KpiCards Server Component
 - [ ] 02-03-PLAN.md — page.tsx 교체 (getTeamDashboardData + Suspense 탭 분기) + 브라우저 검증
 
@@ -104,7 +104,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Layer Foundation | 2/2 | Complete    | 2026-02-22 |
-| 2. Dashboard Shell + KPI Cards | 0/3 | Not started | - |
+| 2. Dashboard Shell + KPI Cards | 1/3 | In Progress | - |
 | 3. Chart Components | 0/TBD | Not started | - |
 | 4. Data Table + Polish | 0/TBD | Not started | - |
 | 5. Cleanup + Migration | 0/TBD | Not started | - |

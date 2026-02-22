@@ -5,32 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** 오늘 매출이 목표 대비 어디에 있는지, 지난 주/지난 달 대비 어떻게 변하고 있는지를 한 페이지에서 즉시 파악할 수 있어야 한다.
-**Current focus:** Phase 1: Data Layer Foundation
+**Current focus:** Phase 2: Dashboard Shell + KPI Cards
 
 ## Current Position
 
-Phase: 1 of 5 (Data Layer Foundation)
-Plan: 2 of TBD in current phase
+Phase: 2 of 5 (Dashboard Shell + KPI Cards)
+Plan: 1 of 3 in current phase
 Status: In Progress
-Last activity: 2026-02-22 -- Plan 01-02 완료 (mock 데이터 + 데이터 레이어 구현)
+Last activity: 2026-02-22 -- Plan 02-01 완료 (shadcn 설치 + KPI 유틸리티 + 스켈레턴)
 
-Progress: [██░░░░░░░░] 10%
+Progress: [███░░░░░░░] 20%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 2.5 min
-- Total execution time: 0.08 hours
+- Total plans completed: 3
+- Average duration: 3.0 min
+- Total execution time: 0.25 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-data-layer-foundation | 2 | 5 min | 2.5 min |
+| 02-dashboard-shell-kpi-cards | 1 | 5 min | 5.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (2 min), 01-02 (3 min)
+- Last 5 plans: 01-01 (2 min), 01-02 (3 min), 02-01 (5 min)
 - Trend: -
 
 *Updated after each plan completion*
@@ -50,11 +51,15 @@ Recent decisions affecting current work:
 - [Phase 01-02]: parseKoreanNumber를 export function으로 공개 — Phase 2 컴포넌트에서 포맷팅 재사용 가능
 - [Phase 01-02]: GOOGLE_DAILY_SHEET_NAME/GOOGLE_WEEKLY_SHEET_NAME 환경변수로 시트 탭명 재정의 가능
 - [Phase 01-02]: 헤더 이름 기반 컬럼 매핑(buildColumnIndex) — 인덱스 고정 파싱 완전 배제
+- [Phase 02-01]: 달성률 상한 999%로 cap — 이상치 데이터 방어
+- [Phase 02-01]: previous=0일 때 percent=0 반환 — 0으로 나누기 방지
+- [Phase 02-01]: formatDelta unit 파라미터로 원/건/%/시간 분기 — KPI 카드에서 단위별 표시 통일
+- [Phase 02-01]: Progress 바 색상은 [&>div]:bg-{color} 패턴으로 shadcn Progress 내부 div 오버라이드
 
 ### Pending Todos
 
-- Phase 2: app/(dashboard)/dashboard/page.tsx를 getTeamDashboardData()로 교체 필요
-- Phase 2: page.tsx에 `export const dynamic = 'force-dynamic'` 추가 필요
+- Phase 2: app/(dashboard)/dashboard/page.tsx를 getTeamDashboardData()로 교체 필요 (02-03)
+- Phase 2: page.tsx에 `export const dynamic = 'force-dynamic'` 추가 필요 (02-03)
 
 ### Blockers/Concerns
 
@@ -64,5 +69,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 01-data-layer-foundation-01-02-PLAN.md (mock 데이터 + 데이터 레이어 구현 완료)
+Stopped at: Completed 02-dashboard-shell-kpi-cards-02-01-PLAN.md (shadcn 설치 + KPI 유틸리티 + 스켈레턴 완료)
 Resume file: None
