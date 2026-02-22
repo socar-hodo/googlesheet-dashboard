@@ -1,32 +1,38 @@
-// 메인 대시보드 페이지 (Server Component)
-// 서버에서 데이터를 가져와 각 컴포넌트에 전달합니다
-import { getDashboardData } from "@/lib/data";
-import { KpiCards } from "@/components/dashboard/kpi-cards";
-import { RevenueChart } from "@/components/dashboard/revenue-chart";
-import { CategoryChart } from "@/components/dashboard/category-chart";
-import { RecentOrdersTable } from "@/components/dashboard/recent-orders-table";
+// 대시보드 메인 페이지 (Server Component)
+// searchParams로 탭 상태를 읽어 KPI 카드를 렌더링합니다
+import { Suspense } from 'react';
+import { getTeamDashboardData } from '@/lib/data';
+import { KpiCards } from '@/components/dashboard/kpi-cards';
+import { KpiCardsSkeleton } from '@/components/dashboard/kpi-cards-skeleton';
+import { TabNav } from '@/components/dashboard/tab-nav';
 
-export default async function DashboardPage() {
-  // 서버에서 데이터 페칭 (Google Sheets 또는 mock 데이터)
-  const data = await getDashboardData();
+// 탭 전환 시 서버에서 최신 데이터를 가져오도록 캐시 비활성화
+export const dynamic = 'force-dynamic';
+
+type SearchParams = Promise<{ tab?: string }>;
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  // Next.js 16: searchParams는 Promise — await 필수
+  const { tab = 'daily' } = await searchParams;
+  const activeTab = tab === 'weekly' ? 'weekly' : 'daily';
+
+  const data = await getTeamDashboardData();
 
   return (
     <div className="space-y-6">
-      {/* KPI 요약 카드 4개 */}
-      <KpiCards data={data.kpi} />
+      {/* 탭 네비게이션 — useSearchParams() 사용으로 Suspense 감싸기 필요 */}
+      <Suspense fallback={null}>
+        <TabNav activeTab={activeTab} />
+      </Suspense>
 
-      {/* 차트 영역: 라인 차트 (4/7) + 파이 차트 (3/7) */}
-      <div className="grid gap-6 lg:grid-cols-7">
-        <div className="lg:col-span-4">
-          <RevenueChart data={data.monthlyRevenue} />
-        </div>
-        <div className="lg:col-span-3">
-          <CategoryChart data={data.categoryDistribution} />
-        </div>
-      </div>
-
-      {/* 최근 주문 테이블 */}
-      <RecentOrdersTable data={data.recentOrders} />
+      {/* key prop으로 탭 전환 시 Suspense 리셋 → 스켈레턴 재표시 (UX-01) */}
+      <Suspense key={activeTab} fallback={<KpiCardsSkeleton />}>
+        <KpiCards data={data} tab={activeTab} />
+      </Suspense>
     </div>
   );
 }

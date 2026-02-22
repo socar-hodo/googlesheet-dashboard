@@ -10,7 +10,16 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { RecentOrder } from "@/types/dashboard";
+// TODO(Phase 5): 이 파일은 레거시 스타터킷 컴포넌트로 Phase 5에서 삭제 예정
+// RecentOrder 타입은 Phase 1 타입 교체로 삭제됨 — 인라인 정의로 대체
+interface RecentOrder {
+  id: string;
+  customerName: string;
+  product: string;
+  amount: number;
+  status: '완료' | '처리중' | '취소';
+  date: string;
+}
 
 interface RecentOrdersTableProps {
   data: RecentOrder[];

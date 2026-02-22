@@ -11,7 +11,12 @@ import {
   Legend,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { CategoryDistribution } from "@/types/dashboard";
+// TODO(Phase 5): 이 파일은 레거시 스타터킷 컴포넌트로 Phase 5에서 삭제 예정
+// CategoryDistribution 타입은 Phase 1 타입 교체로 삭제됨 — 인라인 정의로 대체
+interface CategoryDistribution {
+  name: string;
+  value: number;
+}
 
 // CSS 변수 대신 실제 색상 값 매핑 (Recharts SVG에서 CSS 변수가 작동하지 않을 수 있음)
 const CHART_COLORS = [

@@ -12,7 +12,12 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { MonthlyRevenue } from "@/types/dashboard";
+// TODO(Phase 5): 이 파일은 레거시 스타터킷 컴포넌트로 Phase 5에서 삭제 예정
+// MonthlyRevenue 타입은 Phase 1 타입 교체로 삭제됨 — 인라인 정의로 대체
+interface MonthlyRevenue {
+  month: string;
+  revenue: number;
+}
 
 interface RevenueChartProps {
   data: MonthlyRevenue[];
