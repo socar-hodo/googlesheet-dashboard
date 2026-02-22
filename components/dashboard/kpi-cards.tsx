@@ -1,58 +1,156 @@
-// KPI 요약 카드 4개: 총매출, 주문수, 평균단가, 성장률
-// Server Component로 동작 (인터랙션 없음)
-import { TrendingUp, ShoppingCart, DollarSign, BarChart3 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { KpiData } from "@/types/dashboard";
+// KPI 카드 그리드 — TeamDashboardData에서 5개 KPI 카드 렌더링
+import { TrendingUp, DollarSign, Users, Activity, Clock } from 'lucide-react';
+import type { TeamDashboardData } from '@/types/dashboard';
+import {
+  calcAchievementRate,
+  calcDelta,
+  formatKpiValue,
+  formatDelta,
+  getDeltaColorClass,
+} from '@/lib/kpi-utils';
+import { KpiCard } from './kpi-card';
 
 interface KpiCardsProps {
-  data: KpiData;
+  data: TeamDashboardData;
+  tab: 'daily' | 'weekly';
 }
 
-export function KpiCards({ data }: KpiCardsProps) {
+export function KpiCards({ data, tab }: KpiCardsProps) {
+  if (tab === 'daily') {
+    // 날짜 오름차순 정렬 후 최신/전일 추출
+    const sorted = [...data.daily].sort((a, b) => a.date.localeCompare(b.date));
+    const current = sorted[sorted.length - 1];
+    const previous = sorted[sorted.length - 2];
+
+    if (!current) {
+      return <p className="text-muted-foreground">일별 데이터가 없습니다.</p>;
+    }
+
+    // 카드 정의 배열 (비즈니스 중요도 순)
+    const cards = [
+      {
+        title: '매출',
+        value: formatKpiValue(current.revenue, '원'),
+        delta: previous ? calcDelta(current.revenue, previous.revenue) : null,
+        unit: '원' as const,
+        icon: <TrendingUp className="h-4 w-4" />,
+      },
+      {
+        title: '손익',
+        value: formatKpiValue(current.profit, '원'),
+        delta: previous ? calcDelta(current.profit, previous.profit) : null,
+        unit: '원' as const,
+        icon: <DollarSign className="h-4 w-4" />,
+      },
+      {
+        title: '이용건수',
+        value: formatKpiValue(current.usageCount, '건'),
+        delta: previous ? calcDelta(current.usageCount, previous.usageCount) : null,
+        unit: '건' as const,
+        icon: <Users className="h-4 w-4" />,
+      },
+      {
+        title: '가동률',
+        value: formatKpiValue(current.utilizationRate, '%'),
+        delta: previous ? calcDelta(current.utilizationRate, previous.utilizationRate) : null,
+        unit: '%' as const,
+        icon: <Activity className="h-4 w-4" />,
+      },
+      {
+        title: '이용시간',
+        value: formatKpiValue(current.usageHours, '시간'),
+        delta: previous ? calcDelta(current.usageHours, previous.usageHours) : null,
+        unit: '시간' as const,
+        icon: <Clock className="h-4 w-4" />,
+      },
+    ];
+
+    return (
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        {cards.map((card) => (
+          <KpiCard
+            key={card.title}
+            title={card.title}
+            value={card.value}
+            icon={card.icon}
+            deltaText={card.delta ? formatDelta(card.delta.percent, card.delta.absolute, card.unit) : undefined}
+            deltaColorClass={card.delta ? getDeltaColorClass(card.delta.percent) : undefined}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  // Weekly 탭 — 마지막 항목이 이번 주, 마지막-1 항목이 지난 주
+  const current = data.weekly[data.weekly.length - 1];
+  const previous = data.weekly[data.weekly.length - 2];
+
+  if (!current) {
+    return <p className="text-muted-foreground">주차별 데이터가 없습니다.</p>;
+  }
+
+  // 매출만 weeklyTarget 대비 달성률 표시, 나머지는 달성률 없음
   const cards = [
     {
-      title: "총 매출",
-      value: `₩${(data.totalRevenue / 10000).toLocaleString()}만`,
-      icon: DollarSign,
-      description: "전체 기간 누적",
+      title: '매출',
+      value: formatKpiValue(current.revenue, '원'),
+      target: formatKpiValue(current.weeklyTarget, '원'),
+      achievementRate: calcAchievementRate(current.revenue, current.weeklyTarget),
+      delta: previous ? calcDelta(current.revenue, previous.revenue) : null,
+      unit: '원' as const,
+      icon: <TrendingUp className="h-4 w-4" />,
     },
     {
-      title: "주문 수",
-      value: data.orderCount.toLocaleString(),
-      icon: ShoppingCart,
-      description: "전체 주문 건수",
+      title: '손익',
+      value: formatKpiValue(current.profit, '원'),
+      target: undefined as string | undefined,
+      achievementRate: undefined as number | undefined,
+      delta: previous ? calcDelta(current.profit, previous.profit) : null,
+      unit: '원' as const,
+      icon: <DollarSign className="h-4 w-4" />,
     },
     {
-      title: "평균 주문 금액",
-      value: `₩${data.averageOrderValue.toLocaleString()}`,
-      icon: BarChart3,
-      description: "주문당 평균",
+      title: '이용건수',
+      value: formatKpiValue(current.usageCount, '건'),
+      target: undefined as string | undefined,
+      achievementRate: undefined as number | undefined,
+      delta: previous ? calcDelta(current.usageCount, previous.usageCount) : null,
+      unit: '건' as const,
+      icon: <Users className="h-4 w-4" />,
     },
     {
-      title: "성장률",
-      value: `${data.growthRate > 0 ? "+" : ""}${data.growthRate}%`,
-      icon: TrendingUp,
-      description: "전월 대비",
+      title: '가동률',
+      value: formatKpiValue(current.utilizationRate, '%'),
+      target: undefined as string | undefined,
+      achievementRate: undefined as number | undefined,
+      delta: previous ? calcDelta(current.utilizationRate, previous.utilizationRate) : null,
+      unit: '%' as const,
+      icon: <Activity className="h-4 w-4" />,
+    },
+    {
+      title: '이용시간',
+      value: formatKpiValue(current.usageHours, '시간'),
+      target: undefined as string | undefined,
+      achievementRate: undefined as number | undefined,
+      delta: previous ? calcDelta(current.usageHours, previous.usageHours) : null,
+      unit: '시간' as const,
+      icon: <Clock className="h-4 w-4" />,
     },
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       {cards.map((card) => (
-        <Card key={card.title}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {card.title}
-            </CardTitle>
-            <card.icon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{card.value}</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {card.description}
-            </p>
-          </CardContent>
-        </Card>
+        <KpiCard
+          key={card.title}
+          title={card.title}
+          value={card.value}
+          target={card.target}
+          achievementRate={card.achievementRate}
+          icon={card.icon}
+          deltaText={card.delta ? formatDelta(card.delta.percent, card.delta.absolute, card.unit) : undefined}
+          deltaColorClass={card.delta ? getDeltaColorClass(card.delta.percent) : undefined}
+        />
       ))}
     </div>
   );
