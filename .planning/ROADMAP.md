@@ -110,5 +110,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 1. Data Layer Foundation | 2/2 | Complete    | 2026-02-22 |
 | 2. Dashboard Shell + KPI Cards | 3/3 | Complete    | 2026-02-24 |
 | 3. Chart Components | 4/4 | Complete    | 2026-02-24 |
-| 4. Data Table + Polish | 1/3 | In Progress | - |
+| 4. Data Table + Polish | 2/3 | In Progress|  |
 | 5. Cleanup + Migration | 0/TBD | Not started | - |

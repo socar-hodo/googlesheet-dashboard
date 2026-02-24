@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 4 of 5 (Data Table Polish)
-Plan: 1 of 3 in current phase
-Status: In Progress — Plan 04-01 완료 (DataTable + DataTableSkeleton 구현)
-Last activity: 2026-02-24 -- Plan 04-01 완료 (DataTable Server Component, DataTableSkeleton 구현)
+Plan: 2 of 3 in current phase
+Status: In Progress — Plan 04-02 완료 (UpdateTimestamp Client Component 구현)
+Last activity: 2026-02-24 -- Plan 04-02 완료 (UpdateTimestamp 상대+절대 타임스탬프 컴포넌트)
 
 Progress: [████████████] 80%
 
@@ -43,6 +43,7 @@ Progress: [████████████] 80%
 | Phase 03-chart-components P02 | 4 | 2 tasks | 2 files |
 | Phase 03-chart-components P04 | 5 | 3 tasks | 2 files |
 | Phase 04-data-table-polish P01 | 3 | 2 tasks | 2 files |
+| Phase 04-data-table-polish P02 | 2 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,8 @@ Recent decisions affecting current work:
 - [Phase 04-01]: 테이블 금액 포맷: 원 단위 전체(₩1,234,567) — KPI 카드 만원 단위와 명확히 분리
 - [Phase 04-01]: 가동률 합계 행 → '-' 표시, 평균 행에만 가동률 표시 (합계 무의미)
 - [Phase 04-01]: Striped rows: index % 2 === 1 조건으로 짝수 행에 bg-muted/30 직접 적용
+- [Phase 04-02]: hydration 안전 패턴: mounted 상태 전 null 반환 — SSR 클라이언트 locale 불일치 방지
+- [Phase 04-02]: 자동 새로고침 없음 — 마운트 시 1회 계산만 (CONTEXT.md 결정)
 
 ### Pending Todos
 
@@ -94,5 +97,5 @@ None
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Completed 04-data-table-polish-04-01-PLAN.md (DataTable Server Component + DataTableSkeleton 구현)
+Stopped at: Completed 04-data-table-polish-04-02-PLAN.md (UpdateTimestamp Client Component 구현)
 Resume file: None

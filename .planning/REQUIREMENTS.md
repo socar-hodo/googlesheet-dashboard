@@ -45,7 +45,7 @@
 
 - [x] **UX-01**: 데이터 로딩 중 스켈레턴 플레이스홀더를 표시한다
 - [x] **UX-02**: 페이지 접속 및 새로고침 시 Google Sheets에서 최신 데이터를 가져온다
-- [ ] **UX-03**: 대시보드 상단에 마지막 데이터 업데이트 타임스탬프를 표시한다
+- [x] **UX-03**: 대시보드 상단에 마지막 데이터 업데이트 타임스탬프를 표시한다
 - [ ] **UX-04**: 기존 스타터킷 범용 컴포넌트(revenue-chart, category-chart, recent-orders-table)를 삭제하고 팀 전용 컴포넌트로 교체한다
 
 ## v2 Requirements
@@ -103,7 +103,7 @@
 | TABLE-03 | Phase 4 | Complete |
 | UX-01 | Phase 2 | Complete |
 | UX-02 | Phase 1 | Complete |
-| UX-03 | Phase 4 | Pending |
+| UX-03 | Phase 4 | Complete |
 | UX-04 | Phase 5 | Pending |
 
 **Coverage:**
