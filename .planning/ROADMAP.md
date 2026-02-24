@@ -98,7 +98,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 05-01-PLAN.md — 레거시 컴포넌트 3개 삭제 + 빌드 검증 (UX-04)
+- [x] 05-01-PLAN.md — 레거시 컴포넌트 3개 삭제 + 빌드 검증 (UX-04)
 
 ## Progress
 
