@@ -80,10 +80,12 @@ Plans:
   2. Weekly 탭에서 주차별 전체 데이터가 테이블로 표시된다
   3. 테이블 하단에 전체 합계 및 평균 요약 행이 표시된다
   4. 대시보드 상단에 마지막 데이터 업데이트 타임스탬프가 표시된다
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 04-01: TBD
+- [ ] 04-01-PLAN.md — DataTable Server Component + DataTableSkeleton (TABLE-01, TABLE-02, TABLE-03)
+- [ ] 04-02-PLAN.md — UpdateTimestamp Client Component (UX-03)
+- [ ] 04-03-PLAN.md — page.tsx 통합 + 브라우저 검증 (TABLE-01~03, UX-03)
 
 ### Phase 5: Cleanup + Migration
 **Goal**: 스타터킷 범용 컴포넌트가 완전히 제거되고 팀 전용 대시보드만 남는다
