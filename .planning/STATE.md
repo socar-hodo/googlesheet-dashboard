@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 3 of 5 (Charts)
-Plan: 0 of ? in current phase
-Status: Phase 2 Complete — Ready for Phase 3
-Last activity: 2026-02-24 -- Plan 02-03 완료 (page.tsx 교체 + Phase 2 전체 통합 + 브라우저 검증 통과)
+Plan: 1 of 4 in current phase
+Status: In Progress — 03-01 완료 (차트 공통 인프라: chart-colors + ChartsSkeleton + ChartsSection)
+Last activity: 2026-02-24 -- Plan 03-01 완료 (chart-colors.ts, charts-skeleton.tsx, charts-section.tsx)
 
-Progress: [██████░░░░] 40%
+Progress: [███████░░░] 42%
 
 ## Performance Metrics
 
@@ -29,13 +29,15 @@ Progress: [██████░░░░] 40%
 |-------|-------|-------|----------|
 | 01-data-layer-foundation | 2 | 5 min | 2.5 min |
 | 02-dashboard-shell-kpi-cards | 3 | 12 min | 4.0 min |
+| 03-chart-components | 1 | 2 min | 2.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (2 min), 01-02 (3 min), 02-01 (5 min), 02-02 (2 min), 02-03 (5 min)
+- Last 5 plans: 01-02 (3 min), 02-01 (5 min), 02-02 (2 min), 02-03 (5 min), 03-01 (2 min)
 - Trend: steady
 
 *Updated after each plan completion*
 | Phase 02-dashboard-shell-kpi-cards P03 | 2 | 2 tasks | 2 files |
+| Phase 03-chart-components P01 | 2 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -63,6 +65,9 @@ Recent decisions affecting current work:
 - [Phase 02-03]: TabNav(useSearchParams)는 Suspense fallback=null로 래핑 — SSR 오류 방지
 - [Phase 02-03]: Suspense key={activeTab} — 탭 전환 시 스켈레턴 재마운트 (UX-01 구현)
 - [Phase 02-03]: lib/data.ts buildMergedColumnIndex — 2단 헤더 병합 셀 빈 문자열을 앞 값으로 전파
+- [Phase 03-01]: ChartColorMode를 typeof CHART_COLORS.light 대신 명시적 interface로 정의 — TS 리터럴 타입 충돌 방지
+- [Phase 03-01]: ChartsSection 임시 placeholder로 ChartsSkeleton 반환 — 03-02/03-03 완성 전 빌드 통과 우선
+- [Phase 03-01]: Recharts SVG fill/stroke에 CSS 변수 직접 불가 → 테마별 하드코딩 oklch + hex 색상 상수 패턴 확립
 
 ### Pending Todos
 
@@ -76,5 +81,5 @@ None
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Completed 02-dashboard-shell-kpi-cards-02-03-PLAN.md (page.tsx 교체 + Phase 2 통합 완성 + 브라우저 검증 통과)
+Stopped at: Completed 03-chart-components-03-01-PLAN.md (차트 공통 인프라: chart-colors.ts + charts-skeleton.tsx + charts-section.tsx)
 Resume file: None

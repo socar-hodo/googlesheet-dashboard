@@ -33,7 +33,7 @@
 - [ ] **CHART-02**: 손익 추이 차트 — 수익(양수)은 파란색, 손실(음수)은 빨간색으로 구분된 Bar 차트로 표시한다
 - [ ] **CHART-03**: 가동률 추이 차트 — 기간별 가동률(%) 라인 차트로 표시하며 임계값 기준선을 표시한다
 - [ ] **CHART-04**: 이용건수/이용시간 차트 — 두 지표의 기간별 추이를 차트로 표시한다
-- [ ] **CHART-05**: 모든 차트가 다크/라이트 테마에서 올바른 색상으로 렌더링된다
+- [x] **CHART-05**: 모든 차트가 다크/라이트 테마에서 올바른 색상으로 렌더링된다
 
 ### Data Table
 
@@ -97,7 +97,7 @@
 | CHART-02 | Phase 3 | Pending |
 | CHART-03 | Phase 3 | Pending |
 | CHART-04 | Phase 3 | Pending |
-| CHART-05 | Phase 3 | Pending |
+| CHART-05 | Phase 3 | Complete |
 | TABLE-01 | Phase 4 | Pending |
 | TABLE-02 | Phase 4 | Pending |
 | TABLE-03 | Phase 4 | Pending |
