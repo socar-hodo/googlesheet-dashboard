@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** 오늘 매출이 목표 대비 어디에 있는지, 지난 주/지난 달 대비 어떻게 변하고 있는지를 한 페이지에서 즉시 파악할 수 있어야 한다.
-**Current focus:** Phase 3: Charts
+**Current focus:** Phase 4: Data Table Polish
 
 ## Current Position
 
-Phase: 3 of 5 (Charts)
-Plan: 4 of 4 in current phase
-Status: Complete — Phase 3 완료, CHART-01~05 전체 충족 (ChartsSection 최종 통합 + 브라우저 검증)
-Last activity: 2026-02-24 -- Plan 03-04 완료 (charts-section.tsx 최종 구현, page.tsx ChartsSection 통합)
+Phase: 4 of 5 (Data Table Polish)
+Plan: 1 of 3 in current phase
+Status: In Progress — Plan 04-01 완료 (DataTable + DataTableSkeleton 구현)
+Last activity: 2026-02-24 -- Plan 04-01 완료 (DataTable Server Component, DataTableSkeleton 구현)
 
-Progress: [██████████] 72%
+Progress: [████████████] 80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 3.3 min
-- Total execution time: 0.29 hours
+- Total plans completed: 7
+- Average duration: 3.1 min
+- Total execution time: 0.32 hours
 
 **By Phase:**
 
@@ -30,9 +30,10 @@ Progress: [██████████] 72%
 | 01-data-layer-foundation | 2 | 5 min | 2.5 min |
 | 02-dashboard-shell-kpi-cards | 3 | 12 min | 4.0 min |
 | 03-chart-components | 2 | 6 min | 3.0 min |
+| 04-data-table-polish | 1 | 3 min | 3.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-01 (5 min), 02-02 (2 min), 02-03 (5 min), 03-01 (2 min), 03-03 (4 min)
+- Last 5 plans: 02-02 (2 min), 02-03 (5 min), 03-01 (2 min), 03-03 (4 min), 04-01 (3 min)
 - Trend: steady
 
 *Updated after each plan completion*
@@ -41,6 +42,7 @@ Progress: [██████████] 72%
 | Phase 03-chart-components P03 | 4 | 2 tasks | 2 files |
 | Phase 03-chart-components P02 | 4 | 2 tasks | 2 files |
 | Phase 03-chart-components P04 | 5 | 3 tasks | 2 files |
+| Phase 04-data-table-polish P01 | 3 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -76,6 +78,9 @@ Recent decisions affecting current work:
 - [Phase 03-03]: .next 캐시 오염 시 rm -rf .next 후 클린 빌드 — Next.js 16 dev 타입 캐시 이슈
 - [Phase 03-chart-components]: formatDailyLabel/formatWeeklyLabel 로컬 선언 — 별도 utils 파일 없이 각 차트 파일에 로컬 정의
 - [Phase 03-chart-components]: ChartsSection에서 Daily 최근 30일 슬라이싱 처리 — 개별 차트에 중복 코드 없음
+- [Phase 04-01]: 테이블 금액 포맷: 원 단위 전체(₩1,234,567) — KPI 카드 만원 단위와 명확히 분리
+- [Phase 04-01]: 가동률 합계 행 → '-' 표시, 평균 행에만 가동률 표시 (합계 무의미)
+- [Phase 04-01]: Striped rows: index % 2 === 1 조건으로 짝수 행에 bg-muted/30 직접 적용
 
 ### Pending Todos
 
@@ -89,5 +94,5 @@ None
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Completed 03-chart-components-03-04-PLAN.md (ChartsSection 최종 통합, Phase 3 완료)
+Stopped at: Completed 04-data-table-polish-04-01-PLAN.md (DataTable Server Component + DataTableSkeleton 구현)
 Resume file: None

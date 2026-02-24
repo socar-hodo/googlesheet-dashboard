@@ -37,9 +37,9 @@
 
 ### Data Table
 
-- [ ] **TABLE-01**: Daily 탭에서 일자별 전체 데이터를 테이블로 표시한다 (날짜, 매출, 손익, 이용시간, 이용건수, 가동률)
-- [ ] **TABLE-02**: Weekly 탭에서 주차별 전체 데이터를 테이블로 표시한다
-- [ ] **TABLE-03**: 테이블 하단에 전체 합계 및 평균 요약 행을 표시한다
+- [x] **TABLE-01**: Daily 탭에서 일자별 전체 데이터를 테이블로 표시한다 (날짜, 매출, 손익, 이용시간, 이용건수, 가동률)
+- [x] **TABLE-02**: Weekly 탭에서 주차별 전체 데이터를 테이블로 표시한다
+- [x] **TABLE-03**: 테이블 하단에 전체 합계 및 평균 요약 행을 표시한다
 
 ### UX
 
@@ -98,9 +98,9 @@
 | CHART-03 | Phase 3 | Complete |
 | CHART-04 | Phase 3 | Complete |
 | CHART-05 | Phase 3 | Complete |
-| TABLE-01 | Phase 4 | Pending |
-| TABLE-02 | Phase 4 | Pending |
-| TABLE-03 | Phase 4 | Pending |
+| TABLE-01 | Phase 4 | Complete |
+| TABLE-02 | Phase 4 | Complete |
+| TABLE-03 | Phase 4 | Complete |
 | UX-01 | Phase 2 | Complete |
 | UX-02 | Phase 1 | Complete |
 | UX-03 | Phase 4 | Pending |
@@ -113,4 +113,4 @@
 
 ---
 *Requirements defined: 2026-02-21*
-*Last updated: 2026-02-22 after Phase 1 completion (01-02)*
+*Last updated: 2026-02-24 after Phase 4 Plan 04-01 completion (TABLE-01~03 완료)*

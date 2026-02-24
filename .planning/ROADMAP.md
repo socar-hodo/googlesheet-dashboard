@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Data Layer Foundation** - 팀 전용 타입 정의, Sheets 파서, mock 폴백을 구축하여 모든 UI의 데이터 기반을 마련한다
 - [x] **Phase 2: Dashboard Shell + KPI Cards** - Daily/Weekly 탭 전환과 KPI 카드로 대시보드의 핵심 구조를 완성한다
-- [ ] **Phase 3: Chart Components** - 매출, 손익, 가동률, 이용 추이 차트로 데이터를 시각화한다
+- [x] **Phase 3: Chart Components** - 매출, 손익, 가동률, 이용 추이 차트로 데이터를 시각화한다
 - [ ] **Phase 4: Data Table + Polish** - 상세 데이터 테이블과 요약 행, 업데이트 타임스탬프를 추가한다
 - [ ] **Phase 5: Cleanup + Migration** - 스타터킷 범용 컴포넌트를 제거하고 팀 전용 컴포넌트로 완전 교체한다
 
@@ -83,7 +83,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — DataTable Server Component + DataTableSkeleton (TABLE-01, TABLE-02, TABLE-03)
+- [x] 04-01-PLAN.md — DataTable Server Component + DataTableSkeleton (TABLE-01, TABLE-02, TABLE-03)
 - [ ] 04-02-PLAN.md — UpdateTimestamp Client Component (UX-03)
 - [ ] 04-03-PLAN.md — page.tsx 통합 + 브라우저 검증 (TABLE-01~03, UX-03)
 
@@ -109,6 +109,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Data Layer Foundation | 2/2 | Complete    | 2026-02-22 |
 | 2. Dashboard Shell + KPI Cards | 3/3 | Complete    | 2026-02-24 |
-| 3. Chart Components | 3/4 | In Progress|  |
-| 4. Data Table + Polish | 0/TBD | Not started | - |
+| 3. Chart Components | 4/4 | Complete    | 2026-02-24 |
+| 4. Data Table + Polish | 1/3 | In Progress | - |
 | 5. Cleanup + Migration | 0/TBD | Not started | - |
