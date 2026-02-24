@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Data Layer Foundation** - 팀 전용 타입 정의, Sheets 파서, mock 폴백을 구축하여 모든 UI의 데이터 기반을 마련한다
 - [x] **Phase 2: Dashboard Shell + KPI Cards** - Daily/Weekly 탭 전환과 KPI 카드로 대시보드의 핵심 구조를 완성한다
 - [x] **Phase 3: Chart Components** - 매출, 손익, 가동률, 이용 추이 차트로 데이터를 시각화한다
-- [x] **Phase 4: Data Table + Polish** - 상세 데이터 테이블과 요약 행, 업데이트 타임스탬프를 추가한다 (completed 2026-02-24)
+- [x] **Phase 4: Data Table + Polish** - 상세 데이터 테이블과 요약 행, 업데이트 타임스탬프를 추가한다 (completed 2026-02-24)
 - [ ] **Phase 5: Cleanup + Migration** - 스타터킷 범용 컴포넌트를 제거하고 팀 전용 컴포넌트로 완전 교체한다
 
 ## Phase Details
@@ -95,10 +95,10 @@ Plans:
   1. 기존 스타터킷 범용 컴포넌트(revenue-chart, category-chart, recent-orders-table)가 삭제되었다
   2. 삭제된 컴포넌트에 대한 import 참조가 없고 빌드가 성공한다
   3. 대시보드가 팀 전용 컴포넌트만으로 정상 동작한다
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 05-01: TBD
+- [ ] 05-01-PLAN.md — 레거시 컴포넌트 3개 삭제 + 빌드 검증 (UX-04)
 
 ## Progress
 
@@ -111,4 +111,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 2. Dashboard Shell + KPI Cards | 3/3 | Complete    | 2026-02-24 |
 | 3. Chart Components | 4/4 | Complete    | 2026-02-24 |
 | 4. Data Table + Polish | 3/3 | Complete   | 2026-02-24 |
-| 5. Cleanup + Migration | 0/TBD | Not started | - |
+| 5. Cleanup + Migration | 0/1 | Not started | - |
