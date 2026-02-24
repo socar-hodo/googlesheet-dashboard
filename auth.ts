@@ -1,6 +1,7 @@
 // NextAuth.js v5 설정
 // Google Provider + 이메일 화이트리스트 인증
 // Google 키가 없으면 개발용 Credentials 로그인으로 자동 전환
+// DASHBOARD_PASSWORD 설정 시 이메일+비밀번호 로그인 추가 지원
 import NextAuth from "next-auth";
 import type { Provider } from "next-auth/providers";
 import Google from "next-auth/providers/google";
@@ -9,6 +10,11 @@ import Credentials from "next-auth/providers/credentials";
 /** Google OAuth 환경변수가 설정되었는지 확인 */
 function isGoogleOAuthConfigured(): boolean {
   return !!(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
+}
+
+/** 공유 비밀번호가 설정되었는지 확인 */
+function isPasswordConfigured(): boolean {
+  return !!process.env.DASHBOARD_PASSWORD;
 }
 
 /** 환경변수에서 허용된 이메일 목록을 파싱 */
@@ -22,36 +28,71 @@ function getAllowedEmails(): string[] {
 
 /** 사용할 프로바이더 목록 구성 */
 function getProviders(): Provider[] {
-  // Google OAuth가 설정되어 있으면 Google Provider 사용
+  const providers: Provider[] = [];
+
+  // Google OAuth가 설정되어 있으면 Google Provider 추가
   if (isGoogleOAuthConfigured()) {
-    return [Google];
+    providers.push(Google);
   }
 
-  // 미설정 시 개발용 Credentials Provider (이메일/비밀번호 없이 바로 로그인)
-  return [
-    Credentials({
-      name: "개발 모드 로그인",
-      credentials: {
-        email: {
-          label: "이메일",
-          type: "email",
-          placeholder: "dev@example.com",
+  // DASHBOARD_PASSWORD가 설정되어 있으면 이메일+비밀번호 로그인 추가
+  if (isPasswordConfigured()) {
+    providers.push(
+      Credentials({
+        id: "credentials",
+        name: "이메일/비밀번호",
+        credentials: {
+          email: { label: "이메일", type: "email" },
+          password: { label: "비밀번호", type: "password" },
         },
-      },
-      async authorize(credentials) {
-        // 개발 모드: 이메일만 입력하면 바로 로그인
-        const email = credentials?.email as string;
-        if (!email) return null;
+        async authorize(credentials) {
+          const email = credentials?.email as string;
+          const password = credentials?.password as string;
+          if (!email || !password) return null;
 
-        return {
-          id: "dev-user-1",
-          name: email.split("@")[0],
-          email: email,
-          image: null,
-        };
-      },
-    }),
-  ];
+          // 공유 비밀번호 검증
+          if (password !== process.env.DASHBOARD_PASSWORD) return null;
+
+          return {
+            id: email,
+            name: email.split("@")[0],
+            email,
+            image: null,
+          };
+        },
+      })
+    );
+  }
+
+  // 아무것도 설정되지 않은 경우 개발용 Credentials Provider
+  if (providers.length === 0) {
+    providers.push(
+      Credentials({
+        id: "credentials",
+        name: "개발 모드 로그인",
+        credentials: {
+          email: {
+            label: "이메일",
+            type: "email",
+            placeholder: "dev@example.com",
+          },
+        },
+        async authorize(credentials) {
+          const email = credentials?.email as string;
+          if (!email) return null;
+
+          return {
+            id: "dev-user-1",
+            name: email.split("@")[0],
+            email,
+            image: null,
+          };
+        },
+      })
+    );
+  }
+
+  return providers;
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({

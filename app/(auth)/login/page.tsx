@@ -13,6 +13,9 @@ const isGoogleConfigured = !!(
   process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET
 );
 
+// 공유 비밀번호 로그인이 설정되었는지 확인
+const isPasswordConfigured = !!process.env.DASHBOARD_PASSWORD;
+
 // NextAuth 에러 코드 → 한국어 메시지 매핑
 const errorMessages: Record<string, string> = {
   AccessDenied: "접근이 거부되었습니다. 허용된 이메일이 아닙니다.",
@@ -87,7 +90,7 @@ export default async function LoginPage({
               {error ? "다른 계정으로 다시 로그인" : "Google로 로그인"}
             </Button>
           </form>
-        ) : (
+        ) : !isPasswordConfigured ? (
           /* === 개발 모드: 이메일 입력 로그인 === */
           <form
             action={async (formData: FormData) => {
@@ -122,6 +125,52 @@ export default async function LoginPage({
               </p>
             </div>
           </form>
+        ) : null}
+
+        {/* === 이메일 + 비밀번호 로그인 === */}
+        {isPasswordConfigured && (
+          <>
+            {isGoogleConfigured && (
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">또는</span>
+                </div>
+              </div>
+            )}
+            <form
+              action={async (formData: FormData) => {
+                "use server";
+                await signIn("credentials", {
+                  email: formData.get("email"),
+                  password: formData.get("password"),
+                  redirectTo: "/dashboard",
+                });
+              }}
+            >
+              <div className="space-y-3">
+                <input
+                  name="email"
+                  type="email"
+                  placeholder="이메일"
+                  required
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+                <input
+                  name="password"
+                  type="password"
+                  placeholder="비밀번호"
+                  required
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+                <Button className="w-full" size="lg" type="submit" variant="outline">
+                  이메일로 로그인
+                </Button>
+              </div>
+            </form>
+          </>
         )}
       </CardContent>
     </Card>
