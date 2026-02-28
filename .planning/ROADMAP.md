@@ -43,7 +43,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 **Plans**: 3 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — 기간 필터 유틸리티 (PeriodKey 타입, 날짜 계산, 필터 함수)
+- [x] 06-01-PLAN.md — 기간 필터 유틸리티 (PeriodKey 타입, 날짜 계산, 필터 함수)
 - [ ] 06-02-PLAN.md — UI 컴포넌트 (PeriodFilter, DashboardHeader, Client Component 전환)
 - [ ] 06-03-PLAN.md — 통합 (DashboardContent, page.tsx 업데이트, 브라우저 검증)
 
@@ -76,6 +76,6 @@ Plans:
 | 3. Chart Components | v1.0 | 4/4 | Complete | 2026-02-23 |
 | 4. Data Table + Polish | v1.0 | 3/3 | Complete | 2026-02-24 |
 | 5. Cleanup + Migration | v1.0 | 1/1 | Complete | 2026-02-24 |
-| 6. Period Filter | v1.1 | 0/3 | Not started | - |
+| 6. Period Filter | v1.1 | 1/3 | In progress | - |
 | 7. Export | v1.1 | 0/? | Not started | - |
 | 8. Sparkline | v1.1 | 0/? | Not started | - |

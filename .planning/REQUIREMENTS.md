@@ -125,9 +125,9 @@
 | UX-03 | Phase 4 | Complete |
 | UX-04 | Phase 5 | Complete |
 
-| FILT-01 | Phase 6 | Pending |
-| FILT-02 | Phase 6 | Pending |
-| FILT-03 | Phase 6 | Pending |
+| FILT-01 | Phase 6 | In Progress (06-01 유틸 완료) |
+| FILT-02 | Phase 6 | In Progress (06-01 유틸 완료) |
+| FILT-03 | Phase 6 | In Progress (06-01 유틸 완료) |
 | EXPO-01 | Phase 7 | Pending |
 | EXPO-02 | Phase 7 | Pending |
 | EXPO-03 | Phase 7 | Pending |
