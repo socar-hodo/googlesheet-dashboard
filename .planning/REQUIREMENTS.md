@@ -53,8 +53,8 @@
 ### 기간 선택기 (Period Filter)
 
 - [x] **FILT-01**: 사용자가 이번 주/지난 주/이번 달/지난 달 중 하나를 선택할 수 있다
-- [ ] **FILT-02**: 기간 선택 시 KPI 카드, 차트, 테이블이 해당 기간 데이터로 즉시 업데이트된다
-- [ ] **FILT-03**: 선택된 기간이 URL searchParams에 유지되어 공유/북마크 가능하다
+- [x] **FILT-02**: 기간 선택 시 KPI 카드, 차트, 테이블이 해당 기간 데이터로 즉시 업데이트된다
+- [x] **FILT-03**: 선택된 기간이 URL searchParams에 유지되어 공유/북마크 가능하다
 
 ### 내보내기 (Export)
 
@@ -126,8 +126,8 @@
 | UX-04 | Phase 5 | Complete |
 
 | FILT-01 | Phase 6 | Complete (06-02 UI 컴포넌트 완료) |
-| FILT-02 | Phase 6 | In Progress (06-01 유틸 완료) |
-| FILT-03 | Phase 6 | In Progress (06-01 유틸 완료) |
+| FILT-02 | Phase 6 | Complete (06-03 DashboardContent 통합 완료) |
+| FILT-03 | Phase 6 | Complete (06-03 URL searchParams 동기화 완료) |
 | EXPO-01 | Phase 7 | Pending |
 | EXPO-02 | Phase 7 | Pending |
 | EXPO-03 | Phase 7 | Pending |

@@ -23,7 +23,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 <details open>
 <summary>v1.1 분석 도구 강화 (Phase 6-8) — IN PROGRESS</summary>
 
-- [ ] **Phase 6: Period Filter** — 기간 선택기 (이번 주/지난 주/이번 달/지난 달 토글 + URL 상태)
+- [x] **Phase 6: Period Filter** — 기간 선택기 (이번 주/지난 주/이번 달/지난 달 토글 + URL 상태)
 - [ ] **Phase 7: Export** — 현재 데이터 CSV/Excel 다운로드 + 파일명 규칙
 - [ ] **Phase 8: Sparkline** — KPI 카드 미니 스파크라인 차트 (다크/라이트 테마 대응)
 
@@ -45,7 +45,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 Plans:
 - [x] 06-01-PLAN.md — 기간 필터 유틸리티 (PeriodKey 타입, 날짜 계산, 필터 함수)
 - [x] 06-02-PLAN.md — UI 컴포넌트 (PeriodFilter, DashboardHeader, Client Component 전환)
-- [ ] 06-03-PLAN.md — 통합 (DashboardContent, page.tsx 업데이트, 브라우저 검증)
+- [x] 06-03-PLAN.md — 통합 (DashboardContent, page.tsx 업데이트, 브라우저 검증)
 
 ### Phase 7: Export
 **Goal**: 사용자가 현재 대시보드에 보이는 데이터를 CSV 또는 Excel 파일로 즉시 다운로드할 수 있다
@@ -76,6 +76,6 @@ Plans:
 | 3. Chart Components | v1.0 | 4/4 | Complete | 2026-02-23 |
 | 4. Data Table + Polish | v1.0 | 3/3 | Complete | 2026-02-24 |
 | 5. Cleanup + Migration | v1.0 | 1/1 | Complete | 2026-02-24 |
-| 6. Period Filter | v1.1 | 2/3 | In progress | - |
+| 6. Period Filter | v1.1 | 3/3 | Complete | 2026-03-01 |
 | 7. Export | v1.1 | 0/? | Not started | - |
 | 8. Sparkline | v1.1 | 0/? | Not started | - |
