@@ -131,15 +131,15 @@
 | EXPO-01 | Phase 7 | Complete (07-02 CSV 버튼 + 브라우저 검증 완료) |
 | EXPO-02 | Phase 7 | Complete (07-02 Excel 버튼 + 브라우저 검증 완료) |
 | EXPO-03 | Phase 7 | Complete (07-02 브라우저 검증 통과, 파일명 daily/weekly-YYYY-MM-DD 확인) |
-| SPRK-01 | Phase 8 | Complete (08-01 AreaChart 스파크라인 구현 완료) |
-| SPRK-02 | Phase 8 | Complete (08-01 var(--chart-1) CSS 변수로 다크/라이트 자동 전환 구현) |
+| SPRK-01 | Phase 8 | Complete (08-01 AreaChart 스파크라인 구현, 08-02 Playwright 브라우저 검증 통과) |
+| SPRK-02 | Phase 8 | Complete (08-01 var(--chart-1) CSS 변수, 08-02 다크/라이트 테마 Playwright 검증 통과) |
 
 **Coverage:**
 - v1 requirements: 24 total — all Complete ✓
-- v1.1 requirements: 8 total
+- v1.1 requirements: 8 total — all Complete ✓
 - Mapped to phases: 8
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-02-21*
-*Last updated: 2026-03-01 after Phase 7 Export complete*
+*Last updated: 2026-03-01 after Phase 8 Sparkline complete — v1.1 milestone complete*
