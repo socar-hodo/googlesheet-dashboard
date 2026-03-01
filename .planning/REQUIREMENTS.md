@@ -64,8 +64,8 @@
 
 ### 스파크라인 (Sparkline)
 
-- [ ] **SPRK-01**: KPI 카드 각각에 최근 데이터 추이를 보여주는 미니 차트가 표시된다
-- [ ] **SPRK-02**: 스파크라인이 다크/라이트 테마에 맞는 색상으로 렌더링된다
+- [x] **SPRK-01**: KPI 카드 각각에 최근 데이터 추이를 보여주는 미니 차트가 표시된다
+- [x] **SPRK-02**: 스파크라인이 다크/라이트 테마에 맞는 색상으로 렌더링된다
 
 ## v2 Requirements
 
@@ -131,8 +131,8 @@
 | EXPO-01 | Phase 7 | Complete (07-02 CSV 버튼 + 브라우저 검증 완료) |
 | EXPO-02 | Phase 7 | Complete (07-02 Excel 버튼 + 브라우저 검증 완료) |
 | EXPO-03 | Phase 7 | Complete (07-02 브라우저 검증 통과, 파일명 daily/weekly-YYYY-MM-DD 확인) |
-| SPRK-01 | Phase 8 | Pending |
-| SPRK-02 | Phase 8 | Pending |
+| SPRK-01 | Phase 8 | Complete (08-01 AreaChart 스파크라인 구현 완료) |
+| SPRK-02 | Phase 8 | Complete (08-01 var(--chart-1) CSS 변수로 다크/라이트 자동 전환 구현) |
 
 **Coverage:**
 - v1 requirements: 24 total — all Complete ✓

@@ -25,7 +25,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 
 - [x] **Phase 6: Period Filter** — 기간 선택기 (이번 주/지난 주/이번 달/지난 달 토글 + URL 상태)
 - [x] **Phase 7: Export** — 현재 데이터 CSV/Excel 다운로드 + 파일명 규칙 (2/2 plans done)
-- [ ] **Phase 8: Sparkline** — KPI 카드 미니 스파크라인 차트 (다크/라이트 테마 대응)
+- [ ] **Phase 8: Sparkline** — KPI 카드 미니 스파크라인 차트 (다크/라이트 테마 대응) [1/2 plans done]
 
 </details>
 
@@ -72,7 +72,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 08-01-PLAN.md — kpi-card.tsx + kpi-cards.tsx 스파크라인 구현 (AreaChart prop 추가, 5개 KPI 데이터 추출)
+- [x] 08-01-PLAN.md — kpi-card.tsx + kpi-cards.tsx 스파크라인 구현 (AreaChart prop 추가, 5개 KPI 데이터 추출)
 - [ ] 08-02-PLAN.md — Playwright 브라우저 검증 (5개 카드 렌더링, 테마 전환, 레이아웃 확인)
 
 ## Progress
@@ -86,4 +86,4 @@ Plans:
 | 5. Cleanup + Migration | v1.0 | 1/1 | Complete | 2026-02-24 |
 | 6. Period Filter | v1.1 | 3/3 | Complete | 2026-03-01 |
 | 7. Export | v1.1 | 2/2 | Complete | 2026-03-01 |
-| 8. Sparkline | v1.1 | 0/2 | Not started | - |
+| 8. Sparkline | v1.1 | 1/2 | In progress | - |
