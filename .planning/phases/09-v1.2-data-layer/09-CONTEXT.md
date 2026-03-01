@@ -18,7 +18,8 @@
 ### 시트 데이터 위치
 
 - **고객 유형 컬럼** (왕복_건수, 부름_건수, 편도_건수): 기존 `일별` / `주차별` 시트에 컬럼이 추가되어 있음
-  → 기존 `parseDailySheet` / `parseWeeklySheet` 함수에 필드 추가로 처리
+  → 별도 `parseCustomerTypeFromRows(rows, dateFieldName)` 함수 신규 작성 (기존 rows 재사용, parseDailySheet / parseWeeklySheet 미수정)
+  → `DailyRecord` / `WeeklyRecord` 타입 변경 없이 `CustomerTypeRow[]` 별도 배열로 분리
 - **매출 세분화 + 비용 분석 컬럼**: `[d] raw` / `[w] raw` 별도 시트에 있음
   → 별도 파서 함수 (`parseRevenueBreakdownFromRaw`, `parseCostBreakdownFromRaw`) 신규 작성
 - `[d] raw` / `[w] raw`도 기존 일별/주차별 시트와 동일한 **2행 헤더 구조** (1행: 컬럼 식별자, 2행: 헤더명, 3행~: 데이터)
