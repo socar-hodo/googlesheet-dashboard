@@ -1,11 +1,15 @@
 // 경남울산사업팀 매출 대시보드 — 데이터 페칭 및 파싱 레이어
-import type { DailyRecord, WeeklyRecord, TeamDashboardData } from "@/types/dashboard";
+import type { DailyRecord, WeeklyRecord, TeamDashboardData, CustomerTypeRow, RevenueBreakdownRow, CostBreakdownRow } from "@/types/dashboard";
 import { fetchSheetData, isGoogleSheetsConfigured } from "./sheets";
 import { mockTeamDashboardData } from "./mock-data";
 
 // 실제 Google Sheets 탭 이름 — 환경변수로 재정의 가능 (PITFALLS.md Pitfall 2 대응)
 const DAILY_SHEET = process.env.GOOGLE_DAILY_SHEET_NAME ?? "일별";
 const WEEKLY_SHEET = process.env.GOOGLE_WEEKLY_SHEET_NAME ?? "주차별";
+// [d] raw / [w] raw — 매출세분화 + 비용분석 전용 시트
+// 시트명에 대괄호 특수문자 포함 → fetchSheetData 호출 시 단일 따옴표로 감싸야 한다
+const DAILY_RAW_SHEET = process.env.GOOGLE_DAILY_RAW_SHEET_NAME ?? "[d] raw";
+const WEEKLY_RAW_SHEET = process.env.GOOGLE_WEEKLY_RAW_SHEET_NAME ?? "[w] raw";
 
 // 헤더 이름 상수 — 실제 Google Sheets 2행 컬럼명과 일치해야 한다
 // 1행: 컬럼 문자 식별자, 2행: 실제 헤더, 3행~: 데이터
@@ -26,6 +30,37 @@ const WEEKLY_HEADERS = {
   usageCount: "이용건수",
   utilizationRate: "가동률",
   weeklyTarget: "매출 목표",
+} as const;
+
+// 고객 유형 헤더 — 기존 일별/주차별 시트에 있는 컬럼
+const CUSTOMER_TYPE_HEADERS = {
+  roundTrip: "왕복_건수",
+  call: "부름_건수",
+  oneWay: "편도_건수",
+} as const;
+
+// [d] raw / [w] raw 시트 매출 세분화 헤더
+const RAW_REVENUE_HEADERS = {
+  date: "일자",
+  rental: "대여매출",
+  pf: "PF매출",
+  driving: "주행매출",
+  call: "부름매출",
+  other: "기타매출",
+} as const;
+
+// [d] raw / [w] raw 시트 비용 분석 헤더
+const RAW_COST_HEADERS = {
+  date: "일자",
+  transport: "운반비",
+  fuel: "유류비",
+  parking: "주차료",
+  inspection: "점검비",
+  depreciation: "감가상각비",
+  commission: "수수료",
+  chargeTransport: "충전운반비",
+  callTransport: "부름운반비",
+  zoneOneWayTransport: "존편도운반비",
 } as const;
 
 // --- 유틸리티 함수 ---
@@ -171,6 +206,119 @@ function parseWeeklySheet(rows: string[][]): WeeklyRecord[] {
     }));
 }
 
+/**
+ * 일별 또는 주차별 시트 rows에서 고객 유형 건수를 파싱한다.
+ * @param rows - Google Sheets raw 2D 배열 (rows[0]=식별자, rows[1]=헤더, rows[2~]=데이터)
+ * @param dateFieldName - 날짜/주차 구분 헤더명 ("일자" 또는 "주차")
+ */
+export function parseCustomerTypeFromRows(
+  rows: string[][],
+  dateFieldName: string
+): CustomerTypeRow[] {
+  if (rows.length < 3) return [];
+  const colIndex = buildColumnIndex(rows[1]);
+
+  const getCell = (row: string[], h: string): string | undefined => {
+    const idx = colIndex.get(h);
+    return idx !== undefined ? row[idx] : undefined;
+  };
+
+  // 누락 헤더 경고
+  for (const [, headerName] of Object.entries(CUSTOMER_TYPE_HEADERS)) {
+    if (!colIndex.has(headerName)) {
+      console.warn(`[parseCustomerTypeFromRows] 헤더를 찾을 수 없음: "${headerName}"`);
+    }
+  }
+
+  const dateIdx = colIndex.get(dateFieldName) ?? -1;
+  const isDaily = dateFieldName === "일자";
+
+  return rows
+    .slice(2)
+    .filter((row) => (row[dateIdx] ?? "").trim() !== "")
+    .map((row): CustomerTypeRow => ({
+      ...(isDaily
+        ? { date: normalizeDateToISO((getCell(row, "일자") ?? "").trim()) }
+        : { week: (getCell(row, "주차") ?? "").trim() }),
+      roundTripCount: safeNumber(getCell(row, CUSTOMER_TYPE_HEADERS.roundTrip)),
+      callCount: safeNumber(getCell(row, CUSTOMER_TYPE_HEADERS.call)),
+      oneWayCount: safeNumber(getCell(row, CUSTOMER_TYPE_HEADERS.oneWay)),
+    }));
+}
+
+/**
+ * [d] raw 또는 [w] raw 시트 rows에서 매출 세분화 데이터를 파싱한다.
+ * 2행 헤더 구조 (rows[0]=식별자, rows[1]=헤더, rows[2~]=데이터).
+ */
+export function parseRevenueBreakdownFromRaw(rows: string[][]): RevenueBreakdownRow[] {
+  if (rows.length < 3) return [];
+  const colIndex = buildColumnIndex(rows[1]);
+
+  const getCell = (row: string[], h: string): string | undefined => {
+    const idx = colIndex.get(h);
+    return idx !== undefined ? row[idx] : undefined;
+  };
+
+  // 누락 헤더 경고
+  for (const [, headerName] of Object.entries(RAW_REVENUE_HEADERS)) {
+    if (!colIndex.has(headerName)) {
+      console.warn(`[parseRevenueBreakdownFromRaw] 헤더를 찾을 수 없음: "${headerName}"`);
+    }
+  }
+
+  const dateIdx = colIndex.get(RAW_REVENUE_HEADERS.date) ?? -1;
+  return rows
+    .slice(2)
+    .filter((row) => (row[dateIdx] ?? "").trim() !== "")
+    .map((row): RevenueBreakdownRow => ({
+      date: normalizeDateToISO((getCell(row, RAW_REVENUE_HEADERS.date) ?? "").trim()),
+      rentalRevenue: safeNumber(getCell(row, RAW_REVENUE_HEADERS.rental)),
+      pfRevenue: safeNumber(getCell(row, RAW_REVENUE_HEADERS.pf)),
+      drivingRevenue: safeNumber(getCell(row, RAW_REVENUE_HEADERS.driving)),
+      callRevenue: safeNumber(getCell(row, RAW_REVENUE_HEADERS.call)),
+      otherRevenue: safeNumber(getCell(row, RAW_REVENUE_HEADERS.other)),
+    }));
+}
+
+/**
+ * [d] raw 또는 [w] raw 시트 rows에서 비용 분석 데이터를 파싱한다.
+ * 카테고리 합계 + 드릴다운 세부 컬럼(충전/부름/존편도 운반비)을 포함한다.
+ */
+export function parseCostBreakdownFromRaw(rows: string[][]): CostBreakdownRow[] {
+  if (rows.length < 3) return [];
+  const colIndex = buildColumnIndex(rows[1]);
+
+  const getCell = (row: string[], h: string): string | undefined => {
+    const idx = colIndex.get(h);
+    return idx !== undefined ? row[idx] : undefined;
+  };
+
+  // 누락 헤더 경고 (드릴다운 컬럼은 없을 수도 있으므로 카테고리 합계만 필수 경고)
+  const requiredHeaders = [RAW_COST_HEADERS.date, RAW_COST_HEADERS.transport, RAW_COST_HEADERS.fuel];
+  for (const headerName of requiredHeaders) {
+    if (!colIndex.has(headerName)) {
+      console.warn(`[parseCostBreakdownFromRaw] 헤더를 찾을 수 없음: "${headerName}"`);
+    }
+  }
+
+  const dateIdx = colIndex.get(RAW_COST_HEADERS.date) ?? -1;
+  return rows
+    .slice(2)
+    .filter((row) => (row[dateIdx] ?? "").trim() !== "")
+    .map((row): CostBreakdownRow => ({
+      date: normalizeDateToISO((getCell(row, RAW_COST_HEADERS.date) ?? "").trim()),
+      transportCost: safeNumber(getCell(row, RAW_COST_HEADERS.transport)),
+      fuelCost: safeNumber(getCell(row, RAW_COST_HEADERS.fuel)),
+      parkingCost: safeNumber(getCell(row, RAW_COST_HEADERS.parking)),
+      inspectionCost: safeNumber(getCell(row, RAW_COST_HEADERS.inspection)),
+      depreciationCost: safeNumber(getCell(row, RAW_COST_HEADERS.depreciation)),
+      commissionCost: safeNumber(getCell(row, RAW_COST_HEADERS.commission)),
+      chargeTransportCost: safeNumber(getCell(row, RAW_COST_HEADERS.chargeTransport)),
+      callTransportCost: safeNumber(getCell(row, RAW_COST_HEADERS.callTransport)),
+      zoneOneWayTransportCost: safeNumber(getCell(row, RAW_COST_HEADERS.zoneOneWayTransport)),
+    }));
+}
+
 // --- 통합 데이터 페칭 함수 ---
 
 /**
@@ -191,31 +339,51 @@ export async function getTeamDashboardData(): Promise<TeamDashboardData> {
   }
 
   try {
-    // 두 시트 모두 1행(컬럼 식별자) + 2행(헤더) + 3행~(데이터) 구조
-    const [dailyRows, weeklyRows] = await Promise.all([
+    // 네 시트를 병렬 fetch — [d] raw / [w] raw는 특수문자 시트명이므로 단일 따옴표로 감싼다
+    const [dailyRows, weeklyRows, dailyRawRows, weeklyRawRows] = await Promise.all([
       fetchSheetData(`${DAILY_SHEET}!A1:DZ`),
       fetchSheetData(`${WEEKLY_SHEET}!A1:DZ`),
+      fetchSheetData(`'${DAILY_RAW_SHEET}'!A1:DZ`),
+      fetchSheetData(`'${WEEKLY_RAW_SHEET}'!A1:DZ`),
     ]);
 
     // 개별 시트 실패 시 해당 mock 배열로 대체
-    const daily = dailyRows
-      ? parseDailySheet(dailyRows)
-      : mockTeamDashboardData.daily;
+    const daily = dailyRows ? parseDailySheet(dailyRows) : mockTeamDashboardData.daily;
+    const weekly = weeklyRows ? parseWeeklySheet(weeklyRows) : mockTeamDashboardData.weekly;
 
-    const weekly = weeklyRows
-      ? parseWeeklySheet(weeklyRows)
-      : mockTeamDashboardData.weekly;
+    // 고객 유형: 기존 일별/주차별 시트에서 파싱 (추가 fetch 없이 재활용)
+    const customerTypeDaily = dailyRows
+      ? parseCustomerTypeFromRows(dailyRows, "일자")
+      : mockTeamDashboardData.customerTypeDaily;
+    const customerTypeWeekly = weeklyRows
+      ? parseCustomerTypeFromRows(weeklyRows, "주차")
+      : mockTeamDashboardData.customerTypeWeekly;
+
+    // 매출 세분화: [d] raw / [w] raw 시트에서 파싱
+    const revenueBreakdownDaily = dailyRawRows
+      ? parseRevenueBreakdownFromRaw(dailyRawRows)
+      : mockTeamDashboardData.revenueBreakdownDaily;
+    const revenueBreakdownWeekly = weeklyRawRows
+      ? parseRevenueBreakdownFromRaw(weeklyRawRows)
+      : mockTeamDashboardData.revenueBreakdownWeekly;
+
+    // 비용 분석: [d] raw / [w] raw 시트에서 파싱
+    const costBreakdownDaily = dailyRawRows
+      ? parseCostBreakdownFromRaw(dailyRawRows)
+      : mockTeamDashboardData.costBreakdownDaily;
+    const costBreakdownWeekly = weeklyRawRows
+      ? parseCostBreakdownFromRaw(weeklyRawRows)
+      : mockTeamDashboardData.costBreakdownWeekly;
 
     return {
       daily,
       weekly,
-      // Phase 9 신규 필드 — 파서는 Plan 02에서 구현. 현재는 빈 배열 반환
-      customerTypeDaily: [],
-      customerTypeWeekly: [],
-      revenueBreakdownDaily: [],
-      revenueBreakdownWeekly: [],
-      costBreakdownDaily: [],
-      costBreakdownWeekly: [],
+      customerTypeDaily,
+      customerTypeWeekly,
+      revenueBreakdownDaily,
+      revenueBreakdownWeekly,
+      costBreakdownDaily,
+      costBreakdownWeekly,
       fetchedAt: new Date().toISOString(),
     };
   } catch (error) {
