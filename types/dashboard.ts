@@ -22,9 +22,49 @@ export interface WeeklyRecord {
   weeklyTarget: number;     // 주차 목표 (원) — Weekly 전용 필드
 }
 
+/** 고객 유형별 이용 건수 — 일별/주차별 공용 */
+export interface CustomerTypeRow {
+  date?: string;           // 일별 시트용 (YYYY-MM-DD). 주차별이면 undefined
+  week?: string;           // 주차별 시트용. 일별이면 undefined
+  roundTripCount: number;  // 왕복_건수
+  callCount: number;       // 부름_건수
+  oneWayCount: number;     // 편도_건수
+}
+
+/** 매출 세분화 한 행 — [d] raw / [w] raw 시트 */
+export interface RevenueBreakdownRow {
+  date: string;           // 일자 (ISO YYYY-MM-DD)
+  rentalRevenue: number;  // 대여매출
+  pfRevenue: number;      // PF매출
+  drivingRevenue: number; // 주행매출
+  callRevenue: number;    // 부름매출
+  otherRevenue: number;   // 기타매출
+}
+
+/** 비용 분석 한 행 — 카테고리 합계 + 세부 드릴다운 포함 */
+export interface CostBreakdownRow {
+  date: string;                     // 일자 (ISO YYYY-MM-DD)
+  transportCost: number;            // 운반비 (카테고리 합계)
+  fuelCost: number;                 // 유류비
+  parkingCost: number;              // 주차료
+  inspectionCost: number;           // 점검비
+  depreciationCost: number;         // 감가상각비
+  commissionCost: number;           // 수수료
+  chargeTransportCost: number;      // 충전운반비 (드릴다운 세부)
+  callTransportCost: number;        // 부름운반비 (드릴다운 세부)
+  zoneOneWayTransportCost: number;  // 존편도운반비 (드릴다운 세부)
+}
+
 /** 대시보드 전체 데이터 컨테이너 */
 export interface TeamDashboardData {
   daily: DailyRecord[];
   weekly: WeeklyRecord[];
+  // Phase 9 신규 추가 — 고객유형/매출세분화/비용분석 데이터 레이어
+  customerTypeDaily: CustomerTypeRow[];
+  customerTypeWeekly: CustomerTypeRow[];
+  revenueBreakdownDaily: RevenueBreakdownRow[];
+  revenueBreakdownWeekly: RevenueBreakdownRow[];
+  costBreakdownDaily: CostBreakdownRow[];
+  costBreakdownWeekly: CostBreakdownRow[];
   fetchedAt: string;        // ISO 8601 타임스탬프 (예: "2026-02-22T09:00:00.000Z")
 }
