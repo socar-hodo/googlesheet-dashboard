@@ -7,6 +7,7 @@ import { RevenueTrendChart } from './revenue-trend-chart';
 import { ProfitTrendChart } from './profit-trend-chart';
 import { UtilizationTrendChart } from './utilization-trend-chart';
 import { UsageTrendChart } from './usage-trend-chart';
+import { CustomerTypeSection } from './customer-type-section';
 
 interface ChartsSectionProps {
   data: TeamDashboardData;
@@ -38,6 +39,11 @@ export function ChartsSection({ data, tab }: ChartsSectionProps) {
       <ProfitTrendChart records={records} tab={tab} />
       <UtilizationTrendChart records={records} tab={tab} />
       <UsageTrendChart records={records} tab={tab} />
+      <CustomerTypeSection
+        daily={data.customerTypeDaily}
+        weekly={data.customerTypeWeekly}
+        tab={tab}
+      />
     </div>
   );
 }
