@@ -80,6 +80,23 @@ function safeNumber(value: string | null | undefined, fallback: number = 0): num
 // --- 시트 파서 ---
 
 /**
+ * Google Sheets 날짜 문자열을 ISO YYYY-MM-DD 형식으로 정규화한다.
+ * - "2026-02-21" → "2026-02-21" (이미 ISO, 그대로 반환)
+ * - "2026. 2. 21" → "2026-02-21" (한국어 점 구분 형식 변환)
+ * filterDailyByPeriod는 문자열 사전순 비교를 사용하므로 ISO 형식이 필수.
+ */
+function normalizeDateToISO(date: string): string {
+  const trimmed = date.trim();
+  if (trimmed.includes('-')) return trimmed; // 이미 ISO 형식
+  // "YYYY. M. D" 또는 "YYYY. MM. DD" 형식 처리
+  const parts = trimmed.split('.').map((s) => s.trim()).filter((s) => s !== '');
+  if (parts.length === 3) {
+    return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+  }
+  return trimmed; // 파싱 불가 시 원본 반환
+}
+
+/**
  * Daily 시트 raw 데이터를 DailyRecord 배열로 파싱한다. (DATA-01)
  * 헤더 이름 기반 컬럼 매핑을 사용하여 시트 구조 변경에 강건하다.
  */
@@ -107,7 +124,7 @@ function parseDailySheet(rows: string[][]): DailyRecord[] {
     .slice(2)
     .filter((row) => (row[dateIdx] ?? "").trim() !== "")
     .map((row): DailyRecord => ({
-      date: (getCell(row, DAILY_HEADERS.date) ?? "").trim(),
+      date: normalizeDateToISO((getCell(row, DAILY_HEADERS.date) ?? "").trim()),
       revenue: safeNumber(getCell(row, DAILY_HEADERS.revenue)),
       profit: safeNumber(getCell(row, DAILY_HEADERS.profit)),
       usageHours: safeNumber(getCell(row, DAILY_HEADERS.usageHours)),

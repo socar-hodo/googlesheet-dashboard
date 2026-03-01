@@ -108,8 +108,8 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
         onExportXlsx={handleExportXlsx}
       />
 
-      {/* KPI 카드 — 필터링된 데이터 기반 */}
-      <KpiCards data={filteredData} tab={tab} />
+      {/* KPI 카드 — 필터링된 데이터(current/previous)와 전체 이력(sparkline) 기반 */}
+      <KpiCards data={filteredData} fullData={data} tab={tab} />
 
       {/* 차트 4종 — 필터링된 데이터 기반 */}
       <ChartsSection data={filteredData} tab={tab} />

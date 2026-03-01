@@ -13,16 +13,20 @@ import {
 import { KpiCard } from './kpi-card';
 
 interface KpiCardsProps {
-  data: TeamDashboardData;
+  data: TeamDashboardData;         // 필터링된 데이터 (current/previous 계산용)
+  fullData?: TeamDashboardData;    // 전체 이력 데이터 (sparkline 트렌드용)
   tab: 'daily' | 'weekly';
 }
 
-export function KpiCards({ data, tab }: KpiCardsProps) {
+export function KpiCards({ data, fullData, tab }: KpiCardsProps) {
   if (tab === 'daily') {
-    // 날짜 오름차순 정렬 후 최신/전일 추출
+    // 날짜 오름차순 정렬 후 최신/전일 추출 (필터링된 데이터 기준)
     const sorted = [...data.daily].sort((a, b) => a.date.localeCompare(b.date));
     const current = sorted[sorted.length - 1];
     const previous = sorted[sorted.length - 2];
+    // 스파크라인용: 전체 이력에서 최근 7일, 없으면 필터 데이터로 폴백
+    const sparklineSource = (fullData ?? data).daily;
+    const sparklineSorted = [...sparklineSource].sort((a, b) => a.date.localeCompare(b.date));
     const DAILY_N = 7; // 최근 7일
 
     if (!current) {
@@ -37,7 +41,7 @@ export function KpiCards({ data, tab }: KpiCardsProps) {
         delta: previous ? calcDelta(current.revenue, previous.revenue) : null,
         unit: '원' as const,
         icon: <TrendingUp className="h-4 w-4" />,
-        sparklineData: sorted.map(d => d.revenue).slice(-DAILY_N),
+        sparklineData: sparklineSorted.map(d => d.revenue).slice(-DAILY_N),
       },
       {
         title: 'GPM',
@@ -53,7 +57,7 @@ export function KpiCards({ data, tab }: KpiCardsProps) {
           : null,
         unit: '%' as const,
         icon: <DollarSign className="h-4 w-4" />,
-        sparklineData: sorted
+        sparklineData: sparklineSorted
           .map(d => d.revenue > 0 ? (d.profit / d.revenue) * 100 : 0)
           .slice(-DAILY_N),
       },
@@ -63,7 +67,7 @@ export function KpiCards({ data, tab }: KpiCardsProps) {
         delta: previous ? calcDelta(current.usageCount, previous.usageCount) : null,
         unit: '건' as const,
         icon: <Users className="h-4 w-4" />,
-        sparklineData: sorted.map(d => d.usageCount).slice(-DAILY_N),
+        sparklineData: sparklineSorted.map(d => d.usageCount).slice(-DAILY_N),
       },
       {
         title: '가동률',
@@ -71,7 +75,7 @@ export function KpiCards({ data, tab }: KpiCardsProps) {
         delta: previous ? calcDelta(current.utilizationRate, previous.utilizationRate) : null,
         unit: '%' as const,
         icon: <Activity className="h-4 w-4" />,
-        sparklineData: sorted.map(d => d.utilizationRate).slice(-DAILY_N),
+        sparklineData: sparklineSorted.map(d => d.utilizationRate).slice(-DAILY_N),
       },
       {
         title: '이용시간',
@@ -79,7 +83,7 @@ export function KpiCards({ data, tab }: KpiCardsProps) {
         delta: previous ? calcDelta(current.usageHours, previous.usageHours) : null,
         unit: '시간' as const,
         icon: <Clock className="h-4 w-4" />,
-        sparklineData: sorted.map(d => d.usageHours).slice(-DAILY_N),
+        sparklineData: sparklineSorted.map(d => d.usageHours).slice(-DAILY_N),
       },
     ];
 
@@ -103,8 +107,9 @@ export function KpiCards({ data, tab }: KpiCardsProps) {
   // Weekly 탭 — 마지막 항목이 이번 주, 마지막-1 항목이 지난 주
   const current = data.weekly[data.weekly.length - 1];
   const previous = data.weekly[data.weekly.length - 2];
-  // weeklySorted: 스파크라인 전용 시간순 정렬
-  const weeklySorted = [...data.weekly].sort((a, b) => a.week.localeCompare(b.week));
+  // weeklySorted: 스파크라인 전용 — 전체 이력에서 최근 8주 (없으면 필터 데이터 폴백)
+  const weeklySparklineSource = (fullData ?? data).weekly;
+  const weeklySorted = [...weeklySparklineSource].sort((a, b) => a.week.localeCompare(b.week));
   const WEEKLY_N = 8; // 최근 8주
 
   if (!current) {

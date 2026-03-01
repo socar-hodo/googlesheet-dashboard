@@ -1,7 +1,8 @@
 // 경남울산사업팀 매출 대시보드 — 개발/폴백용 mock 데이터
 import type { DailyRecord, WeeklyRecord, TeamDashboardData } from "@/types/dashboard";
 
-// --- 일별 mock 데이터 (28개: 2026-01-26 ~ 2026-02-22) ---
+// --- 일별 mock 데이터 (43개: 2026-01-26 ~ 2026-03-08) ---
+// 2026-03 데이터 추가: 기본 period가 this-month(3월)이므로 현재 날짜 기준 데이터 필요
 export const mockDailyRecords: DailyRecord[] = [
   // 1주차: 2026-01-26 ~ 2026-02-01
   { date: "2026-01-26", revenue: 9200000, profit: 1200000, usageHours: 42, usageCount: 28, utilizationRate: 72.5 },
@@ -38,6 +39,16 @@ export const mockDailyRecords: DailyRecord[] = [
   { date: "2026-02-20", revenue: 10600000, profit: 1700000, usageHours: 48, usageCount: 38, utilizationRate: 82.5 },
   { date: "2026-02-21", revenue: 9400000, profit: 1050000, usageHours: 43, usageCount: 32, utilizationRate: 73.3 },
   { date: "2026-02-22", revenue: 10000000, profit: 1550000, usageHours: 46, usageCount: 35, utilizationRate: 78.9 },
+
+  // 2026-03 (이번 달 기본 데이터: 2026-03-01 ~ 2026-03-08)
+  { date: "2026-03-01", revenue: 10800000, profit: 1720000, usageHours: 49, usageCount: 36, utilizationRate: 80.5 },
+  { date: "2026-03-02", revenue: 9600000, profit: 1100000, usageHours: 44, usageCount: 30, utilizationRate: 74.8 },
+  { date: "2026-03-03", revenue: 11900000, profit: 2050000, usageHours: 55, usageCount: 46, utilizationRate: 93.2 },
+  { date: "2026-03-04", revenue: 8700000, profit: 250000, usageHours: 40, usageCount: 24, utilizationRate: 65.4 },
+  { date: "2026-03-05", revenue: 10200000, profit: 1580000, usageHours: 46, usageCount: 35, utilizationRate: 78.1 },
+  { date: "2026-03-06", revenue: 9300000, profit: 980000, usageHours: 42, usageCount: 29, utilizationRate: 72.0 },
+  { date: "2026-03-07", revenue: 11400000, profit: 1880000, usageHours: 52, usageCount: 41, utilizationRate: 87.6 },
+  { date: "2026-03-08", revenue: 10100000, profit: 1620000, usageHours: 46, usageCount: 37, utilizationRate: 79.4 },
 ];
 
 // --- 주차별 mock 데이터 (8개: 1주차 ~ 8주차) ---
@@ -61,5 +72,5 @@ export const mockWeeklyRecords: WeeklyRecord[] = [
 export const mockTeamDashboardData: TeamDashboardData = {
   daily: mockDailyRecords,
   weekly: mockWeeklyRecords,
-  fetchedAt: "2026-02-22T00:00:00.000Z",
+  fetchedAt: "2026-03-08T00:00:00.000Z",
 };
