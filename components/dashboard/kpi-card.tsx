@@ -1,8 +1,11 @@
-// 단일 KPI 카드 컴포넌트 — 달성률, 프로그레스 바, 델타 표시
+'use client';
+
+// 단일 KPI 카드 컴포넌트 — 달성률, 프로그레스 바, 델타 표시, 스파크라인
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { getAchievementColorClass, getProgressColorClass } from '@/lib/kpi-utils';
+import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 
 interface KpiCardProps {
   title: string;            // KPI 명칭 (예: "매출")
@@ -12,6 +15,7 @@ interface KpiCardProps {
   deltaText?: string;       // 포맷된 델타 문자열 (예: "▲ +12% / ₩120만")
   deltaColorClass?: string; // 델타 색상 클래스
   icon: React.ReactNode;    // lucide-react 아이콘
+  sparklineData?: number[]; // 스파크라인 데이터 포인트 배열
 }
 
 export function KpiCard({
@@ -22,6 +26,7 @@ export function KpiCard({
   deltaText,
   deltaColorClass,
   icon,
+  sparklineData,
 }: KpiCardProps) {
   return (
     <Card>
@@ -47,6 +52,27 @@ export function KpiCard({
         )}
         {deltaText && (
           <p className={cn('text-xs', deltaColorClass)}>{deltaText}</p>
+        )}
+        {sparklineData && sparklineData.length >= 2 && (
+          <div className="pt-1">
+            <ResponsiveContainer width="100%" height={40} minWidth={0}>
+              <AreaChart
+                data={sparklineData.map((v, i) => ({ v, i }))}
+                margin={{ top: 2, right: 0, left: 0, bottom: 2 }}
+              >
+                <Area
+                  type="monotone"
+                  dataKey="v"
+                  stroke="var(--chart-1)"
+                  strokeWidth={1.5}
+                  fill="var(--chart-1)"
+                  fillOpacity={0.15}
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         )}
       </CardContent>
     </Card>
