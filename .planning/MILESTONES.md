@@ -14,3 +14,17 @@
 
 ---
 
+## v1.1 분析 도구 강化 (Shipped: 2026-03-01)
+
+**Phases completed:** 3 phases (6-8), 7 plans, ~967 LOC added
+
+**Key accomplishments:**
+- 기간 필터 유틸리티 (period-utils.ts) — PeriodKey 타입, ISO 주차 기반 날짜 계산, vitest 25개 단위 테스트
+- 기간 선택 UI — 이번 주/지난 주/이번 달/지난 달 토글, URL searchParams 동기화, DashboardContent 통합
+- Export 유틸리티 (export-utils.ts) — CSV(UTF-8 BOM) + Excel(SheetJS 0.20.3 CDN), vitest 21개 단위 테스트
+- CSV/Excel 다운로드 버튼 UI — DashboardHeader 우측, 파일명에 탭·날짜 포함
+- KPI 카드 스파크라인 5개 — Recharts AreaChart, CSS var(--chart-1) 다크모드 자동 대응
+- Google Sheets 날짜 정규화 자동 수정 + Playwright 브라우저 3/3 검증 통과
+
+---
+
