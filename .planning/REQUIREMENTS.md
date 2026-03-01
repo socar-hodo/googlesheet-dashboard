@@ -58,9 +58,9 @@
 
 ### 내보내기 (Export)
 
-- [ ] **EXPO-01**: 사용자가 현재 보이는 데이터를 CSV 파일로 다운로드할 수 있다
-- [ ] **EXPO-02**: 사용자가 현재 보이는 데이터를 Excel(.xlsx) 파일로 다운로드할 수 있다
-- [ ] **EXPO-03**: 내보내기 파일명에 현재 탭(Daily/Weekly)과 날짜가 포함된다
+- [x] **EXPO-01**: 사용자가 현재 보이는 데이터를 CSV 파일로 다운로드할 수 있다
+- [x] **EXPO-02**: 사용자가 현재 보이는 데이터를 Excel(.xlsx) 파일로 다운로드할 수 있다
+- [x] **EXPO-03**: 내보내기 파일명에 현재 탭(Daily/Weekly)과 날짜가 포함된다
 
 ### 스파크라인 (Sparkline)
 
@@ -128,9 +128,9 @@
 | FILT-01 | Phase 6 | Complete (06-02 UI 컴포넌트 완료) |
 | FILT-02 | Phase 6 | Complete (06-03 DashboardContent 통합 완료) |
 | FILT-03 | Phase 6 | Complete (06-03 URL searchParams 동기화 완료) |
-| EXPO-01 | Phase 7 | In Progress (07-01 export-utils 라이브러리 완료, 07-02 UI 통합 대기) |
-| EXPO-02 | Phase 7 | In Progress (07-01 export-utils 라이브러리 완료, 07-02 UI 통합 대기) |
-| EXPO-03 | Phase 7 | In Progress (07-01 파일명 로직 구현됨, 07-02 브라우저 검증 대기) |
+| EXPO-01 | Phase 7 | Complete (07-02 CSV 버튼 + 브라우저 검증 완료) |
+| EXPO-02 | Phase 7 | Complete (07-02 Excel 버튼 + 브라우저 검증 완료) |
+| EXPO-03 | Phase 7 | Complete (07-02 브라우저 검증 통과, 파일명 daily/weekly-YYYY-MM-DD 확인) |
 | SPRK-01 | Phase 8 | Pending |
 | SPRK-02 | Phase 8 | Pending |
 
@@ -142,4 +142,4 @@
 
 ---
 *Requirements defined: 2026-02-21*
-*Last updated: 2026-03-01 after v1.1 milestone start*
+*Last updated: 2026-03-01 after Phase 7 Export complete*
