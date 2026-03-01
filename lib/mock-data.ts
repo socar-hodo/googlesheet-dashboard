@@ -72,9 +72,26 @@ export const mockWeeklyRecords: WeeklyRecord[] = [
 export const mockTeamDashboardData: TeamDashboardData = {
   daily: mockDailyRecords,
   weekly: mockWeeklyRecords,
-  // Phase 9 신규 — 0 플레이스홀더 (UI 레이아웃 확인용, Sheets 연결 후 실제 데이터로 대체)
-  customerTypeDaily: [] as CustomerTypeRow[],
-  customerTypeWeekly: [] as CustomerTypeRow[],
+  // Phase 10 — 고객 유형 샘플 데이터 (이번 달 + 지난 달 필터 테스트용)
+  customerTypeDaily: [
+    // 이번 달 (2026-03) — this-month 필터에서 노출
+    { date: "2026-03-01", roundTripCount: 18, callCount: 12, oneWayCount: 6 },
+    { date: "2026-03-02", roundTripCount: 15, callCount: 10, oneWayCount: 5 },
+    { date: "2026-03-03", roundTripCount: 22, callCount: 16, oneWayCount: 8 },
+    { date: "2026-03-04", roundTripCount: 12, callCount: 8, oneWayCount: 4 },
+    { date: "2026-03-05", roundTripCount: 20, callCount: 14, oneWayCount: 7 },
+    // 지난 달 (2026-02) — last-month 필터에서 노출
+    { date: "2026-02-21", roundTripCount: 16, callCount: 11, oneWayCount: 5 },
+    { date: "2026-02-22", roundTripCount: 19, callCount: 13, oneWayCount: 6 },
+    { date: "2026-02-23", roundTripCount: 14, callCount: 9, oneWayCount: 4 },
+  ] as CustomerTypeRow[],
+  customerTypeWeekly: [
+    // "N월 N주차" 형식 — parseWeekMonth가 월을 파싱 가능
+    { week: "2월 1주차", roundTripCount: 108, callCount: 72, oneWayCount: 35 },
+    { week: "2월 2주차", roundTripCount: 115, callCount: 80, oneWayCount: 45 },
+    { week: "3월 1주차", roundTripCount: 98, callCount: 65, oneWayCount: 32 },
+    { week: "3월 2주차", roundTripCount: 105, callCount: 70, oneWayCount: 38 },
+  ] as CustomerTypeRow[],
   revenueBreakdownDaily: [] as RevenueBreakdownRow[],
   revenueBreakdownWeekly: [] as RevenueBreakdownRow[],
   costBreakdownDaily: [] as CostBreakdownRow[],
