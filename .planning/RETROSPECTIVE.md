@@ -51,13 +51,61 @@
 
 ---
 
+## Milestone: v1.2 — 고객 유형 분析
+
+**Shipped:** 2026-03-02
+**Phases:** 2 (Phase 9-10) | **Plans:** 4
+
+### What Was Built
+
+- **v1.2 Data Layer** — TypeScript 인터페이스 3개 (CustomerTypeRow, RevenueBreakdownRow, CostBreakdownRow) + TeamDashboardData 6개 배열 필드 확장 + 파서 함수 3개 + 4-fetch 병렬 확장 + vitest 14개 단위 테스트
+- **Customer Type Analysis UI** — CustomerTypeDonut(PieChart 도넛, 중앙 총건수, Legend, Tooltip) + CustomerTypeTrend(stacked BarChart, 탭별 X축, 커스텀 Tooltip) + CustomerTypeSection(1/3+2/3 그리드) → ChartsSection 연결
+- **chart3/4/5 oklch 색상 시스템** + filterCustomerTypeWeekly 헬퍼 + filteredData useMemo 확장
+
+### What Worked
+
+- **TDD 패턴 유지**: 파서 함수 3개 모두 Red(14 fail) → Green(14 pass) TDD 사이클로 구현 — 순수 함수 유틸리티에서 특히 효과적
+- **Phase 9 데이터 레이어 선행 설계**: 타입 컨트랙트 먼저 확정 후 파서 구현 → Phase 10/11/12 UI 단계가 타입 안전하게 의존 가능
+- **단일 따옴표 시트명 패턴**: `[d] raw` 특수문자 시트명 처리 패턴이 즉시 적용됨 — 파싱 오류 없이 첫 실행 성공
+- **PieChart 중앙 텍스트 비율 좌표**: `x="50%" y="50%"` 패턴 — ResponsiveContainer 폭 변동에도 안정적 렌더링
+- **Playwright 자동 검증**: 기간 필터 연동, 탭 전환, 테마 전환 모두 자동 검증
+
+### What Was Inefficient
+
+- **v1.2 범위 축소**: 처음에 Phase 9-12 전체를 v1.2로 계획했으나 Phase 11-12(REV/COST UI)가 미완료 → 범위 재조정 필요 — 로드맵 계획 시 UI 구현 공수를 더 보수적으로 추정해야 함
+- **npm run build 파일 잠금 충돌**: Phase 10-01에서 다른 Node 프로세스와 충돌 → `npx tsc --noEmit`으로 대체. build 전에 프로세스 확인 필요
+- **customerTypeDaily 인라인 필터**: CustomerTypeRow와 DailyRecord 타입 불일치로 filterDailyByPeriod 재사용 불가 — 타입 설계 시 공통 날짜 필드 인터페이스 고려할 것
+
+### Patterns Established
+
+- **파서 함수 dateFieldName 파라미터**: 일별("일자")/주차별("주차") 구분을 파라미터로 처리 — 단일 함수로 두 시트 지원
+- **stackId 바에서 radius는 최상단 Bar만 적용**: 내부 세그먼트 radius 시 시각적 갭 방지
+- **PieChart 중앙 텍스트 비율 좌표**: 픽셀 고정 금지, `x="50%" y="50%"` 비율 사용
+- **데이터 레이어 단독 Phase**: UI 단계들이 병렬로 의존할 수 있도록 데이터 레이어를 별도 Phase로 선행
+
+### Key Lessons
+
+1. **마일스톤 범위는 실제 완성 가능한 것만** — REV/COST UI는 데이터 레이어 완성 후 별도 마일스톤으로 분리가 올바름
+2. **CustomerTypeRow 타입을 DailyRecord 공통 인터페이스에서 파생시키면** filterDailyByPeriod 재사용 가능 — 다음 유사 타입 설계 시 고려
+3. **TDD Red-Green 패턴은 파서 함수에 최적** — 입력/출력이 명확한 순수 함수는 선행 테스트로 스펙을 확정하면 구현이 빠름
+
+### Cost Observations
+
+- Sessions: ~3 sessions (Phase 9-01/02, Phase 10-01, Phase 10-02+fix)
+- Notable: Phase 10-02(25분)이 가장 길었음 — 컴포넌트 3개 신규 생성 + Playwright 검증 포함
+
+---
+
 ## Cross-Milestone Trends
 
 | Milestone | Phases | Plans | LOC | Timeline | TDD |
 |-----------|--------|-------|-----|----------|-----|
 | v1.0 MVP | 5 | 13 | ~3,120 | 2026-02-21 ~ 02-27 (7일) | 없음 |
 | v1.1 分析 | 3 | 7 | +~967 | 2026-02-28 ~ 03-01 (2일) | period-utils, export-utils |
+| v1.2 고객 유형 | 2 | 4 | +~718 | 2026-03-01 ~ 03-02 (2일) | data.test.ts (파서 14개) |
 
-**Trend: TDD 도입** — v1.1에서 순수 함수 유틸리티에 TDD 적용. 단위 테스트 총 46개(vitest). 브라우저 검증은 Playwright로 자동화.
+**Trend: TDD 정착** — v1.1 순수 함수 → v1.2 데이터 레이어로 확산. 단위 테스트 총 60개(vitest). 브라우저 검증은 Playwright로 자동화.
 
-**Trend: 컴포넌트 구조** — v1.0에서 Server Component 위주 → v1.1에서 Client Component 비중 증가 (기간 필터·스파크라인). 'use client' 경계가 명확해짐.
+**Trend: 컴포넌트 구조** — v1.0 Server Component → v1.1 Client Component 비중 증가 → v1.2 Recharts 전용 컴포넌트 레이어 확립. 'use client' 경계가 chart 컴포넌트로 명확히 집중.
+
+**Trend: 마일스톤 범위 조정** — v1.2에서 처음으로 계획 범위 축소 경험. Phase 9-12 → Phase 9-10. 데이터 레이어 선행 + UI 단계 분리 패턴이 자연스럽게 마일스톤 경계와 일치함을 확인.

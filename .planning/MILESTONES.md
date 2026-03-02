@@ -1,11 +1,14 @@
 # Milestones
 
-## v1.2 고객 유형 분析 (Shipped: 2026-03-01)
+## v1.2 고객 유형 분析 (Shipped: 2026-03-02)
 
-**Phases completed:** 2 phases, 4 plans, 0 tasks
+**Phases completed:** 2 phases (9-10), 4 plans, ~718 LOC added
 
 **Key accomplishments:**
-- (none recorded)
+- TypeScript 인터페이스 3개 신규 정의 (CustomerTypeRow, RevenueBreakdownRow, CostBreakdownRow) + TeamDashboardData 6개 배열 필드 확장 — Phase 10/11/12 데이터 기반 완비
+- 파서 함수 3개 (parseCustomerTypeFromRows, parseRevenueBreakdownFromRaw, parseCostBreakdownFromRaw) + getTeamDashboardData 4-fetch 병렬 확장 + vitest 14개 단위 테스트 전체 통과
+- chart3/4/5 oklch 색상 추가, filterCustomerTypeWeekly 헬퍼, customerType 샘플 데이터(8+4행), filteredData 기간 필터 연동 완비
+- CustomerTypeDonut(도넛 차트) + CustomerTypeTrend(스택 바 추이) + CustomerTypeSection 신규 생성 → ChartsSection 연결, Playwright 브라우저 4/4 검증 통과
 
 ---
 

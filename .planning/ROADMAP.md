@@ -33,10 +33,15 @@ Full details: `.planning/milestones/v1.1-ROADMAP.md`
 
 </details>
 
-### ✅ v1.2 고객 유형 분析 (Phase 9-10) — SHIPPED 2026-03-02
+<details>
+<summary>✅ v1.2 고객 유형 분析 (Phase 9-10) — SHIPPED 2026-03-02</summary>
 
-- [x] **Phase 9: v1.2 Data Layer** (2/2 plans) - 고객 유형·매출 세분화·비용 분析용 TypeScript 타입 + Sheets 파싱 + 단위 테스트
-- [x] **Phase 10: Customer Type Analysis** (2/2 plans) - 왕복/부름/편도 이용건수 도넛·추이 차트 + 기간 필터 연동
+- [x] **Phase 9: v1.2 Data Layer** (2/2 plans) — 고객 유형·매출 세분화·비용 분析용 TypeScript 타입 + Sheets 파싱 + 단위 테스트
+- [x] **Phase 10: Customer Type Analysis** (2/2 plans) — 왕복/부름/편도 이용건수 도넛·추이 차트 + 기간 필터 연동
+
+Full details: `.planning/milestones/v1.2-ROADMAP.md`
+
+</details>
 
 ### 📋 v1.3 매출/비용 분析 (Phase 11-12) — Planned
 
@@ -44,37 +49,6 @@ Full details: `.planning/milestones/v1.1-ROADMAP.md`
 - [ ] **Phase 12: Cost Analysis** - 비용 카테고리 합계 + 드릴다운 세부항목 + 기간 필터 연동
 
 ## Phase Details
-
-### Phase 9: v1.2 Data Layer
-**Goal**: 고객 유형, 매출 세분화, 비용 분석 세 영역 모두 데이터를 안전하게 읽고 후속 UI 단계에 전달할 수 있다
-**Depends on**: Phase 8 (기존 데이터 레이어 위에 확장)
-**Requirements**: CTYPE-01 (data portion), CTYPE-02 (data portion), REV-01 (data portion), REV-02 (data portion), COST-01 (data portion), COST-02 (data portion)
-
-Note: Phase 9 delivers the shared data foundation. The UI requirements (CTYPE-01~03, REV-01~03, COST-01~03) are fully satisfied only when their respective UI phases (10, 11, 12) complete. Phase 9 is the enabling layer.
-
-**Success Criteria** (what must be TRUE):
-  1. `types/dashboard.ts`에 `CustomerTypeRow`, `RevenueBreakdownRow`, `CostBreakdownRow` 타입이 정의되어 있고 TypeScript 빌드가 통과한다
-  2. `lib/sheets.ts`가 일별/주차별 시트에서 왕복_건수, 부름_건수, 편도_건수 컬럼을 헤더 이름 기반으로 파싱하여 숫자로 반환한다
-  3. `lib/sheets.ts`가 대여/PF/주행/부름/기타 매출 컬럼과 운반비/유류비/주차료/점검비/감가상각비/수수료 컬럼을 파싱하여 숫자로 반환한다
-  4. 해당 컬럼이 시트에 없을 경우 0으로 폴백하여 기존 대시보드 기능이 중단되지 않는다
-  5. `lib/data.ts`의 `getDashboardData` 반환 타입에 세 영역의 데이터가 포함되고 mock 폴백도 동작한다
-**Plans**: 2 plans
-Plans:
-- [x] 09-01-PLAN.md — 타입 컨트랙트 정의 (CustomerTypeRow, RevenueBreakdownRow, CostBreakdownRow, TeamDashboardData 확장) + Mock 데이터 플레이스홀더
-- [x] 09-02-PLAN.md — 파서 구현 (parseCustomerTypeFromRows, parseRevenueBreakdownFromRaw, parseCostBreakdownFromRaw) + 4-fetch 확장 + 단위 테스트
-
-### Phase 10: Customer Type Analysis
-**Goal**: 사용자가 왕복/부름/편도 이용건수를 도넛 차트와 추이 차트로 확인하고 기간 필터로 즉시 좁힐 수 있다
-**Depends on**: Phase 9
-**Requirements**: CTYPE-01, CTYPE-02, CTYPE-03
-**Success Criteria** (what must be TRUE):
-  1. 대시보드에 도넛 차트가 표시되어 왕복/부름/편도 각각의 이용건수 비율(%)을 색상으로 구분해 보여준다
-  2. 스택 바 또는 스택 라인 차트에서 날짜(일별 탭) 또는 주차(주차별 탭)별 세 유형의 건수 추이를 확인할 수 있다
-  3. 이번 주/지난 주/이번 달/지난 달 토글을 바꾸면 도넛 차트와 추이 차트 모두 해당 기간 데이터로 즉시 갱신된다
-**Plans**: 2 plans
-Plans:
-- [ ] 10-01-PLAN.md — chart-colors.ts chart3/4/5 추가 + mock-data.ts 샘플 데이터 채우기 + filteredData useMemo customerType 필터링 확장
-- [ ] 10-02-PLAN.md — CustomerTypeDonut + CustomerTypeTrend + CustomerTypeSection 신규 생성 + ChartsSection 연결 + Playwright 검증
 
 ### Phase 11: Revenue Breakdown
 **Goal**: 사용자가 매출을 대여/PF/주행/부름/기타 유형별로 나눠 구성 비율과 금액을 한눈에 파악할 수 있다
