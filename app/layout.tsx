@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
-import { Geist_Mono, IBM_Plex_Sans_KR } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { SessionProvider } from "@/components/providers/session-provider";
 import "./globals.css";
 
-const ibmPlexSansKr = IBM_Plex_Sans_KR({
-  variable: "--font-ibm-plex-sans-kr",
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
 });
 
 const geistMono = Geist_Mono({
@@ -16,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SOCAR Dashboard",
-  description: "SOCAR dashboard redesign",
+  title: "GU Dashboard",
+  description: "경남울산사업팀 매출 대시보드",
 };
 
 export default function RootLayout({
@@ -26,13 +25,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    // suppressHydrationWarning: next-themes가 html에 class를 동적 추가하므로 필수
     <html lang="ko" suppressHydrationWarning>
-      <body className={`${ibmPlexSansKr.variable} ${geistMono.variable} antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
         <SessionProvider>
           <ThemeProvider
             attribute="class"
-            defaultTheme="dark"
-            enableSystem={false}
+            defaultTheme="system"
+            enableSystem
             disableTransitionOnChange
           >
             {children}

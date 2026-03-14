@@ -1,4 +1,6 @@
 "use client";
+// components/dashboard/charts/revenue-trend-chart.tsx
+// CHART-01: 매출 추이 — ComposedChart (Bar + 조건부 Line)
 
 import {
   ComposedChart,
@@ -9,7 +11,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
 import { useTheme } from "next-themes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,11 +22,13 @@ interface RevenueTrendChartProps {
   tab: "daily" | "weekly";
 }
 
+// Daily: "2026-02-01" → "2/1"
 function formatDailyLabel(date: string): string {
   const parts = date.split("-");
-  return `${parseInt(parts[1], 10)}/${parseInt(parts[2], 10)}`;
+  return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
 }
 
+// Weekly: "1주차" → "1주"
 function formatWeeklyLabel(week: string): string {
   return week.replace("주차", "주");
 }
@@ -40,33 +43,32 @@ export function RevenueTrendChart({ records, tab }: RevenueTrendChartProps) {
         ? formatDailyLabel((r as DailyRecord).date)
         : formatWeeklyLabel((r as WeeklyRecord).week),
     revenue: r.revenue,
-    target: tab === "weekly" ? (r as WeeklyRecord).weeklyTarget : undefined,
+    target:
+      tab === "weekly" ? (r as WeeklyRecord).weeklyTarget : undefined,
   }));
 
   return (
-    <Card className="bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04))]">
+    <Card>
       <CardHeader>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#A3D1FF]">Revenue</p>
-        <CardTitle className="text-xl text-white">매출 추이</CardTitle>
+        <CardTitle>매출 추이</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="rounded-[24px] border border-white/6 bg-black/10 p-3">
-          <ResponsiveContainer width="100%" height={280} minWidth={0}>
-            <ComposedChart data={chartData} margin={{ top: 10, right: 20, left: 8, bottom: 2 }}>
-              <defs>
-                <linearGradient id="revenue-bar" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#66B0FF" />
-                  <stop offset="100%" stopColor="#0078FF" />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} vertical={false} />
-              <XAxis dataKey="label" tick={{ fill: colors.axis, fontSize: 11 }} axisLine={false} tickLine={false} />
+        <ResponsiveContainer width="100%" height={280} minWidth={0}>
+            <ComposedChart
+              data={chartData}
+              margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
+              <XAxis
+                dataKey="label"
+                tick={{ fill: colors.axis, fontSize: 11 }}
+              />
               <YAxis
                 tick={{ fill: colors.axis, fontSize: 11 }}
-                tickFormatter={(v) => `${Math.round(v / 10000).toLocaleString()}만`}
-                width={60}
-                axisLine={false}
-                tickLine={false}
+                tickFormatter={(v) =>
+                  `${Math.round(v / 10000).toLocaleString()}만`
+                }
+                width={55}
               />
               <Tooltip
                 formatter={(value, name) => [
@@ -76,32 +78,28 @@ export function RevenueTrendChart({ records, tab }: RevenueTrendChartProps) {
                 contentStyle={{
                   backgroundColor: colors.tooltip.bg,
                   border: `1px solid ${colors.tooltip.border}`,
-                  borderRadius: "16px",
+                  borderRadius: "8px",
                   fontSize: "12px",
                 }}
               />
-              <Legend wrapperStyle={{ color: colors.axis, fontSize: "12px" }} />
               <Bar
                 dataKey="revenue"
-                fill="url(#revenue-bar)"
+                fill={colors.chart1}
                 name="revenue"
-                radius={[8, 8, 0, 0]}
-                barSize={tab === "weekly" ? 26 : 18}
+                radius={[2, 2, 0, 0]}
               />
               {tab === "weekly" && (
                 <Line
                   type="monotone"
                   dataKey="target"
-                  stroke="#EBF5FF"
-                  strokeWidth={2.5}
-                  dot={{ fill: "#EBF5FF", r: 4, stroke: "#0078FF", strokeWidth: 2 }}
-                  activeDot={{ r: 6 }}
+                  stroke={colors.chart2}
+                  strokeWidth={2}
+                  dot={{ fill: colors.chart2, r: 3 }}
                   name="target"
                 />
               )}
             </ComposedChart>
-          </ResponsiveContainer>
-        </div>
+        </ResponsiveContainer>
       </CardContent>
     </Card>
   );
