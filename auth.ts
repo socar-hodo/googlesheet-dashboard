@@ -1,46 +1,55 @@
-// NextAuth.js v5 설정
-// Google Provider + 이메일 화이트리스트 인증
-// Google 키가 없으면 개발용 Credentials 로그인으로 자동 전환
-// DASHBOARD_PASSWORD 설정 시 이메일+비밀번호 로그인 추가 지원
 import NextAuth from "next-auth";
 import type { Provider } from "next-auth/providers";
-import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
+import type { JWT } from "next-auth/jwt";
 
-/** Google OAuth 환경변수가 설정되었는지 확인 */
 function isGoogleOAuthConfigured(): boolean {
   return !!(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
 }
 
-/** 공유 비밀번호가 설정되었는지 확인 */
 function isPasswordConfigured(): boolean {
   return !!process.env.DASHBOARD_PASSWORD;
 }
 
-/** 환경변수에서 허용된 이메일 목록을 파싱 */
 function getAllowedEmails(): string[] {
   const emails = process.env.ALLOWED_EMAILS ?? "";
   return emails
     .split(",")
-    .map((e) => e.trim())
+    .map((email) => email.trim())
     .filter(Boolean);
 }
 
-/** 사용할 프로바이더 목록 구성 */
 function getProviders(): Provider[] {
   const providers: Provider[] = [];
 
-  // Google OAuth가 설정되어 있으면 Google Provider 추가
   if (isGoogleOAuthConfigured()) {
-    providers.push(Google);
+    providers.push(
+      Google({
+        authorization: {
+          params: {
+            scope: [
+              "openid",
+              "email",
+              "profile",
+              "https://www.googleapis.com/auth/drive.metadata.readonly",
+              "https://www.googleapis.com/auth/spreadsheets.readonly",
+            ].join(" "),
+            include_granted_scopes: "true",
+            access_type: "offline",
+            prompt: "consent",
+            response_type: "code",
+          },
+        },
+      })
+    );
   }
 
-  // DASHBOARD_PASSWORD가 설정되어 있으면 이메일+비밀번호 로그인 추가
   if (isPasswordConfigured()) {
     providers.push(
       Credentials({
         id: "credentials",
-        name: "이메일/비밀번호",
+        name: "이메일 비밀번호",
         credentials: {
           email: { label: "이메일", type: "email" },
           password: { label: "비밀번호", type: "password" },
@@ -48,9 +57,8 @@ function getProviders(): Provider[] {
         async authorize(credentials) {
           const email = credentials?.email as string;
           const password = credentials?.password as string;
-          if (!email || !password) return null;
 
-          // 공유 비밀번호 검증
+          if (!email || !password) return null;
           if (password !== process.env.DASHBOARD_PASSWORD) return null;
 
           return {
@@ -64,7 +72,6 @@ function getProviders(): Provider[] {
     );
   }
 
-  // 아무것도 설정되지 않은 경우 개발용 Credentials Provider
   if (providers.length === 0) {
     providers.push(
       Credentials({
@@ -95,28 +102,110 @@ function getProviders(): Provider[] {
   return providers;
 }
 
+async function refreshGoogleAccessToken(token: JWT): Promise<JWT> {
+  if (!token.refreshToken) {
+    return {
+      ...token,
+      error: "RefreshAccessTokenError",
+    };
+  }
+
+  try {
+    const response = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        client_id: process.env.AUTH_GOOGLE_ID ?? "",
+        client_secret: process.env.AUTH_GOOGLE_SECRET ?? "",
+        grant_type: "refresh_token",
+        refresh_token: token.refreshToken,
+      }),
+    });
+
+    const refreshedTokens = (await response.json()) as {
+      access_token?: string;
+      expires_in?: number;
+      refresh_token?: string;
+      error?: string;
+      error_description?: string;
+    };
+
+    if (!response.ok || !refreshedTokens.access_token || !refreshedTokens.expires_in) {
+      throw new Error(
+        refreshedTokens.error_description ??
+          refreshedTokens.error ??
+          "Failed to refresh Google access token",
+      );
+    }
+
+    return {
+      ...token,
+      accessToken: refreshedTokens.access_token,
+      accessTokenExpires: Date.now() + refreshedTokens.expires_in * 1000,
+      refreshToken: refreshedTokens.refresh_token ?? token.refreshToken,
+      error: undefined,
+    };
+  } catch {
+    return {
+      ...token,
+      error: "RefreshAccessTokenError",
+    };
+  }
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: getProviders(),
   pages: {
-    signIn: "/login",  // 커스텀 로그인 페이지
-    error: "/login",   // 에러 발생 시에도 로그인 페이지로 리다이렉트
+    signIn: "/login",
+    error: "/login",
   },
   session: {
-    strategy: "jwt", // Credentials Provider 사용 시 JWT 필수
+    strategy: "jwt",
   },
   callbacks: {
-    /** 로그인 시 이메일 화이트리스트 검증 */
     signIn({ user }) {
       const allowed = getAllowedEmails();
-      // ALLOWED_EMAILS가 비어있으면 모든 계정 허용 (개발 편의)
       if (allowed.length === 0) return true;
       return allowed.includes(user.email ?? "");
     },
-    /** 세션에 사용자 정보 포함 */
+    async jwt({ token, account }) {
+      if (account?.access_token) {
+        return {
+          ...token,
+          accessToken: account.access_token,
+          accessTokenExpires: account.expires_at
+            ? account.expires_at * 1000
+            : Date.now() + 60 * 60 * 1000,
+          refreshToken: account.refresh_token ?? token.refreshToken,
+          error: undefined,
+        };
+      }
+
+      if (token.accessToken && token.accessTokenExpires && Date.now() < token.accessTokenExpires - 60_000) {
+        return token;
+      }
+
+      if (token.refreshToken) {
+        return refreshGoogleAccessToken(token);
+      }
+
+      return token;
+    },
     session({ session, token }) {
       if (token?.sub) {
         session.user.id = token.sub;
       }
+
+      if (typeof token.accessToken === "string") {
+        session.accessToken = token.accessToken;
+      }
+
+      if (typeof token.error === "string") {
+        session.error = token.error;
+      }
+
       return session;
     },
   },

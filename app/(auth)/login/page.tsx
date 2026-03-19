@@ -1,4 +1,5 @@
 import { signIn } from "@/auth";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -6,66 +7,52 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 
-// Google OAuth가 설정되었는지 서버에서 확인
 const isGoogleConfigured = !!(
   process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET
 );
 
-// 공유 비밀번호 로그인이 설정되었는지 확인
 const isPasswordConfigured = !!process.env.DASHBOARD_PASSWORD;
 
-// NextAuth 에러 코드 → 한국어 메시지 매핑
 const errorMessages: Record<string, string> = {
-  AccessDenied: "접근이 거부되었습니다. 허용된 이메일이 아닙니다.",
-  Configuration: "서버 설정에 문제가 있습니다. 관리자에게 문의하세요.",
-  Verification: "인증 링크가 만료되었습니다. 다시 시도해주세요.",
-  Default: "로그인 중 오류가 발생했습니다. 다시 시도해주세요.",
+  AccessDenied: "접근이 거부되었습니다. 허용된 이메일인지 확인해 주세요.",
+  Configuration: "로그인 설정에 문제가 있습니다. 관리자에게 문의해 주세요.",
+  Verification: "인증 링크가 만료되었습니다. 다시 시도해 주세요.",
+  Default: "로그인 중 오류가 발생했습니다. 다시 시도해 주세요.",
 };
 
-// 로그인 페이지 (Server Component)
-// 에러 발생 시 한국어 메시지 표시 + 다시 로그인 가능
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; callbackUrl?: string }>;
 }) {
-  const { error } = await searchParams;
-  const errorMessage = error
-    ? errorMessages[error] ?? errorMessages.Default
-    : null;
+  const { error, callbackUrl } = await searchParams;
+  const errorMessage = error ? errorMessages[error] ?? errorMessages.Default : null;
+  const redirectTo = callbackUrl || "/work-history";
 
   return (
-    <Card className="w-full max-w-md mx-4">
+    <Card className="mx-4 w-full max-w-md">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">로그인</CardTitle>
         <CardDescription>
           {isGoogleConfigured
-            ? "Google 계정으로 로그인하세요"
-            : "개발 모드: 이메일을 입력하면 바로 로그인됩니다"}
+            ? "Google 계정으로 워크스페이스 포털에 로그인하세요."
+            : "개발 모드: 이메일만 입력하면 바로 로그인됩니다."}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* 에러 메시지 배너 */}
         {errorMessage && (
-          <div className="mb-4 rounded-md bg-red-50 dark:bg-red-950 p-3 text-sm text-red-800 dark:text-red-200">
+          <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950 dark:text-red-200">
             <p className="font-medium">로그인 실패</p>
             <p className="mt-1">{errorMessage}</p>
-            {error === "AccessDenied" && (
-              <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-                다른 Google 계정으로 다시 시도해주세요.
-              </p>
-            )}
           </div>
         )}
 
         {isGoogleConfigured ? (
-          /* === Google OAuth 로그인 === */
           <form
             action={async () => {
               "use server";
-              await signIn("google", { redirectTo: "/dashboard" });
+              await signIn("google", { redirectTo });
             }}
           >
             <Button className="w-full" size="lg">
@@ -87,17 +74,16 @@ export default async function LoginPage({
                   fill="#EA4335"
                 />
               </svg>
-              {error ? "다른 계정으로 다시 로그인" : "Google로 로그인"}
+              Google로 로그인
             </Button>
           </form>
         ) : !isPasswordConfigured ? (
-          /* === 개발 모드: 이메일 입력 로그인 === */
           <form
             action={async (formData: FormData) => {
               "use server";
               await signIn("credentials", {
                 email: formData.get("email"),
-                redirectTo: "/dashboard",
+                redirectTo,
               });
             }}
           >
@@ -108,26 +94,15 @@ export default async function LoginPage({
                 placeholder="dev@example.com"
                 defaultValue="dev@example.com"
                 required
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
               <Button className="w-full" size="lg" type="submit">
                 로그인 (개발 모드)
               </Button>
             </div>
-
-            {/* 개발 모드 안내 배너 */}
-            <div className="mt-4 rounded-md bg-yellow-50 dark:bg-yellow-950 p-3 text-xs text-yellow-800 dark:text-yellow-200">
-              <p className="font-medium">개발 모드</p>
-              <p className="mt-1">
-                Google OAuth 키가 설정되지 않아 개발용 로그인을 사용합니다.
-                프로덕션에서는 .env.local에 AUTH_GOOGLE_ID와
-                AUTH_GOOGLE_SECRET을 설정하세요.
-              </p>
-            </div>
           </form>
         ) : null}
 
-        {/* === 이메일 + 비밀번호 로그인 === */}
         {isPasswordConfigured && (
           <>
             {isGoogleConfigured && (
@@ -146,7 +121,7 @@ export default async function LoginPage({
                 await signIn("credentials", {
                   email: formData.get("email"),
                   password: formData.get("password"),
-                  redirectTo: "/dashboard",
+                  redirectTo,
                 });
               }}
             >
@@ -156,14 +131,14 @@ export default async function LoginPage({
                   type="email"
                   placeholder="이메일"
                   required
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
                 <input
                   name="password"
                   type="password"
                   placeholder="비밀번호"
                   required
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
                 <Button className="w-full" size="lg" type="submit" variant="outline">
                   이메일로 로그인

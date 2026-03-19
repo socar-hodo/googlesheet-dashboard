@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   CarFront,
   ChevronLeft,
   ChevronRight,
   LayoutDashboard,
   Menu,
+  SearchCheck,
   X,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const navItems = [
   {
@@ -19,11 +21,17 @@ const navItems = [
     label: "대시보드",
     href: "/dashboard",
   },
+  {
+    icon: SearchCheck,
+    label: "워크스페이스",
+    href: "/work-history",
+  },
 ];
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
     <>
@@ -62,7 +70,7 @@ export function Sidebar() {
                   SOCAR
                 </p>
                 <span className="block truncate text-base font-semibold text-sidebar-foreground">
-                  Dashboard
+                  Workspace Hub
                 </span>
               </div>
             </div>
@@ -79,20 +87,26 @@ export function Sidebar() {
         </div>
 
         <nav className="flex-1 space-y-2 p-3">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setMobileOpen(false)}
-              className={cn(
-                "flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all",
-                "bg-sidebar-accent text-sidebar-accent-foreground shadow-[0_12px_26px_-22px_rgba(0,120,255,0.8)] ring-1 ring-[#0078FF]/10"
-              )}
-            >
-              <item.icon className="h-5 w-5 shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const active = pathname.startsWith(item.href);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all",
+                  active
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-[0_12px_26px_-22px_rgba(0,120,255,0.8)] ring-1 ring-[#0078FF]/10"
+                    : "text-muted-foreground hover:bg-white/60 hover:text-sidebar-foreground dark:hover:bg-white/5"
+                )}
+              >
+                <item.icon className="h-5 w-5 shrink-0" />
+                {!collapsed && <span>{item.label}</span>}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="hidden border-t border-sidebar-border p-3 md:block">
