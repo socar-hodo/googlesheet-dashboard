@@ -4,12 +4,14 @@
 // 데스크톱: 접기/펼치기 가능, 모바일: 오버레이로 표시
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   ChevronLeft,
   ChevronRight,
   Menu,
   X,
+  Car,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -21,6 +23,11 @@ const navItems = [
     label: "대시보드",
     href: "/dashboard",
   },
+  {
+    icon: Car,
+    label: "신차 배분",
+    href: "/allocation",
+  },
   // 향후 메뉴 추가 가능
   // { icon: Settings, label: "설정", href: "/settings" },
 ];
@@ -30,6 +37,8 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   // 모바일 메뉴 열림/닫힘 상태
   const [mobileOpen, setMobileOpen] = useState(false);
+  // 현재 페이지 경로
+  const pathname = usePathname();
 
   return (
     <>
@@ -90,7 +99,9 @@ export function Sidebar() {
               onClick={() => setMobileOpen(false)}
               className={cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                "bg-sidebar-accent text-sidebar-accent-foreground"
+                pathname.startsWith(item.href)
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/50"
               )}
             >
               <item.icon className="h-5 w-5 shrink-0" />
