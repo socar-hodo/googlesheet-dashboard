@@ -51,6 +51,6 @@ export async function runQuery(
   if (!isBigQueryConfigured()) return null;
 
   const client = getBigQueryClient();
-  const [rows] = await client.query({ query: sql, location: "asia-northeast3" });
+  const [rows] = await client.query({ query: sql });
   return rows as Record<string, unknown>[];
 }
