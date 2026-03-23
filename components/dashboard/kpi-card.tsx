@@ -1,21 +1,23 @@
-'use client';
+"use client";
 
-// 단일 KPI 카드 컴포넌트 — 달성률, 프로그레스 바, 델타 표시, 스파크라인
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
-import { getAchievementColorClass, getProgressColorClass } from '@/lib/kpi-utils';
-import { AreaChart, Area, ResponsiveContainer } from 'recharts';
+import { Area, AreaChart, ResponsiveContainer } from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+import {
+  getAchievementColorClass,
+  getProgressColorClass,
+} from "@/lib/kpi-utils";
 
 interface KpiCardProps {
-  title: string;            // KPI 명칭 (예: "매출")
-  value: string;            // 포맷된 실적값 (예: "₩1,234만")
-  target?: string;          // 포맷된 목표값 (Weekly 전용, Daily면 undefined)
-  achievementRate?: number; // 달성률 % (Weekly 전용, Daily면 undefined)
-  deltaText?: string;       // 포맷된 델타 문자열 (예: "▲ +12% / ₩120만")
-  deltaColorClass?: string; // 델타 색상 클래스
-  icon: React.ReactNode;    // lucide-react 아이콘
-  sparklineData?: number[]; // 스파크라인 데이터 포인트 배열
+  title: string;
+  value: string;
+  target?: string;
+  achievementRate?: number;
+  deltaText?: string;
+  deltaColorClass?: string;
+  icon: React.ReactNode;
+  sparklineData?: number[];
 }
 
 export function KpiCard({
@@ -29,32 +31,39 @@ export function KpiCard({
   sparklineData,
 }: KpiCardProps) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <div className="text-muted-foreground">{icon}</div>
+    <Card className="gap-4 overflow-hidden border-white/80 bg-white/80">
+      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-0">
+        <CardTitle className="text-sm font-semibold tracking-[-0.01em] text-foreground/88">
+          {title}
+        </CardTitle>
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#EBF5FF] text-[#0078FF]">
+          {icon}
+        </div>
       </CardHeader>
-      <CardContent className="space-y-2">
-        <div className="text-2xl font-bold">{value}</div>
+      <CardContent className="space-y-3">
+        <div className="text-[2rem] font-semibold tracking-[-0.04em]">{value}</div>
         {achievementRate !== undefined && (
           <>
-            <div className={cn('text-xs font-medium', getAchievementColorClass(achievementRate))}>
+            <div
+              className={cn(
+                "text-xs font-medium",
+                getAchievementColorClass(achievementRate)
+              )}
+            >
               달성률 {achievementRate}%
             </div>
             <Progress
               value={Math.min(achievementRate, 100)}
-              className={cn('h-2', getProgressColorClass(achievementRate))}
+              className={cn("h-2", getProgressColorClass(achievementRate))}
             />
           </>
         )}
-        {target && (
-          <p className="text-xs text-muted-foreground">목표: {target}</p>
-        )}
+        {target && <p className="text-xs text-muted-foreground">목표: {target}</p>}
         {deltaText && (
-          <p className={cn('text-xs', deltaColorClass)}>{deltaText}</p>
+          <p className={cn("text-xs font-medium", deltaColorClass)}>{deltaText}</p>
         )}
         {sparklineData && sparklineData.length >= 2 && (
-          <div className="pt-1">
+          <div className="rounded-2xl bg-[#F7FAFF] px-2 py-1.5 dark:bg-white/3">
             <ResponsiveContainer width="100%" height={40} minWidth={0}>
               <AreaChart
                 data={sparklineData.map((v, i) => ({ v, i }))}
@@ -64,9 +73,9 @@ export function KpiCard({
                   type="monotone"
                   dataKey="v"
                   stroke="var(--chart-1)"
-                  strokeWidth={1.5}
+                  strokeWidth={1.75}
                   fill="var(--chart-1)"
-                  fillOpacity={0.15}
+                  fillOpacity={0.12}
                   dot={false}
                   isAnimationActive={false}
                 />

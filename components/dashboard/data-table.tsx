@@ -1,72 +1,66 @@
-'use client';
+"use client";
 
-// DataTable — Daily/Weekly 탭별 테이블 렌더링, 요약 행 포함
-import type { TeamDashboardData, DailyRecord, WeeklyRecord } from '@/types/dashboard';
+import type {
+  DailyRecord,
+  TeamDashboardData,
+  WeeklyRecord,
+} from "@/types/dashboard";
 import {
   Table,
-  TableHeader,
   TableBody,
-  TableRow,
-  TableHead,
   TableCell,
-} from '@/components/ui/table';
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface DataTableProps {
   data: TeamDashboardData;
-  tab: 'daily' | 'weekly';
+  tab: "daily" | "weekly";
 }
 
-/** 금액 포맷 — 만원 단위, 소수점 없음 */
 function formatCurrency(value: number): string {
   return `₩${Math.round(value / 10000).toLocaleString()}만`;
 }
 
-/** 이용시간 포맷 — Xh Ym 형식 */
 function formatHours(hours: number): string {
   const h = Math.floor(hours);
   const m = Math.round((hours % 1) * 60);
   return `${h}h ${m}m`;
 }
 
-/** 가동률 포맷 — 소수점 1자리 % */
 function formatRate(rate: number): string {
   return `${rate.toFixed(1)}%`;
 }
 
-/** 이용건수 포맷 */
 function formatCount(count: number): string {
   return `${count.toLocaleString()}건`;
 }
 
-/** GPM 계산 — 매출 대비 손익 비율 */
 function calcGpm(profit: number, revenue: number): number {
   return revenue > 0 ? (profit / revenue) * 100 : 0;
 }
 
-/** GPM 포맷 — 소수점 1자리 % */
 function formatGpm(gpm: number): string {
   return `${gpm.toFixed(1)}%`;
 }
 
-/** GPM 추이 포맷 — 이전 행 대비 변화 (0.05%p 미만이면 '-') */
 function formatGpmTrend(current: number, prev: number | null): string {
-  if (prev === null) return '-';
+  if (prev === null) return "-";
   const delta = current - prev;
-  if (Math.abs(delta) < 0.05) return '-';
-  return `${delta > 0 ? '↑' : '↓'}${Math.abs(delta).toFixed(1)}%p`;
+  if (Math.abs(delta) < 0.05) return "-";
+  return `${delta > 0 ? "↑" : "↓"}${Math.abs(delta).toFixed(1)}%p`;
 }
 
-/** GPM 추이 색상 클래스 */
 function gpmTrendClass(current: number, prev: number | null): string {
-  if (prev === null) return '';
+  if (prev === null) return "";
   const delta = current - prev;
-  if (Math.abs(delta) < 0.05) return '';
-  return delta > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+  if (Math.abs(delta) < 0.05) return "";
+  return delta > 0 ? "text-blue-600 dark:text-blue-300" : "text-rose-600 dark:text-rose-300";
 }
 
-/** Daily 테이블 렌더링 */
 function DailyTable({ records }: { records: DailyRecord[] }) {
-  const gpms = records.map(r => calcGpm(r.profit, r.revenue));
+  const gpms = records.map((r) => calcGpm(r.profit, r.revenue));
 
   const sumRevenue = records.reduce((acc, r) => acc + r.revenue, 0);
   const sumProfit = records.reduce((acc, r) => acc + r.profit, 0);
@@ -77,14 +71,17 @@ function DailyTable({ records }: { records: DailyRecord[] }) {
   const avgRevenue = len > 0 ? sumRevenue / len : 0;
   const avgUsageHours = len > 0 ? sumUsageHours / len : 0;
   const avgUsageCount = len > 0 ? sumUsageCount / len : 0;
-  const avgUtilization = len > 0 ? records.reduce((acc, r) => acc + r.utilizationRate, 0) / len : 0;
+  const avgUtilization =
+    len > 0
+      ? records.reduce((acc, r) => acc + r.utilizationRate, 0) / len
+      : 0;
   const totalGpm = calcGpm(sumProfit, sumRevenue);
   const avgGpm = len > 0 ? gpms.reduce((a, b) => a + b, 0) / len : 0;
 
   return (
-    <div className="overflow-auto max-h-[70vh]">
+    <div className="max-h-[70vh] overflow-auto rounded-[1.5rem] border border-white/70 bg-white/78 p-2 shadow-[0_18px_50px_-38px_rgba(20,26,36,0.4)] backdrop-blur">
       <Table>
-        <TableHeader className="sticky top-0 bg-background z-10">
+        <TableHeader className="sticky top-0 z-10 bg-white/95 backdrop-blur">
           <TableRow>
             <TableHead className="text-left">날짜</TableHead>
             <TableHead className="text-right">매출</TableHead>
@@ -97,11 +94,16 @@ function DailyTable({ records }: { records: DailyRecord[] }) {
         </TableHeader>
         <TableBody>
           {records.map((record, index) => (
-            <TableRow key={record.date} className={index % 2 === 1 ? 'bg-muted/30' : ''}>
+            <TableRow key={record.date} className={index % 2 === 1 ? "bg-[#F7FAFF]" : ""}>
               <TableCell className="text-left">{record.date}</TableCell>
               <TableCell className="text-right">{formatCurrency(record.revenue)}</TableCell>
               <TableCell className="text-right">{formatGpm(gpms[index])}</TableCell>
-              <TableCell className={`text-right ${gpmTrendClass(gpms[index], index > 0 ? gpms[index - 1] : null)}`}>
+              <TableCell
+                className={`text-right ${gpmTrendClass(
+                  gpms[index],
+                  index > 0 ? gpms[index - 1] : null
+                )}`}
+              >
                 {formatGpmTrend(gpms[index], index > 0 ? gpms[index - 1] : null)}
               </TableCell>
               <TableCell className="text-right">{formatHours(record.usageHours)}</TableCell>
@@ -109,8 +111,7 @@ function DailyTable({ records }: { records: DailyRecord[] }) {
               <TableCell className="text-right">{formatRate(record.utilizationRate)}</TableCell>
             </TableRow>
           ))}
-          {/* 합계 행 */}
-          <TableRow className="font-bold bg-muted/60">
+          <TableRow className="bg-[#EEF5FF] font-bold">
             <TableCell className="text-left">합계</TableCell>
             <TableCell className="text-right">{formatCurrency(sumRevenue)}</TableCell>
             <TableCell className="text-right">{formatGpm(totalGpm)}</TableCell>
@@ -119,8 +120,7 @@ function DailyTable({ records }: { records: DailyRecord[] }) {
             <TableCell className="text-right">{formatCount(sumUsageCount)}</TableCell>
             <TableCell className="text-right">-</TableCell>
           </TableRow>
-          {/* 평균 행 */}
-          <TableRow className="font-bold bg-muted/60">
+          <TableRow className="bg-[#EEF5FF] font-bold">
             <TableCell className="text-left">평균</TableCell>
             <TableCell className="text-right">{formatCurrency(Math.round(avgRevenue))}</TableCell>
             <TableCell className="text-right">{formatGpm(avgGpm)}</TableCell>
@@ -135,9 +135,8 @@ function DailyTable({ records }: { records: DailyRecord[] }) {
   );
 }
 
-/** Weekly 테이블 렌더링 */
 function WeeklyTable({ records }: { records: WeeklyRecord[] }) {
-  const gpms = records.map(r => calcGpm(r.profit, r.revenue));
+  const gpms = records.map((r) => calcGpm(r.profit, r.revenue));
 
   const sumRevenue = records.reduce((acc, r) => acc + r.revenue, 0);
   const sumProfit = records.reduce((acc, r) => acc + r.profit, 0);
@@ -149,17 +148,20 @@ function WeeklyTable({ records }: { records: WeeklyRecord[] }) {
   const avgRevenue = len > 0 ? sumRevenue / len : 0;
   const avgUsageHours = len > 0 ? sumUsageHours / len : 0;
   const avgUsageCount = len > 0 ? sumUsageCount / len : 0;
-  const avgUtilization = len > 0 ? records.reduce((acc, r) => acc + r.utilizationRate, 0) / len : 0;
+  const avgUtilization =
+    len > 0
+      ? records.reduce((acc, r) => acc + r.utilizationRate, 0) / len
+      : 0;
   const avgTarget = len > 0 ? sumTarget / len : 0;
   const totalGpm = calcGpm(sumProfit, sumRevenue);
   const avgGpm = len > 0 ? gpms.reduce((a, b) => a + b, 0) / len : 0;
 
   return (
-    <div className="overflow-auto max-h-[70vh]">
+    <div className="max-h-[70vh] overflow-auto rounded-[1.5rem] border border-white/70 bg-white/78 p-2 shadow-[0_18px_50px_-38px_rgba(20,26,36,0.4)] backdrop-blur">
       <Table>
-        <TableHeader className="sticky top-0 bg-background z-10">
+        <TableHeader className="sticky top-0 z-10 bg-white/95 backdrop-blur">
           <TableRow>
-            <TableHead className="text-left">주차</TableHead>
+            <TableHead className="text-left">주차별</TableHead>
             <TableHead className="text-right">매출</TableHead>
             <TableHead className="text-right">GPM</TableHead>
             <TableHead className="text-right">GPM 추이</TableHead>
@@ -171,11 +173,16 @@ function WeeklyTable({ records }: { records: WeeklyRecord[] }) {
         </TableHeader>
         <TableBody>
           {records.map((record, index) => (
-            <TableRow key={record.week} className={index % 2 === 1 ? 'bg-muted/30' : ''}>
+            <TableRow key={record.week} className={index % 2 === 1 ? "bg-[#F7FAFF]" : ""}>
               <TableCell className="text-left">{record.week}</TableCell>
               <TableCell className="text-right">{formatCurrency(record.revenue)}</TableCell>
               <TableCell className="text-right">{formatGpm(gpms[index])}</TableCell>
-              <TableCell className={`text-right ${gpmTrendClass(gpms[index], index > 0 ? gpms[index - 1] : null)}`}>
+              <TableCell
+                className={`text-right ${gpmTrendClass(
+                  gpms[index],
+                  index > 0 ? gpms[index - 1] : null
+                )}`}
+              >
                 {formatGpmTrend(gpms[index], index > 0 ? gpms[index - 1] : null)}
               </TableCell>
               <TableCell className="text-right">{formatHours(record.usageHours)}</TableCell>
@@ -184,8 +191,7 @@ function WeeklyTable({ records }: { records: WeeklyRecord[] }) {
               <TableCell className="text-right">{formatCurrency(record.weeklyTarget)}</TableCell>
             </TableRow>
           ))}
-          {/* 합계 행 */}
-          <TableRow className="font-bold bg-muted/60">
+          <TableRow className="bg-[#EEF5FF] font-bold">
             <TableCell className="text-left">합계</TableCell>
             <TableCell className="text-right">{formatCurrency(sumRevenue)}</TableCell>
             <TableCell className="text-right">{formatGpm(totalGpm)}</TableCell>
@@ -195,8 +201,7 @@ function WeeklyTable({ records }: { records: WeeklyRecord[] }) {
             <TableCell className="text-right">-</TableCell>
             <TableCell className="text-right">{formatCurrency(sumTarget)}</TableCell>
           </TableRow>
-          {/* 평균 행 */}
-          <TableRow className="font-bold bg-muted/60">
+          <TableRow className="bg-[#EEF5FF] font-bold">
             <TableCell className="text-left">평균</TableCell>
             <TableCell className="text-right">{formatCurrency(Math.round(avgRevenue))}</TableCell>
             <TableCell className="text-right">{formatGpm(avgGpm)}</TableCell>
@@ -212,17 +217,17 @@ function WeeklyTable({ records }: { records: WeeklyRecord[] }) {
   );
 }
 
-/** DataTable — Daily/Weekly 탭별 상세 데이터 테이블 */
 export function DataTable({ data, tab }: DataTableProps) {
-  if (tab === 'daily') {
+  if (tab === "daily") {
     if (data.daily.length === 0) {
-      return <p className="text-muted-foreground py-4">일별 데이터가 없습니다.</p>;
+      return <p className="py-4 text-muted-foreground">일별 데이터가 없습니다.</p>;
     }
     return <DailyTable records={data.daily} />;
   }
 
   if (data.weekly.length === 0) {
-    return <p className="text-muted-foreground py-4">주차별 데이터가 없습니다.</p>;
+    return <p className="py-4 text-muted-foreground">주차별 데이터가 없습니다.</p>;
   }
+
   return <WeeklyTable records={data.weekly} />;
 }

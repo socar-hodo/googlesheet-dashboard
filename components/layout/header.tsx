@@ -1,7 +1,8 @@
 "use client";
 
-// 상단 헤더: 페이지 타이틀 + 다크모드 토글 + 유저 아바타/로그아웃
-import { useSession, signOut } from "next-auth/react";
+import { useMemo } from "react";
+import { usePathname } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
 import { LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -14,41 +15,43 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "./theme-toggle";
 
-interface HeaderProps {
-  title: string; // 페이지 제목
-}
+const titleMap: Record<string, { eyebrow: string; title: string }> = {
+  "/dashboard": { eyebrow: "SOCAR Dashboard", title: "대시보드" },
+  "/work-history": { eyebrow: "SOCAR Workspace", title: "나의 워크스페이스 포털" },
+};
 
-export function Header({ title }: HeaderProps) {
+export function Header() {
   const { data: session } = useSession();
+  const pathname = usePathname();
+
+  const headerCopy = useMemo(() => {
+    const matched = Object.entries(titleMap).find(([route]) => pathname.startsWith(route));
+    return matched?.[1] ?? titleMap["/dashboard"];
+  }, [pathname]);
 
   return (
-    <header className="flex h-14 items-center justify-between border-b bg-background px-6">
-      {/* 모바일에서 햄버거 메뉴 공간 확보 */}
-      <h1 className="text-lg font-semibold pl-10 md:pl-0">{title}</h1>
+    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border/70 bg-background/75 px-6 backdrop-blur-xl">
+      <div className="pl-10 md:pl-0">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          {headerCopy.eyebrow}
+        </p>
+        <h1 className="text-lg font-semibold">{headerCopy.title}</h1>
+      </div>
 
       <div className="flex items-center gap-2">
-        {/* 다크모드 토글 */}
         <ThemeToggle />
 
-        {/* 유저 아바타 + 로그아웃 드롭다운 */}
         <DropdownMenu>
           <DropdownMenuTrigger className="outline-none">
-            <Avatar className="h-8 w-8 cursor-pointer">
-              <AvatarImage
-                src={session?.user?.image ?? ""}
-                alt={session?.user?.name ?? "사용자"}
-              />
-              <AvatarFallback>
-                {session?.user?.name?.charAt(0) ?? "U"}
-              </AvatarFallback>
+            <Avatar className="h-9 w-9 cursor-pointer border border-border/70 shadow-[0_10px_24px_-18px_rgba(20,26,36,0.6)]">
+              <AvatarImage src={session?.user?.image ?? ""} alt={session?.user?.name ?? "사용자"} />
+              <AvatarFallback>{session?.user?.name?.charAt(0) ?? "U"}</AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>
               <p className="text-sm font-medium">{session?.user?.name}</p>
-              <p className="text-xs text-muted-foreground">
-                {session?.user?.email}
-              </p>
+              <p className="text-xs text-muted-foreground">{session?.user?.email}</p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem
