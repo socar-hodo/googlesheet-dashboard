@@ -6,7 +6,8 @@
 //   gcloud auth application-default login
 //   base64 -w 0 ~/.config/gcloud/application_default_credentials.json
 //   → 출력값을 GOOGLE_APPLICATION_CREDENTIALS_B64 환경변수에 설정
-import { BigQuery, type BigQueryOptions } from "@google-cloud/bigquery";
+import { BigQuery } from "@google-cloud/bigquery";
+import { UserRefreshClient } from "google-auth-library";
 
 /** BigQuery 환경변수가 설정되었는지 확인 */
 export function isBigQueryConfigured(): boolean {
@@ -19,16 +20,14 @@ function getBigQueryClient(): BigQuery {
 
   if (credsB64) {
     const creds = JSON.parse(Buffer.from(credsB64, "base64").toString("utf-8"));
-    const options: BigQueryOptions = {
-      projectId: "socar-data",
-      credentials: {
-        client_id: creds.client_id,
-        client_secret: creds.client_secret,
-        refresh_token: creds.refresh_token,
-        type: "authorized_user",
-      },
-    };
-    return new BigQuery(options);
+    // authorized_user 타입은 credentials 옵션에 직접 넘기면 Vercel 등 서버리스에서
+    // 인증이 실패하므로 UserRefreshClient를 경유해야 합니다.
+    const auth = new UserRefreshClient(
+      creds.client_id,
+      creds.client_secret,
+      creds.refresh_token,
+    );
+    return new BigQuery({ projectId: "socar-data", authClient: auth });
   }
 
   // 로컬 ADC 폴백 (gcloud auth application-default login)
