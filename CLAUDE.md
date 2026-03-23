@@ -34,12 +34,19 @@ npm run lint   # ESLint
 
 ### 데이터 3-레이어 패턴
 ```
-lib/sheets.ts   → Google Sheets API 래퍼 (fetchSheetData)
-lib/data.ts     → 통합 레이어 (getDashboardData: Sheets 또는 mock 폴백)
+lib/sheets.ts    → Google Sheets API 래퍼 (fetchSheetData)
+lib/bigquery.ts  → BigQuery 래퍼 (runQuery) — sheets.ts와 대칭 구조
+lib/data.ts      → 통합 레이어 (getDashboardData: Sheets 또는 mock 폴백)
 lib/mock-data.ts → 기본 목 데이터
 ```
 - 각 시트를 `Promise.all`로 병렬 페칭, 개별 시트 실패 시 해당 영역만 mock 폴백
 - `GOOGLE_PRIVATE_KEY`의 `\\n`을 실제 줄바꿈으로 변환 필수 (sheets.ts에서 처리)
+
+### BigQuery 연동 (`lib/bigquery.ts`)
+- `GOOGLE_APPLICATION_CREDENTIALS_B64` 환경변수: `gcloud auth application-default login` 후
+  `~/.config/gcloud/application_default_credentials.json`을 base64 인코딩한 값
+- 미설정 시 `runQuery()` → `null` 반환 (Sheets의 `isGoogleSheetsConfigured()` 패턴과 동일)
+- 프로젝트 고정: `socar-data`, 위치: `asia-northeast3`
 
 ### Server Component vs Client Component
 - **Server**: 대시보드 페이지, KPI 카드, 주문 테이블 (데이터 페칭/렌더링 전용)
