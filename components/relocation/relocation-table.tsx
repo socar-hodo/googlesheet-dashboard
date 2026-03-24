@@ -21,13 +21,13 @@ export function RelocationTable({ rows }: Props) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-muted/40 text-xs text-muted-foreground">
-            <th className="px-3 py-2 text-left">시/도</th>
-            <th className="px-3 py-2 text-left">시/군/구</th>
-            <th className="px-3 py-2 text-right">가동률</th>
-            <th className="px-3 py-2 text-right">대당매출</th>
-            <th className="px-3 py-2 text-right">사전예약률</th>
-            <th className="px-3 py-2 text-right">종합스코어</th>
-            <th className="px-3 py-2 text-right">차량수</th>
+            <th scope="col" className="px-3 py-2 text-left">시/도</th>
+            <th scope="col" className="px-3 py-2 text-left">시/군/구</th>
+            <th scope="col" className="px-3 py-2 text-right">가동률</th>
+            <th scope="col" className="px-3 py-2 text-right">대당매출</th>
+            <th scope="col" className="px-3 py-2 text-right">사전예약률</th>
+            <th scope="col" className="px-3 py-2 text-right">종합스코어</th>
+            <th scope="col" className="px-3 py-2 text-right">차량수</th>
           </tr>
         </thead>
         <tbody>
@@ -43,7 +43,7 @@ export function RelocationTable({ rows }: Props) {
               <td className="px-3 py-2 text-muted-foreground">{row.region1}</td>
               <td className="px-3 py-2 font-medium">{row.region2}</td>
               <td className="px-3 py-2 text-right">{(row.utilRate * 100).toFixed(1)}%</td>
-              <td className="px-3 py-2 text-right">{Math.round(row.revPerCar / 10000).toLocaleString()}만원</td>
+              <td className="px-3 py-2 text-right">{Math.round(row.revPerCar / 10000).toLocaleString("ko-KR")}만원</td>
               <td className="px-3 py-2 text-right">{(row.prereservRate * 100).toFixed(1)}%</td>
               <td className="px-3 py-2 text-right font-semibold">{row.score.toFixed(3)}</td>
               <td className="px-3 py-2 text-right text-muted-foreground">{row.carCount}대</td>
