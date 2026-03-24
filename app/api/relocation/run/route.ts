@@ -6,8 +6,8 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const params: RelocationParams = {
     region1:    body.region1    ?? "전체",
-    pastDays:   Number(body.pastDays   ?? 14) as RelocationParams["pastDays"],
-    futureDays: Number(body.futureDays ?? 7)  as RelocationParams["futureDays"],
+    pastDays:   Number(body.pastDays   ?? 14) as RelocationParams["pastDays"],   // 허용값 검증은 validateParams()에서
+    futureDays: Number(body.futureDays ?? 7)  as RelocationParams["futureDays"], // 허용값 검증은 validateParams()에서
     weights: {
       utilization:    Number(body.weights?.utilization    ?? 0.4),
       revenue:        Number(body.weights?.revenue        ?? 0.4),
