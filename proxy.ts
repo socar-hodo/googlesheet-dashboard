@@ -9,6 +9,7 @@ export default auth((req) => {
   const isProtectedRoute =
     nextUrl.pathname.startsWith("/dashboard") ||
     nextUrl.pathname.startsWith("/allocation") ||
+    nextUrl.pathname.startsWith("/relocation") ||
     nextUrl.pathname.startsWith("/work-history");
   // 인증 경로: /login 페이지
   const isAuthRoute = nextUrl.pathname.startsWith("/login");

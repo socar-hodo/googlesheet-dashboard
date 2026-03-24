@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  ArrowLeftRight,
   CarFront,
   ChevronLeft,
   ChevronRight,
@@ -17,9 +18,10 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { icon: LayoutDashboard, label: "대시보드",    href: "/dashboard"    },
-  { icon: Car,             label: "신차 배분",   href: "/allocation"   },
-  { icon: SearchCheck,     label: "워크스페이스", href: "/work-history" },
+  { icon: LayoutDashboard, label: "대시보드",    href: "/dashboard"   },
+  { icon: Car,             label: "신차 배분",   href: "/allocation"  },
+  { icon: ArrowLeftRight,  label: "차량 재배치", href: "/relocation"  },
+  { icon: SearchCheck,     label: "워크스페이스", href: "/work-history"},
 ];
 
 export function Sidebar() {
