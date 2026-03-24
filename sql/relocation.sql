@@ -79,20 +79,37 @@ reserved_slots AS (
     AND slot >= rb.start_at
 ),
 
+future_occ AS (
+  -- 향후 {future_days}일간 예약 점유 분 합산 (분자)
+  SELECT
+    region1,
+    region2,
+    SUM(occupied_minutes) AS total_occ_min
+  FROM reserved_slots
+  GROUP BY region1, region2
+),
+
+future_dp AS (
+  -- 향후 {future_days}일간 전체 배치 가용 분 합산 (분모)
+  -- 예약이 없는 시간대도 포함해야 올바른 분모
+  SELECT
+    region1,
+    region2,
+    SUM(dp_min) AS total_dp_min
+  FROM `socar-data.socar_biz.operation_per_car_hourly_v2`
+  WHERE datetime >= DATETIME(CURRENT_DATE("Asia/Seoul"))
+    AND datetime < DATETIME_ADD(DATETIME(CURRENT_DATE("Asia/Seoul")), INTERVAL {future_days} DAY)
+    {region1_where}
+  GROUP BY region1, region2
+),
+
 future_reservation AS (
   SELECT
-    rs.region1,
-    rs.region2,
-    SAFE_DIVIDE(
-      SUM(rs.occupied_minutes),
-      SUM(h.dp_min)
-    ) AS prereserv_rate
-  FROM reserved_slots rs
-  JOIN `socar-data.socar_biz.operation_per_car_hourly_v2` h
-    ON rs.region1  = h.region1
-   AND rs.region2  = h.region2
-   AND DATETIME(TIMESTAMP_TRUNC(slot, HOUR), "Asia/Seoul") = h.datetime  -- slot(TIMESTAMP UTC)을 서울 DATETIME으로 변환 후 비교 (타입 불일치 방지)
-  GROUP BY rs.region1, rs.region2
+    d.region1,
+    d.region2,
+    SAFE_DIVIDE(COALESCE(o.total_occ_min, 0), d.total_dp_min) AS prereserv_rate
+  FROM future_dp d
+  LEFT JOIN future_occ o ON d.region1 = o.region1 AND d.region2 = o.region2
 )
 
 SELECT
