@@ -30,15 +30,9 @@ export function RelocationRecommendations({ recommendations }: Props) {
   async function toggleCandidates(idx: number, fromZone: string) {
     const current = cardStates[idx];
 
-    // 이미 열려 있으면 닫기
-    if (current?.open) {
-      setCardStates((s) => ({ ...s, [idx]: { ...s[idx], open: false } }));
-      return;
-    }
-
-    // 이미 데이터가 있으면 열기만
-    if (current?.candidates !== null) {
-      setCardStates((s) => ({ ...s, [idx]: { ...s[idx], open: true } }));
+    // 이미 초기화된 카드(조회한 적 있음): 열기/닫기 토글
+    if (current !== undefined) {
+      setCardStates((s) => ({ ...s, [idx]: { ...current, open: !current.open } }));
       return;
     }
 
