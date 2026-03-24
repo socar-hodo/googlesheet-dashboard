@@ -1,4 +1,4 @@
-// types/relocation.ts
+// 차량 재배치 의사결정 도구 — 타입 정의
 
 export const PAST_DAYS_OPTIONS = [7, 14, 30] as const;
 export const FUTURE_DAYS_OPTIONS = [3, 7, 14] as const;
@@ -28,7 +28,7 @@ export interface RelocationRow {
 export interface RelocationRecommendation {
   fromZone: string;    // 송출 존 (region2)
   toZone: string;      // 수신 존 (region2)
-  carCount: number;    // 권장 이동 대수 (fromZone.carCount × 0.2, 최소 1)
+  carCount: number;    // 권장 이동 대수 (최소 1)
   sameRegion: boolean; // 동일 region1 여부
 }
 
@@ -36,4 +36,8 @@ export interface RelocationResult {
   rows: RelocationRow[];
   recommendations: RelocationRecommendation[];
   fetchedAt: string;   // ISO 8601
+}
+
+export interface RelocationError {
+  errors: string[];
 }
