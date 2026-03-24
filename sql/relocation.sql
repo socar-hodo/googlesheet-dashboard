@@ -57,7 +57,7 @@ reserved_base AS (
   JOIN `socar-data.socar_biz_base.carzone_info_daily` z
     ON r.zone_id = z.id
    AND DATE(r.start_at, "Asia/Seoul") = z.date
-  WHERE r.state IN (0, 1, 2, 3)
+  WHERE r.state IN (0, 1, 2, 3)  -- state 0~3: 미래 사전예약률 계산용 (완료 포함 전체 예약 상태)
     AND r.member_imaginary IN (0, 9)
     AND DATE(r.start_at, "Asia/Seoul") BETWEEN CURRENT_DATE("Asia/Seoul")
                                            AND DATE_ADD(CURRENT_DATE("Asia/Seoul"), INTERVAL {future_days} DAY)
@@ -96,7 +96,7 @@ future_reservation AS (
   JOIN `socar-data.socar_biz.operation_per_car_hourly_v2` h
     ON rs.region1  = h.region1
    AND rs.region2  = h.region2
-   AND TIMESTAMP_TRUNC(slot, HOUR) = h.datetime
+   AND TIMESTAMP_TRUNC(slot, HOUR) = h.datetime  -- slot은 reserved_slots에서 시간별로 분해된 각 행; 여러 slot이 같은 시간대에 매핑될 수 있음
   GROUP BY rs.region1, rs.region2
 )
 
