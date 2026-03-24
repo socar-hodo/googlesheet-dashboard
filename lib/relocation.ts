@@ -5,8 +5,10 @@ import type {
   RelocationParams,
   RelocationRow,
   RelocationRecommendation,
+  RelocationResult,
 } from "@/types/relocation";
 import { PAST_DAYS_OPTIONS, FUTURE_DAYS_OPTIONS } from "@/types/relocation";
+import { runQuery } from "@/lib/bigquery";
 
 const DEFAULT_SQL_PATH = resolve(process.cwd(), "sql/relocation.sql");
 
@@ -118,4 +120,32 @@ export function computeRecommendations(
       sameRegion: target.region1 === from.region1,
     };
   });
+}
+
+export async function runRelocation(params: RelocationParams): Promise<RelocationResult> {
+  const sql = loadSql(params);
+  const rawRows = await runQuery(sql);
+  if (!rawRows) {
+    throw new Error("BigQuery가 설정되지 않았습니다 (GOOGLE_APPLICATION_CREDENTIALS_B64).");
+  }
+
+  const baseRows = rawRows.map((r) => ({
+    region1:       String(r.region1 ?? ""),
+    region2:       String(r.region2 ?? ""),
+    utilRate:      Number(r.util_rate      ?? 0),
+    revPerCar:     Number(r.rev_per_car    ?? 0),
+    prereservRate: Number(r.prereserv_rate ?? 0),
+    carCount:      Number(r.car_count      ?? 0),
+    score:         0,
+    tier:          "mid" as RelocationRow["tier"],
+  }));
+
+  const scored          = computeScore(baseRows, params.weights);
+  const recommendations = computeRecommendations(scored);
+
+  return {
+    rows: scored,
+    recommendations,
+    fetchedAt: new Date().toISOString(),
+  };
 }
