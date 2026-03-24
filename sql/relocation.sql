@@ -91,7 +91,7 @@ future_reservation AS (
   JOIN `socar-data.socar_biz.operation_per_car_hourly_v2` h
     ON rs.region1  = h.region1
    AND rs.region2  = h.region2
-   AND TIMESTAMP_TRUNC(slot, HOUR) = h.datetime  -- slot은 reserved_slots에서 시간별로 분해된 각 행; 여러 slot이 같은 시간대에 매핑될 수 있음
+   AND DATETIME(TIMESTAMP_TRUNC(slot, HOUR), "Asia/Seoul") = h.datetime  -- slot(TIMESTAMP UTC)을 서울 DATETIME으로 변환 후 비교 (타입 불일치 방지)
   GROUP BY rs.region1, rs.region2
 )
 
