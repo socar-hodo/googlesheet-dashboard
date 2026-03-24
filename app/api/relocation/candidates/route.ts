@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
-import { readFileSync } from "fs";
-import { resolve } from "path";
 import { runQuery } from "@/lib/bigquery";
 
-const SQL_PATH = resolve(process.cwd(), "sql/relocation-candidates.sql");
-// region2 값은 BigQuery 조회 결과에서 오지만 추가 검증 적용
+// region2 값은 BigQuery 결과에서 오지만 추가 검증 적용
 const SAFE_ZONE = /^[가-힣a-zA-Z0-9\s]+$/;
 
 export async function POST(req: Request) {
@@ -21,7 +18,23 @@ export async function POST(req: Request) {
   }
 
   const region2In = zones.map((z) => `'${z}'`).join(", ");
-  const sql = readFileSync(SQL_PATH, "utf-8").replace("{region2_in}", region2In);
+  const sql = `
+    SELECT
+      c.id       AS car_id,
+      c.car_name,
+      c.car_num,
+      z.region1,
+      z.region2
+    FROM \`socar-data.socar_biz_base.car_info_daily\` c
+    JOIN \`socar-data.socar_biz_base.carzone_info_daily\` z
+      ON c.zone_id = z.id
+     AND c.date    = z.date
+    WHERE c.date = CURRENT_DATE("Asia/Seoul")
+      AND c.sharing_type IN ('socar', 'zplus')
+      AND c.imaginary = 0
+      AND z.region2 IN (${region2In})
+    ORDER BY z.region1, z.region2, c.car_name
+  `;
 
   try {
     const rows = await runQuery(sql);
@@ -42,8 +55,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ candidates });
   } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
     return NextResponse.json(
-      { errors: [`차량 후보 조회 중 오류가 발생했습니다: ${String(e)}`] },
+      { errors: [message] },
       { status: 500 }
     );
   }
