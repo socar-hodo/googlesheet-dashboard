@@ -27,9 +27,19 @@ export interface RelocationRow {
 
 export interface RelocationRecommendation {
   fromZone: string;    // 송출 존 (region2)
+  fromRegion1: string; // 송출 시/도 (region1)
   toZone: string;      // 수신 존 (region2)
+  toRegion1: string;   // 수신 시/도 (region1)
   carCount: number;    // 권장 이동 대수 (최소 1)
   sameRegion: boolean; // 동일 region1 여부
+}
+
+export interface RelocationCarCandidate {
+  carId: number;
+  carName: string;
+  carNum: string;
+  region1: string;
+  region2: string;
 }
 
 export interface RelocationResult {

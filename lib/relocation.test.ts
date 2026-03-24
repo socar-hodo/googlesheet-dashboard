@@ -155,7 +155,9 @@ describe("computeRecommendations", () => {
     const recs = computeRecommendations(rows);
     expect(recs).toHaveLength(1);
     expect(recs[0].fromZone).toBe("중구");
+    expect(recs[0].fromRegion1).toBe("서울");
     expect(recs[0].toZone).toBe("강남구");
+    expect(recs[0].toRegion1).toBe("서울");
   });
 
   it("이동 대수 = carCount × 0.2 반올림, 최소 1", () => {

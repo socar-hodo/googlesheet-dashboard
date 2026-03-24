@@ -115,7 +115,9 @@ export function computeRecommendations(
 
     return {
       fromZone: from.region2,
+      fromRegion1: from.region1,
       toZone: target.region2,
+      toRegion1: target.region1,
       carCount: Math.max(1, Math.round(from.carCount * 0.2)),
       sameRegion: target.region1 === from.region1,
     };
