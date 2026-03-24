@@ -31,29 +31,34 @@ export function RelocationForm() {
     setError(null);
     setResult(null);
 
-    const res = await fetch("/api/relocation/run", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        region1:    form.region1,
-        pastDays:   form.pastDays,
-        futureDays: form.futureDays,
-        weights: {
-          utilization:    form.weightUtil,
-          revenue:        form.weightRev,
-          prereservation: form.weightPre,
-        },
-      }),
-    });
+    try {
+      const res = await fetch("/api/relocation/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          region1:    form.region1,
+          pastDays:   form.pastDays,
+          futureDays: form.futureDays,
+          weights: {
+            utilization:    form.weightUtil,
+            revenue:        form.weightRev,
+            prereservation: form.weightPre,
+          },
+        }),
+      });
 
-    const data = await res.json();
-    setLoading(false);
+      const data = await res.json();
+      setLoading(false);
 
-    if (!res.ok) {
-      setError(data.errors?.join(" / ") ?? "알 수 없는 오류가 발생했습니다.");
-      return;
+      if (!res.ok) {
+        setError(data.errors?.join(" / ") ?? "알 수 없는 오류가 발생했습니다.");
+        return;
+      }
+      setResult(data);
+    } catch {
+      setLoading(false);
+      setError("네트워크 오류가 발생했습니다. 연결을 확인해주세요.");
     }
-    setResult(data);
   }
 
   // 가중치 슬라이더: 변경된 값에 맞게 나머지 두 값을 비례 조정

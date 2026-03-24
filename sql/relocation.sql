@@ -1,15 +1,10 @@
 -- ============================================================
 -- 차량 재배치 의사결정 도구 쿼리
--- 파라미터 (Python에서 .format()으로 치환):
---   {region1_filter}   : 광역 필터 ("전체" | "서울특별시" 등)
---   {past_days}        : 과거 기간 일수 (7, 14, 30)
---   {future_days}      : 미래 기간 일수 (3, 7, 14)
---
--- 치환 규칙:
---   {region1_filter} = "전체" 이면 {region1_where} = "", {region1_where_z} = ""
---   {region1_filter} != "전체" 이면:
---     {region1_where} = "AND region1 = '{region1_filter}'"
---     {region1_where_z} = "AND z.region1 = '{region1_filter}'"
+-- 파라미터 (lib/relocation.ts의 loadSql()에서 치환):
+--   {past_days}        : 과거 실적 기간 (7 | 14 | 30일)
+--   {future_days}      : 사전예약 조회 기간 (3 | 7 | 14일)
+--   {region1_where}    : region1 필터 (AND region1 = '...' or 빈 문자열)
+--   {region1_where_z}  : reserved_base의 z.region1 필터
 --
 -- 테이블 구조 참고:
 --   carzone_info_daily.id = zone_id (zone_id 컬럼명 아님)
