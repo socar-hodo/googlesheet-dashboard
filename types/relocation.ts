@@ -40,6 +40,7 @@ export interface RelocationCarCandidate {
   carNum: string;
   region1: string;
   region2: string;
+  deployedOn: string | null; // 현재 존 배치일 (오래될수록 재배치 우선)
 }
 
 export interface RelocationResult {

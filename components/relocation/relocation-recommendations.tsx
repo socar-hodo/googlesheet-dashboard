@@ -27,7 +27,7 @@ export function RelocationRecommendations({ recommendations }: Props) {
     );
   }
 
-  async function toggleCandidates(idx: number, fromZone: string) {
+  async function toggleCandidates(idx: number, fromZone: string, limit: number) {
     const current = cardStates[idx];
 
     // 이미 초기화된 카드(조회한 적 있음): 열기/닫기 토글
@@ -46,7 +46,7 @@ export function RelocationRecommendations({ recommendations }: Props) {
       const res = await fetch("/api/relocation/candidates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ zones: [fromZone] }),
+        body: JSON.stringify({ zones: [fromZone], limit }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -93,7 +93,7 @@ export function RelocationRecommendations({ recommendations }: Props) {
                   <Badge variant="secondary" className="text-xs">동일 시/도</Badge>
                 )}
                 <button
-                  onClick={() => toggleCandidates(i, rec.fromZone)}
+                  onClick={() => toggleCandidates(i, rec.fromZone, rec.carCount)}
                   className="flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-muted transition-colors"
                   title="차량 후보 보기"
                 >
@@ -116,7 +116,7 @@ export function RelocationRecommendations({ recommendations }: Props) {
                 {state?.candidates && (
                   <>
                     <p className="text-xs text-muted-foreground mb-2">
-                      {rec.fromZone} 현재 배치 차량 ({state.candidates.length}대)
+                      이동 권장 차량 — {rec.fromZone} 장기 배치 순 {state.candidates.length}대
                     </p>
                     <div className="max-h-48 overflow-y-auto">
                       <table className="w-full text-xs">
@@ -124,6 +124,7 @@ export function RelocationRecommendations({ recommendations }: Props) {
                           <tr className="text-muted-foreground border-b">
                             <th className="text-left pb-1 font-medium">차량번호</th>
                             <th className="text-left pb-1 font-medium">모델</th>
+                            <th className="text-left pb-1 font-medium">배치일</th>
                             <th className="text-left pb-1 font-medium">차량 ID</th>
                           </tr>
                         </thead>
@@ -132,6 +133,7 @@ export function RelocationRecommendations({ recommendations }: Props) {
                             <tr key={c.carId} className="border-b border-muted last:border-0">
                               <td className="py-1 font-medium">{c.carNum}</td>
                               <td className="py-1 text-muted-foreground">{c.carName}</td>
+                              <td className="py-1 text-muted-foreground">{c.deployedOn ?? "-"}</td>
                               <td className="py-1 text-muted-foreground">{c.carId}</td>
                             </tr>
                           ))}
