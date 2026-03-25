@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 
 interface Props {
   recommendations: RelocationRecommendation[];
+  pastDays: number;
 }
 
 interface CardState {
@@ -16,7 +17,7 @@ interface CardState {
   error: string | null;
 }
 
-export function RelocationRecommendations({ recommendations }: Props) {
+export function RelocationRecommendations({ recommendations, pastDays }: Props) {
   const [cardStates, setCardStates] = useState<Record<number, CardState>>({});
 
   if (recommendations.length === 0) {
@@ -30,13 +31,11 @@ export function RelocationRecommendations({ recommendations }: Props) {
   async function toggleCandidates(idx: number, fromZone: string, limit: number) {
     const current = cardStates[idx];
 
-    // 이미 초기화된 카드(조회한 적 있음): 열기/닫기 토글
     if (current !== undefined) {
       setCardStates((s) => ({ ...s, [idx]: { ...current, open: !current.open } }));
       return;
     }
 
-    // 최초 조회
     setCardStates((s) => ({
       ...s,
       [idx]: { open: true, loading: true, candidates: null, error: null },
@@ -46,7 +45,7 @@ export function RelocationRecommendations({ recommendations }: Props) {
       const res = await fetch("/api/relocation/candidates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ zones: [fromZone], limit }),
+        body: JSON.stringify({ zones: [fromZone], limit, pastDays }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -76,7 +75,6 @@ export function RelocationRecommendations({ recommendations }: Props) {
 
         return (
           <div key={i} className="rounded-xl border bg-card text-sm overflow-hidden">
-            {/* 추천 헤더 */}
             <div className="flex items-center gap-2 px-4 py-3">
               <div className="flex flex-col min-w-0">
                 <span className="text-xs text-muted-foreground">{rec.fromRegion1}</span>
@@ -104,7 +102,6 @@ export function RelocationRecommendations({ recommendations }: Props) {
               </div>
             </div>
 
-            {/* 차량 후보 패널 */}
             {isOpen && (
               <div className="border-t bg-muted/30 px-4 py-3">
                 {state?.loading && (
@@ -116,7 +113,7 @@ export function RelocationRecommendations({ recommendations }: Props) {
                 {state?.candidates && (
                   <>
                     <p className="text-xs text-muted-foreground mb-2">
-                      이동 권장 차량 — {rec.fromZone} 장기 배치 순 {state.candidates.length}대
+                      이동 권장 차량 — {rec.fromZone} 내 가동률 하위 {state.candidates.length}대 (최근 {pastDays}일 기준)
                     </p>
                     <div className="max-h-48 overflow-y-auto">
                       <table className="w-full text-xs">
@@ -124,7 +121,7 @@ export function RelocationRecommendations({ recommendations }: Props) {
                           <tr className="text-muted-foreground border-b">
                             <th className="text-left pb-1 font-medium">차량번호</th>
                             <th className="text-left pb-1 font-medium">모델</th>
-                            <th className="text-left pb-1 font-medium">배치일</th>
+                            <th className="text-right pb-1 font-medium">가동률</th>
                             <th className="text-left pb-1 font-medium">차량 ID</th>
                           </tr>
                         </thead>
@@ -133,7 +130,12 @@ export function RelocationRecommendations({ recommendations }: Props) {
                             <tr key={c.carId} className="border-b border-muted last:border-0">
                               <td className="py-1 font-medium">{c.carNum}</td>
                               <td className="py-1 text-muted-foreground">{c.carName}</td>
-                              <td className="py-1 text-muted-foreground">{c.deployedOn ?? "-"}</td>
+                              <td className="py-1 text-right">
+                                {c.utilRate != null
+                                  ? <span className="text-red-500">{(c.utilRate * 100).toFixed(1)}%</span>
+                                  : <span className="text-muted-foreground">-</span>
+                                }
+                              </td>
                               <td className="py-1 text-muted-foreground">{c.carId}</td>
                             </tr>
                           ))}

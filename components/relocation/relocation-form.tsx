@@ -205,7 +205,7 @@ export function RelocationForm() {
 
               <div>
                 <h2 className="text-base font-semibold mb-2">재배치 추천</h2>
-                <RelocationRecommendations recommendations={result.recommendations} />
+                <RelocationRecommendations recommendations={result.recommendations} pastDays={form.pastDays} />
               </div>
             </div>
 
