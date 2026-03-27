@@ -49,7 +49,7 @@
 
 :root {
   --radius: 1rem;
-  --background: #f2f3f8;
+  --background: #f6f7fb;
   --foreground: #141a24;
   --card: rgba(255, 255, 255, 0.96);
   --card-foreground: #141a24;
@@ -59,61 +59,61 @@
   --primary-foreground: #ffffff;
   --secondary: #ebf5ff;
   --secondary-foreground: #0a1491;
-  --muted: #eef2f8;
-  --muted-foreground: #354153;
-  --accent: #edf5ff;
-  --accent-foreground: #005aff;
+  --muted: #eff2f7;
+  --muted-foreground: #4b5565;
+  --accent: #eef2f8;
+  --accent-foreground: #1f2937;
   --destructive: #ef4444;
-  --border: #c2ccda;
-  --input: #c2ccda;
+  --border: #d3dae6;
+  --input: #d3dae6;
   --ring: #0078ff;
   --chart-1: #0078ff;
   --chart-2: #005aff;
   --chart-3: #0a1491;
   --chart-4: #66b0ff;
   --chart-5: #a3d1ff;
-  --sidebar: rgba(236, 240, 247, 0.96);
+  --sidebar: rgba(243, 245, 250, 0.96);
   --sidebar-foreground: #141a24;
   --sidebar-primary: #0078ff;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #dfeafb;
-  --sidebar-accent-foreground: #005aff;
-  --sidebar-border: rgba(132, 142, 158, 0.92);
+  --sidebar-accent: #e8ecf3;
+  --sidebar-accent-foreground: #1f2937;
+  --sidebar-border: rgba(190, 198, 210, 0.92);
   --sidebar-ring: #0078ff;
 }
 
 .dark {
-  --background: #141a24;
-  --foreground: #f8fbff;
-  --card: rgba(26, 34, 47, 0.92);
+  --background: #0e131b;
+  --foreground: #f4f7fb;
+  --card: rgba(20, 27, 38, 0.9);
   --card-foreground: #f8fbff;
-  --popover: #1c2431;
+  --popover: #131a24;
   --popover-foreground: #f8fbff;
-  --primary: #66b0ff;
+  --primary: #7ab8ff;
   --primary-foreground: #08101e;
-  --secondary: #1b2431;
+  --secondary: #161f2b;
   --secondary-foreground: #f8fbff;
-  --muted: #1b2431;
-  --muted-foreground: #99a1b1;
-  --accent: #202c3d;
-  --accent-foreground: #d6ebff;
+  --muted: #161f2b;
+  --muted-foreground: #9ca8ba;
+  --accent: #1a2432;
+  --accent-foreground: #dfe8f5;
   --destructive: #fb7185;
-  --border: rgba(153, 161, 177, 0.2);
-  --input: rgba(153, 161, 177, 0.2);
-  --ring: #66b0ff;
-  --chart-1: #66b0ff;
-  --chart-2: #3393ff;
+  --border: rgba(167, 178, 194, 0.18);
+  --input: rgba(167, 178, 194, 0.18);
+  --ring: #7ab8ff;
+  --chart-1: #7ab8ff;
+  --chart-2: #4da0ff;
   --chart-3: #d6ebff;
-  --chart-4: #0078ff;
-  --chart-5: #a3d1ff;
-  --sidebar: rgba(18, 24, 34, 0.9);
+  --chart-4: #2f84ff;
+  --chart-5: #a9d2ff;
+  --sidebar: rgba(13, 18, 26, 0.9);
   --sidebar-foreground: #f8fbff;
-  --sidebar-primary: #66b0ff;
+  --sidebar-primary: #7ab8ff;
   --sidebar-primary-foreground: #08101e;
-  --sidebar-accent: rgba(32, 44, 61, 0.8);
-  --sidebar-accent-foreground: #d6ebff;
-  --sidebar-border: rgba(153, 161, 177, 0.16);
-  --sidebar-ring: #66b0ff;
+  --sidebar-accent: rgba(24, 32, 45, 0.84);
+  --sidebar-accent-foreground: #dfe8f5;
+  --sidebar-border: rgba(167, 178, 194, 0.14);
+  --sidebar-ring: #7ab8ff;
 }
 
 @layer base {
@@ -129,16 +129,16 @@
     @apply bg-background text-foreground;
     min-height: 100vh;
     background-image:
-      radial-gradient(circle at top left, rgba(0, 120, 255, 0.1), transparent 24rem),
-      radial-gradient(circle at top right, rgba(10, 20, 145, 0.06), transparent 20rem),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(242, 243, 248, 0.98));
+      radial-gradient(circle at top left, rgba(0, 120, 255, 0.08), transparent 24rem),
+      radial-gradient(circle at top right, rgba(20, 26, 36, 0.04), transparent 20rem),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(246, 247, 251, 0.99));
   }
 
   .dark body {
     background-image:
-      radial-gradient(circle at top left, rgba(0, 120, 255, 0.18), transparent 26rem),
-      radial-gradient(circle at top right, rgba(102, 176, 255, 0.14), transparent 22rem),
-      linear-gradient(180deg, rgba(20, 26, 36, 0.98), rgba(14, 19, 28, 1));
+      radial-gradient(circle at top left, rgba(58, 126, 209, 0.16), transparent 26rem),
+      radial-gradient(circle at top right, rgba(122, 184, 255, 0.08), transparent 22rem),
+      linear-gradient(180deg, rgba(14, 19, 27, 0.98), rgba(11, 15, 22, 1));
   }
 
   ::selection {

@@ -465,6 +465,22 @@ function ScopedWorkHistoryPortal({
     );
   }
 
+  function handleRestoreTodoToToday(todoId: string) {
+    const today = getTodayDateInputValue();
+    setTodos((current) =>
+      current.map((todo) =>
+        todo.id === todoId
+          ? {
+              ...todo,
+              completed: false,
+              completedAt: undefined,
+              dueDate: today,
+            }
+          : todo,
+      ),
+    );
+  }
+
   function handleRemoveTodo(todoId: string) {
     const workLogId = buildTodoWorkLogId(workspaceOwnerKey, todoId);
     const resourceId = `history-${workLogId}`;
@@ -659,15 +675,14 @@ function ScopedWorkHistoryPortal({
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_22rem]">
         <Card
           className={cn(
-            'overflow-hidden border-0 shadow-[0_36px_90px_-52px_rgba(5,10,90,0.72)]',
+            'overflow-hidden border border-border/60 shadow-[0_28px_70px_-50px_rgba(20,26,36,0.28)]',
             workspaceToneClass.card,
           )}
         >
-          <CardContent className="relative p-6 md:p-7">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(163,209,255,0.24),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(0,120,255,0.2),transparent_32%)]" />
-            <div className="relative space-y-6">
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                <div className="space-y-3">
+          <CardContent className="p-6 md:p-7">
+            <div className="space-y-6">
+              <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+                <div className="space-y-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <p
                       className={cn(
@@ -675,39 +690,34 @@ function ScopedWorkHistoryPortal({
                         workspaceToneClass.badge,
                       )}
                     >
-                      SOCAR Workspace
+                      {workspaceDisplayName} workspace
                     </p>
-                    <span className="text-xs font-medium text-white/70">
-                      {workspaceDisplayName}님의 업무 허브
+                    <span className="text-xs font-medium text-muted-foreground">
+                      필요한 문서와 해야 할 일을 빠르게 다시 여는 허브
                     </span>
                   </div>
                   <div className="space-y-2">
-                    <h2 className="max-w-3xl text-3xl font-semibold tracking-[-0.04em] text-white md:text-[2.1rem]">
+                    <h2 className="max-w-3xl text-3xl font-semibold tracking-[-0.05em] text-foreground md:text-[2.25rem]">
                       {workspaceSettings.title}
                     </h2>
-                    <p className="max-w-2xl text-sm leading-6 text-white/74">
+                    <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
                       {workspaceSettings.subtitle}
                     </p>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full border border-white/14 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/80">
-                      오늘 마감 {todoSummary.dueToday}건
-                    </span>
-                    <span className="rounded-full border border-white/14 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/80">
-                      주간 진행률 {weeklySummary.progress}%
-                    </span>
-                    <span className="rounded-full border border-white/14 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/80">
-                      메모 {memoSummary.total}건
-                    </span>
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <SummaryCard label="업무 기록" value={`${stats.total}건`} />
+                    <SummaryCard label="진행 중" value={`${stats.active}건`} />
+                    <SummaryCard label="최근 문서" value={`${stats.recent}건`} />
+                    <SummaryCard label="즐겨찾기" value={`${stats.favorites}건`} />
                   </div>
                 </div>
-                <div className="flex flex-col gap-3 lg:min-w-[18rem]">
+                <div className="flex flex-col gap-3 xl:min-w-[16rem]">
                   <Button
                     type="button"
                     variant="ghost"
                     className={cn(
-                      'h-11 rounded-2xl border border-white/14 bg-white/8 text-white hover:bg-white/14',
-                      showWorkspaceSettings && 'bg-white text-[#0A1491] hover:bg-white/92',
+                      'h-11 rounded-2xl border border-border/70 bg-background/90 text-foreground hover:bg-background',
+                      showWorkspaceSettings && 'border-foreground bg-foreground text-background hover:bg-foreground/92',
                     )}
                     onClick={() => {
                       setWorkspaceDraft(workspaceSettings);
@@ -717,55 +727,43 @@ function ScopedWorkHistoryPortal({
                     <Settings2 className="mr-2 h-4 w-4" />
                     워크스페이스 편집
                   </Button>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="rounded-[1.4rem] border border-white/12 bg-white/8 px-4 py-3">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/56">
-                        기록
-                      </p>
-                      <p className="mt-2 text-2xl font-semibold text-white">{stats.total}건</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="rounded-2xl border border-border/60 bg-background/70 px-4 py-3">
+                      <p className="text-xs font-medium text-muted-foreground">오늘 마감</p>
+                      <p className="mt-1 text-lg font-semibold text-foreground">{todoSummary.dueToday}건</p>
                     </div>
-                    <div className="rounded-[1.4rem] border border-white/12 bg-white/8 px-4 py-3">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/56">
-                        진행 중
-                      </p>
-                      <p className="mt-2 text-2xl font-semibold text-white">{stats.active}건</p>
+                    <div className="rounded-2xl border border-border/60 bg-background/70 px-4 py-3">
+                      <p className="text-xs font-medium text-muted-foreground">주간 진행률</p>
+                      <p className="mt-1 text-lg font-semibold text-foreground">{weeklySummary.progress}%</p>
                     </div>
-                    <div className="rounded-[1.4rem] border border-white/12 bg-white/8 px-4 py-3">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/56">
-                        최근 문서
-                      </p>
-                      <p className="mt-2 text-2xl font-semibold text-white">{stats.recent}건</p>
-                    </div>
-                    <div className="rounded-[1.4rem] border border-white/12 bg-white/8 px-4 py-3">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/56">
-                        즐겨찾기
-                      </p>
-                      <p className="mt-2 text-2xl font-semibold text-white">{stats.favorites}건</p>
+                    <div className="rounded-2xl border border-border/60 bg-background/70 px-4 py-3">
+                      <p className="text-xs font-medium text-muted-foreground">메모</p>
+                      <p className="mt-1 text-lg font-semibold text-foreground">{memoSummary.total}건</p>
                     </div>
                   </div>
                 </div>
               </div>
 
               {showWorkspaceSettings && (
-                <div className="grid gap-4 rounded-[1.75rem] border border-white/12 bg-white/8 p-4 backdrop-blur lg:grid-cols-[1.1fr_0.9fr]">
+                <div className="grid gap-4 rounded-[1.75rem] border border-border/70 bg-background/80 p-4 lg:grid-cols-[1.1fr_0.9fr]">
                 <div className="space-y-3">
-                  <p className="text-sm font-semibold text-white">헤더 커스텀</p>
-                  <input value={workspaceDraft.title} onChange={(event) => handleWorkspaceSettingChange('title', event.target.value)} placeholder="포털 제목" className="h-11 w-full rounded-2xl border border-white/12 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/20" />
-                  <textarea value={workspaceDraft.subtitle} onChange={(event) => handleWorkspaceSettingChange('subtitle', event.target.value)} placeholder="포털 설명" className="min-h-28 w-full rounded-2xl border border-white/12 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/20" />
-                  <select value={workspaceDraft.tone} onChange={(event) => handleWorkspaceSettingChange('tone', event.target.value as WorkspaceTone)} className="h-11 w-full rounded-2xl border border-white/12 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/20">
+                  <p className="text-sm font-semibold text-foreground">헤더 커스텀</p>
+                  <input value={workspaceDraft.title} onChange={(event) => handleWorkspaceSettingChange('title', event.target.value)} placeholder="포털 제목" className="h-11 w-full rounded-2xl border border-border/70 bg-background px-4 text-sm text-foreground outline-none transition focus:border-foreground focus:ring-4 focus:ring-foreground/10" />
+                  <textarea value={workspaceDraft.subtitle} onChange={(event) => handleWorkspaceSettingChange('subtitle', event.target.value)} placeholder="포털 설명" className="min-h-28 w-full rounded-2xl border border-border/70 bg-background px-4 py-3 text-sm text-foreground outline-none transition focus:border-foreground focus:ring-4 focus:ring-foreground/10" />
+                  <select value={workspaceDraft.tone} onChange={(event) => handleWorkspaceSettingChange('tone', event.target.value as WorkspaceTone)} className="h-11 w-full rounded-2xl border border-border/70 bg-background px-4 text-sm text-foreground outline-none transition focus:border-foreground focus:ring-4 focus:ring-foreground/10">
                     <option value="sand">샌드 톤</option>
                     <option value="sky">스카이 톤</option>
                     <option value="mint">민트 톤</option>
                   </select>
                 </div>
                 <div className="space-y-3">
-                  <p className="text-sm font-semibold text-white">보여줄 섹션</p>
+                  <p className="text-sm font-semibold text-foreground">보여줄 섹션</p>
                   <WorkspaceSettingToggle label="오늘/완료 패널" checked={workspaceDraft.showTodoFocus} onChange={(checked) => handleWorkspaceSettingChange('showTodoFocus', checked)} />
                   <WorkspaceSettingToggle label="주간 진행률 요약" checked={workspaceDraft.showWeeklySummary} onChange={(checked) => handleWorkspaceSettingChange('showWeeklySummary', checked)} />
                   <WorkspaceSettingToggle label="메모 보관함" checked={workspaceDraft.showMemos} onChange={(checked) => handleWorkspaceSettingChange('showMemos', checked)} />
                   <WorkspaceSettingToggle label="최근/즐겨찾기/추천 문서" checked={workspaceDraft.showResources} onChange={(checked) => handleWorkspaceSettingChange('showResources', checked)} />
                   <div className="space-y-2 pt-1">
-                    <p className="text-sm font-semibold text-white">카드 순서 드래그 변경</p>
+                    <p className="text-sm font-semibold text-foreground">카드 순서 드래그 변경</p>
                     {workspaceDraft.resourceCardOrder.map((cardId) => (
                       <button
                         key={cardId}
@@ -778,30 +776,30 @@ function ScopedWorkHistoryPortal({
                           setDraggingResourceCard(null);
                         }}
                         onDragEnd={() => setDraggingResourceCard(null)}
-                        className={cn('flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/8 px-4 py-3 text-sm text-white transition', draggingResourceCard === cardId && 'border-white/30 bg-white/15')}
+                        className={cn('flex w-full items-center justify-between rounded-2xl border border-border/70 bg-background px-4 py-3 text-sm text-foreground transition', draggingResourceCard === cardId && 'border-foreground/30 bg-foreground/[0.04]')}
                       >
                         <span>{resourceCardLabelMap[cardId]}</span>
-                        <span className="text-xs text-white/60">드래그</span>
+                        <span className="text-xs text-muted-foreground">드래그</span>
                       </button>
                     ))}
                   </div>
                   <div className="flex flex-wrap gap-2 pt-2">
-                    <Button type="button" className="rounded-2xl bg-white text-[#0A1491] hover:bg-white/90" onClick={handleSaveWorkspaceSettings}>저장</Button>
-                    <Button type="button" variant="outline" className="rounded-2xl border-white/16 bg-white/8 text-white hover:bg-white/12" onClick={() => { setWorkspaceDraft(workspaceSettings); setShowWorkspaceSettings(false); }}>취소</Button>
-                    <Button type="button" variant="ghost" className="rounded-2xl text-white/80 hover:bg-white/10 hover:text-white" onClick={handleResetWorkspaceSettings}>기본값 복원</Button>
+                    <Button type="button" className="rounded-2xl bg-foreground text-background hover:bg-foreground/92" onClick={handleSaveWorkspaceSettings}>저장</Button>
+                    <Button type="button" variant="outline" className="rounded-2xl border-border/70 bg-background text-foreground hover:bg-background/80" onClick={() => { setWorkspaceDraft(workspaceSettings); setShowWorkspaceSettings(false); }}>취소</Button>
+                    <Button type="button" variant="ghost" className="rounded-2xl text-muted-foreground hover:bg-background hover:text-foreground" onClick={handleResetWorkspaceSettings}>기본값 복원</Button>
                   </div>
                 </div>
               </div>
             )}
 
-              <div className="grid gap-3 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,0.9fr)_auto]">
+              <div className="grid gap-3 xl:grid-cols-[minmax(0,1.8fr)_minmax(0,0.9fr)_auto]">
               <div className="relative">
                 <label className="relative block">
                     <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="업무명, 프로젝트, 태그, 결과로 검색" className="h-13 w-full rounded-[1.4rem] border border-white/12 bg-white pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/20" />
+                    <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="업무명, 프로젝트, 태그, 결과로 검색" className="h-13 w-full rounded-[1.4rem] border border-border/70 bg-background pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-foreground focus:ring-4 focus:ring-foreground/10" />
                 </label>
                 {normalizedQuery && (
-                  <div className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-20 overflow-hidden rounded-[1.75rem] border border-white/12 bg-white/98 shadow-[0_26px_70px_-34px_rgba(20,26,36,0.48)] backdrop-blur">
+                  <div className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-20 overflow-hidden rounded-[1.75rem] border border-border/70 bg-white/98 shadow-[0_26px_70px_-34px_rgba(20,26,36,0.24)] backdrop-blur">
                     <div className="flex items-center justify-between gap-3 border-b border-slate-200/80 px-4 py-3">
                       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Quick Results</p>
                       <span className="text-xs text-slate-500">{autocompleteHasResults ? `${autocompleteItems.length}개 미리보기` : '검색 중'}</span>
@@ -836,16 +834,16 @@ function ScopedWorkHistoryPortal({
                   </div>
                 )}
               </div>
-              <select value={status} onChange={(event) => setStatus(event.target.value as 'all' | WorkStatus)} className="h-13 rounded-[1.4rem] border border-white/12 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/20">
+              <select value={status} onChange={(event) => setStatus(event.target.value as 'all' | WorkStatus)} className="h-13 rounded-[1.4rem] border border-border/70 bg-background px-4 text-sm text-slate-900 outline-none transition focus:border-foreground focus:ring-4 focus:ring-foreground/10">
                 <option value="all">전체 상태</option>
                 {Object.entries(workStatusLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
               </select>
-              <Button type="button" variant="ghost" className={cn('h-13 rounded-[1.4rem] border px-4 text-sm', pinnedOnly ? 'border-white bg-white text-[#0A1491] hover:bg-white/92' : 'border-white/14 bg-white/8 text-white hover:bg-white/14')} onClick={() => setPinnedOnly((current) => !current)}><Filter className="mr-2 h-4 w-4" />중요 기록만 보기</Button>
+              <Button type="button" variant="ghost" className={cn('h-13 rounded-[1.4rem] border px-4 text-sm', pinnedOnly ? 'border-foreground bg-foreground text-background hover:bg-foreground/92' : 'border-border/70 bg-background text-foreground hover:bg-background/80')} onClick={() => setPinnedOnly((current) => !current)}><Filter className="mr-2 h-4 w-4" />중요 기록만 보기</Button>
             </div>
 
               <div className="flex flex-wrap gap-2">
                 {keywordSuggestions.map((keyword) => (
-                  <button key={keyword} type="button" onClick={() => setQuery(keyword)} className="rounded-full border border-white/14 bg-white/8 px-3 py-1.5 text-sm text-white/84 transition hover:bg-white/14">{keyword}</button>
+                  <button key={keyword} type="button" onClick={() => setQuery(keyword)} className="rounded-full border border-border/70 bg-background px-3 py-1.5 text-sm text-foreground transition hover:border-foreground/30 hover:bg-background/80">{keyword}</button>
                 ))}
               </div>
             </div>
@@ -854,15 +852,15 @@ function ScopedWorkHistoryPortal({
 
         {workspaceSettings.showTodoFocus && (
         <div className="space-y-4">
-          <Card className="border-0 bg-[#141A24] shadow-[0_32px_72px_-48px_rgba(5,10,90,0.78)]">
-            <CardHeader className="pb-3"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><ListTodo className="h-4 w-4 text-[#66B0FF]" /><CardTitle className="text-base text-white">오늘/완료 현황</CardTitle></div><span className="rounded-full bg-[#0078FF]/20 px-2.5 py-1 text-xs font-semibold text-[#A3D1FF]">{todoSummary.progress}%</span></div></CardHeader>
+          <Card className="border-border/60 bg-card/98 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.2)]">
+            <CardHeader className="pb-3"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><ListTodo className="h-4 w-4 text-primary" /><CardTitle className="text-base">오늘/완료 현황</CardTitle></div><span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{todoSummary.progress}%</span></div></CardHeader>
             <CardContent className="space-y-4">
               <Progress value={todoSummary.progress} className="h-2.5" />
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-[1.35rem] border border-white/8 bg-white/6 px-4 py-4"><p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/56">오늘 할 일</p><p className="mt-2 text-2xl font-semibold text-white">{todayTodos.length}건</p></div>
-                <div className="rounded-[1.35rem] border border-white/8 bg-white/6 px-4 py-4"><p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/56">완료한 일</p><p className="mt-2 text-2xl font-semibold text-white">{todoSummary.completed}건</p></div>
+                <div className="rounded-[1.35rem] border border-border/60 bg-background/65 px-4 py-4"><p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">오늘 할 일</p><p className="mt-2 text-2xl font-semibold text-foreground">{todayTodos.length}건</p></div>
+                <div className="rounded-[1.35rem] border border-border/60 bg-background/65 px-4 py-4"><p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">완료한 일</p><p className="mt-2 text-2xl font-semibold text-foreground">{todoSummary.completed}건</p></div>
               </div>
-              <div className="rounded-[1.35rem] border border-white/8 bg-white/6 p-4 text-sm leading-6 text-white/70">{weeklySummaryText}</div>
+              <div className="rounded-[1.35rem] border border-border/60 bg-background/65 p-4 text-sm leading-6 text-muted-foreground">{weeklySummaryText}</div>
             </CardContent>
           </Card>
 
@@ -889,7 +887,14 @@ function ScopedWorkHistoryPortal({
                   {group.todos.slice(0, 3).map((todo) => (
                     <div key={todo.id} className="rounded-2xl border border-border/60 bg-background/65 px-4 py-3">
                       <div className="flex items-start gap-3">
-                        <CheckCircle2 className="mt-0.5 h-4.5 w-4.5 shrink-0 text-primary" />
+                        <button
+                          type="button"
+                          onClick={() => handleRestoreTodoToToday(todo.id)}
+                          className="mt-0.5 shrink-0 text-primary transition hover:opacity-80"
+                          aria-label={`${todo.title} 오늘 할 일로 되돌리기`}
+                        >
+                          <CheckCircle2 className="h-4.5 w-4.5" />
+                        </button>
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium text-muted-foreground line-through">{todo.title}</p>
                           <div className="mt-2 flex flex-wrap gap-2">
@@ -897,6 +902,9 @@ function ScopedWorkHistoryPortal({
                             <TodoDateBadge dueDate={todo.dueDate} />
                             <span className="rounded-full bg-background px-2.5 py-1 text-xs text-muted-foreground">완료 {formatDateTime(todo.completedAt ?? todo.createdAt)}</span>
                           </div>
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            왼쪽 체크를 누르면 오늘 할 일로 다시 되돌립니다.
+                          </p>
                           <div className="mt-3">
                             <Button type="button" variant="outline" className="rounded-2xl" onClick={() => handleCreateWorkLogFromTodo(todo)}>
                               업무 기록 만들기
@@ -1525,8 +1533,8 @@ function getTimeValue(value?: string): number {
 
 function SummaryCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[1.35rem] border border-border/60 bg-white/78 px-4 py-4 shadow-[0_18px_40px_-34px_rgba(20,26,36,0.35)] backdrop-blur">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+    <div className="rounded-[1.35rem] border border-border/60 bg-background/70 px-4 py-4 shadow-[0_18px_40px_-34px_rgba(20,26,36,0.12)]">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/90">
         {label}
       </p>
       <p className="mt-2 text-xl font-semibold tracking-[-0.03em] text-foreground">{value}</p>
@@ -1539,16 +1547,16 @@ const workspaceToneClassMap: Record<
   { card: string; badge: string }
 > = {
   sand: {
-    card: 'bg-[linear-gradient(140deg,#141A24_0%,#1E315B_58%,#0078FF_100%)]',
-    badge: 'border-white/16 bg-white/8 text-white/92',
+    card: 'bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(250,247,240,0.92))] dark:bg-[linear-gradient(180deg,rgba(22,28,38,0.96),rgba(28,24,20,0.92))]',
+    badge: 'border-[#d7c7ad] bg-[#fbf4e8] text-[#765a2c] dark:border-[#5a4b34] dark:bg-[#2e261c] dark:text-[#f1d8aa]',
   },
   sky: {
-    card: 'bg-[linear-gradient(140deg,#141A24_0%,#0A1491_42%,#0078FF_100%)]',
-    badge: 'border-white/16 bg-white/8 text-white/92',
+    card: 'bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(241,246,255,0.94))] dark:bg-[linear-gradient(180deg,rgba(20,27,38,0.96),rgba(18,30,48,0.94))]',
+    badge: 'border-[#b7d0f8] bg-[#edf4ff] text-[#28518d] dark:border-[#314a72] dark:bg-[#17273d] dark:text-[#bdd7ff]',
   },
   mint: {
-    card: 'bg-[linear-gradient(140deg,#141A24_0%,#243A5E_52%,#2C7ED6_100%)]',
-    badge: 'border-white/16 bg-white/8 text-white/92',
+    card: 'bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(240,251,247,0.94))] dark:bg-[linear-gradient(180deg,rgba(20,27,38,0.96),rgba(18,36,32,0.94))]',
+    badge: 'border-[#b8dccd] bg-[#ebf8f1] text-[#2f6b57] dark:border-[#365a4d] dark:bg-[#152a24] dark:text-[#bfe5d5]',
   },
 };
 
@@ -1562,13 +1570,13 @@ function WorkspaceSettingToggle({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/8 px-4 py-3">
-      <span className="text-sm text-white">{label}</span>
+    <label className="flex items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background px-4 py-3">
+      <span className="text-sm text-foreground">{label}</span>
       <input
         type="checkbox"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
-        className="h-4 w-4 rounded border-white/20 bg-white text-primary focus:ring-primary"
+        className="h-4 w-4 rounded border-border bg-background text-primary focus:ring-primary"
       />
     </label>
   );
@@ -1614,7 +1622,7 @@ function ResourcePanel({
   removeLabel?: string;
 }) {
   return (
-    <Card className="border-border/60 bg-card/98 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.25)]">
+    <Card className="border-border/60 bg-card/98 shadow-[0_20px_50px_-40px_rgba(20,26,36,0.16)]">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
           <Icon className="h-4 w-4 text-primary" />
@@ -1622,7 +1630,7 @@ function ResourcePanel({
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        {resources.length === 0 && <div className="rounded-2xl bg-background/65 px-4 py-6 text-sm text-muted-foreground">{emptyText}</div>}
+        {resources.length === 0 && <div className="rounded-2xl border border-dashed border-border/70 bg-background/65 px-4 py-6 text-sm text-muted-foreground">{emptyText}</div>}
         {resources.map((resource) => (
           <div key={resource.id} className="rounded-2xl border border-border/60 bg-background/65 p-4">
             <div className="flex items-start justify-between gap-3">

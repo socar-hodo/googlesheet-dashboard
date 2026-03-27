@@ -15,9 +15,27 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "./theme-toggle";
 
-const titleMap: Record<string, { eyebrow: string; title: string }> = {
-  "/dashboard": { eyebrow: "SOCAR Dashboard", title: "대시보드" },
-  "/work-history": { eyebrow: "SOCAR Workspace", title: "나의 워크스페이스 포털" },
+const titleMap: Record<string, { eyebrow: string; title: string; description: string }> = {
+  "/dashboard": {
+    eyebrow: "Dashboard",
+    title: "운영 대시보드",
+    description: "배분, 재배치, 주요 지표 화면을 빠르게 오가며 확인합니다.",
+  },
+  "/allocation": {
+    eyebrow: "Allocation",
+    title: "신차 배분",
+    description: "배분 실행과 결과를 단정한 흐름으로 검토합니다.",
+  },
+  "/relocation": {
+    eyebrow: "Relocation",
+    title: "재배치 추천",
+    description: "이동 추천 차량과 권역별 후보를 비교합니다.",
+  },
+  "/work-history": {
+    eyebrow: "Workspace",
+    title: "개인 워크스페이스",
+    description: "문서 검색, 메모, To-do를 하나의 허브로 정리합니다.",
+  },
 };
 
 export function Header() {
@@ -30,15 +48,18 @@ export function Header() {
   }, [pathname]);
 
   return (
-    <header className="sticky top-0 z-20 border-b border-border/70 bg-background/82 backdrop-blur-xl">
-      <div className="flex h-16 items-center justify-between px-6">
+    <header className="sticky top-0 z-20 border-b border-border/60 bg-background/88 backdrop-blur-xl">
+      <div className="flex min-h-16 items-center justify-between gap-4 px-6 py-3">
         <div className="pl-10 md:pl-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/90">
             {headerCopy.eyebrow}
           </p>
           <h1 className="text-lg font-semibold tracking-[-0.02em] text-foreground">
             {headerCopy.title}
           </h1>
+          <p className="mt-0.5 hidden text-sm text-muted-foreground lg:block">
+            {headerCopy.description}
+          </p>
         </div>
 
         <div className="flex items-center gap-2">

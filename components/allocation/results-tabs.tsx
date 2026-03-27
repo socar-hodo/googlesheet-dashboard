@@ -13,105 +13,137 @@ interface ResultsTabsProps {
 }
 
 function RefBadge({ refType }: { refType: string }) {
-  const styles: Record<string, string> = {
-    model:    "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-    segment:  "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-    fallback: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+  const labels: Record<string, string> = {
+    model: "모델 기준",
+    segment: "세그먼트 기준",
+    fallback: "보완 기준",
   };
+
+  const styles: Record<string, string> = {
+    model: "bg-green-100 text-green-800 dark:bg-green-950/60 dark:text-green-200",
+    segment: "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-200",
+    fallback: "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-200",
+  };
+
   return (
-    <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${styles[refType] ?? ""}`}>
-      {refType}
+    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${styles[refType] ?? ""}`}>
+      {labels[refType] ?? refType}
     </span>
   );
 }
 
 function YoyCell({ value }: { value: number | null }) {
   if (value === null) {
-    return <td className="px-3 py-2 text-right text-xs text-muted-foreground">—</td>;
+    return <td className="px-3 py-3 text-right text-xs text-muted-foreground">N/A</td>;
   }
+
   return (
-    <td className={`px-3 py-2 text-right text-xs font-medium ${value >= 1.0 ? "text-green-600" : "text-red-500"}`}>
+    <td
+      className={`px-3 py-3 text-right text-xs font-medium ${
+        value >= 1.0 ? "text-green-600 dark:text-green-300" : "text-red-500 dark:text-red-300"
+      }`}
+    >
       {value.toFixed(3)}
     </td>
   );
 }
 
-export function ResultsTabs({ rows, totalAllocated, region1Count, region2Count, spearman }: ResultsTabsProps) {
-  // 시/도별 집계 (avg_score 내림차순)
+export function ResultsTabs({
+  rows,
+  totalAllocated,
+  region1Count,
+  region2Count,
+  spearman,
+}: ResultsTabsProps) {
   const region1Data = useMemo(() => {
-    const map = new Map<string, {
-      scoreSum: number; revSum: number; utilSum: number;
-      cars: number; count: number; refTypes: Record<string, number>;
-    }>();
-    for (const r of rows) {
-      const g = map.get(r.region1) ?? { scoreSum: 0, revSum: 0, utilSum: 0, cars: 0, count: 0, refTypes: {} };
-      g.scoreSum += r.final_score;
-      g.revSum   += r.rev_yoy ?? 0;
-      g.utilSum  += r.util_yoy ?? 0;
-      g.cars     += r.allocated_cars;
-      g.count    += 1;
-      g.refTypes[r.ref_type] = (g.refTypes[r.ref_type] ?? 0) + 1;
-      map.set(r.region1, g);
+    const grouped = new Map<
+      string,
+      {
+        scoreSum: number;
+        revSum: number;
+        utilSum: number;
+        cars: number;
+        count: number;
+        refTypes: Record<string, number>;
+      }
+    >();
+
+    for (const row of rows) {
+      const current = grouped.get(row.region1) ?? {
+        scoreSum: 0,
+        revSum: 0,
+        utilSum: 0,
+        cars: 0,
+        count: 0,
+        refTypes: {},
+      };
+
+      current.scoreSum += row.final_score;
+      current.revSum += row.rev_yoy ?? 0;
+      current.utilSum += row.util_yoy ?? 0;
+      current.cars += row.allocated_cars;
+      current.count += 1;
+      current.refTypes[row.ref_type] = (current.refTypes[row.ref_type] ?? 0) + 1;
+      grouped.set(row.region1, current);
     }
-    return Array.from(map.entries())
-      .map(([region1, g]) => ({
+
+    return Array.from(grouped.entries())
+      .map(([region1, value]) => ({
         region1,
-        avgScore:  g.scoreSum / g.count,
-        avgRev:    g.revSum / g.count,
-        avgUtil:   g.utilSum / g.count,
-        totalCars: g.cars,
-        topRef:    Object.entries(g.refTypes).sort((a, b) => b[1] - a[1])[0][0],
+        avgScore: value.scoreSum / value.count,
+        avgRev: value.revSum / value.count,
+        avgUtil: value.utilSum / value.count,
+        totalCars: value.cars,
+        topRef: Object.entries(value.refTypes).sort((left, right) => right[1] - left[1])[0][0],
       }))
-      .sort((a, b) => b.avgScore - a.avgScore);
+      .sort((left, right) => right.avgScore - left.avgScore);
   }, [rows]);
 
-  // 시/군/구별 (final_score 내림차순)
-  const region2Data = useMemo(
-    () => [...rows].sort((a, b) => b.final_score - a.final_score),
-    [rows]
-  );
+  const region2Data = useMemo(() => [...rows].sort((left, right) => right.final_score - left.final_score), [rows]);
 
   return (
-    <div className="space-y-3">
-      {/* 요약 */}
-      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-        <span>총 배분: <strong className="text-foreground">{totalAllocated}대</strong></span>
-        <span>시/도: <strong className="text-foreground">{region1Count}개</strong></span>
-        <span>시/군/구: <strong className="text-foreground">{region2Count}개</strong></span>
-        {spearman !== null && (
-          <span>스피어만(α 안정성): <strong className="text-foreground">{spearman}</strong></span>
-        )}
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <SummaryStat label="총 배분" value={`${totalAllocated}대`} />
+        <SummaryStat label="권역 수" value={`${region1Count}개`} />
+        <SummaryStat label="세부 존 수" value={`${region2Count}개`} />
+        <SummaryStat label="Spearman" value={spearman !== null ? String(spearman) : "N/A"} />
       </div>
 
-      <Tabs defaultValue="region1">
-        <TabsList>
-          <TabsTrigger value="region1">시/도별</TabsTrigger>
-          <TabsTrigger value="region2">시/군/구별</TabsTrigger>
+      <Tabs defaultValue="region1" className="space-y-4">
+        <TabsList className="h-auto rounded-2xl border border-border/60 bg-background/70 p-1">
+          <TabsTrigger value="region1" className="rounded-xl px-4 py-2">
+            권역 집계
+          </TabsTrigger>
+          <TabsTrigger value="region2" className="rounded-xl px-4 py-2">
+            세부 존 상세
+          </TabsTrigger>
         </TabsList>
 
-        {/* 시/도별 탭 */}
         <TabsContent value="region1">
-          <div className="overflow-x-auto rounded-md border">
+          <div className="overflow-x-auto rounded-[1.5rem] border border-border/60 bg-card/95">
             <table className="w-full text-sm">
-              <thead className="bg-muted text-xs uppercase">
+              <thead className="bg-muted/55 text-xs uppercase text-muted-foreground">
                 <tr>
-                  <th className="px-3 py-2 text-left">시/도</th>
-                  <th className="px-3 py-2 text-left">참조기준</th>
-                  <th className="px-3 py-2 text-right">평균점수</th>
-                  <th className="px-3 py-2 text-right">수익YoY</th>
-                  <th className="px-3 py-2 text-right">가동YoY</th>
-                  <th className="px-3 py-2 text-right">배분대수</th>
+                  <th className="px-3 py-3 text-left">권역</th>
+                  <th className="px-3 py-3 text-left">주요 기준</th>
+                  <th className="px-3 py-3 text-right">평균 점수</th>
+                  <th className="px-3 py-3 text-right">매출 YoY</th>
+                  <th className="px-3 py-3 text-right">가동률 YoY</th>
+                  <th className="px-3 py-3 text-right">배분 대수</th>
                 </tr>
               </thead>
               <tbody>
-                {region1Data.map((d) => (
-                  <tr key={d.region1} className="border-t hover:bg-muted/50">
-                    <td className="px-3 py-2 font-medium">{d.region1}</td>
-                    <td className="px-3 py-2"><RefBadge refType={d.topRef} /></td>
-                    <td className="px-3 py-2 text-right">{d.avgScore.toFixed(3)}</td>
-                    <YoyCell value={d.avgRev} />
-                    <YoyCell value={d.avgUtil} />
-                    <td className="px-3 py-2 text-right font-bold">{d.totalCars}</td>
+                {region1Data.map((item) => (
+                  <tr key={item.region1} className="border-t border-border/60 hover:bg-muted/25">
+                    <td className="px-3 py-3 font-medium text-foreground">{item.region1}</td>
+                    <td className="px-3 py-3">
+                      <RefBadge refType={item.topRef} />
+                    </td>
+                    <td className="px-3 py-3 text-right">{item.avgScore.toFixed(3)}</td>
+                    <YoyCell value={item.avgRev} />
+                    <YoyCell value={item.avgUtil} />
+                    <td className="px-3 py-3 text-right font-semibold">{item.totalCars}</td>
                   </tr>
                 ))}
               </tbody>
@@ -119,31 +151,32 @@ export function ResultsTabs({ rows, totalAllocated, region1Count, region2Count, 
           </div>
         </TabsContent>
 
-        {/* 시/군/구별 탭 */}
         <TabsContent value="region2">
-          <div className="overflow-x-auto rounded-md border">
+          <div className="overflow-x-auto rounded-[1.5rem] border border-border/60 bg-card/95">
             <table className="w-full text-sm">
-              <thead className="bg-muted text-xs uppercase">
+              <thead className="bg-muted/55 text-xs uppercase text-muted-foreground">
                 <tr>
-                  <th className="px-3 py-2 text-left">시/도</th>
-                  <th className="px-3 py-2 text-left">시/군/구</th>
-                  <th className="px-3 py-2 text-left">참조기준</th>
-                  <th className="px-3 py-2 text-right">최종점수</th>
-                  <th className="px-3 py-2 text-right">수익YoY</th>
-                  <th className="px-3 py-2 text-right">가동YoY</th>
-                  <th className="px-3 py-2 text-right">배분대수</th>
+                  <th className="px-3 py-3 text-left">권역</th>
+                  <th className="px-3 py-3 text-left">세부 존</th>
+                  <th className="px-3 py-3 text-left">참조 기준</th>
+                  <th className="px-3 py-3 text-right">최종 점수</th>
+                  <th className="px-3 py-3 text-right">매출 YoY</th>
+                  <th className="px-3 py-3 text-right">가동률 YoY</th>
+                  <th className="px-3 py-3 text-right">배분 대수</th>
                 </tr>
               </thead>
               <tbody>
-                {region2Data.map((r, i) => (
-                  <tr key={i} className="border-t hover:bg-muted/50">
-                    <td className="px-3 py-2">{r.region1}</td>
-                    <td className="px-3 py-2 font-medium">{r.region2}</td>
-                    <td className="px-3 py-2"><RefBadge refType={r.ref_type} /></td>
-                    <td className="px-3 py-2 text-right">{r.final_score.toFixed(3)}</td>
-                    <YoyCell value={r.rev_yoy} />
-                    <YoyCell value={r.util_yoy} />
-                    <td className="px-3 py-2 text-right font-bold">{r.allocated_cars}</td>
+                {region2Data.map((row, index) => (
+                  <tr key={`${row.region1}-${row.region2}-${index}`} className="border-t border-border/60 hover:bg-muted/25">
+                    <td className="px-3 py-3">{row.region1}</td>
+                    <td className="px-3 py-3 font-medium text-foreground">{row.region2}</td>
+                    <td className="px-3 py-3">
+                      <RefBadge refType={row.ref_type} />
+                    </td>
+                    <td className="px-3 py-3 text-right">{row.final_score.toFixed(3)}</td>
+                    <YoyCell value={row.rev_yoy} />
+                    <YoyCell value={row.util_yoy} />
+                    <td className="px-3 py-3 text-right font-semibold">{row.allocated_cars}</td>
                   </tr>
                 ))}
               </tbody>
@@ -151,6 +184,15 @@ export function ResultsTabs({ rows, totalAllocated, region1Count, region2Count, 
           </div>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function SummaryStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[1.35rem] border border-border/60 bg-background/70 px-4 py-4">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/90">{label}</p>
+      <p className="mt-2 text-xl font-semibold tracking-[-0.03em] text-foreground">{value}</p>
     </div>
   );
 }

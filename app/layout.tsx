@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SOCAR Workspace Portal",
-  description: "문서 검색, 업무 기록, 메모, To-do를 한곳에서 관리하는 개인 워크스페이스 포털",
+  title: "Workspace Portal",
+  description: "문서 검색, 업무 기록, 메모, To-do를 한 화면에서 정리하는 개인 워크스페이스 포털",
 };
 
 export default function RootLayout({

@@ -1,16 +1,24 @@
 import { RelocationForm } from "@/components/relocation/relocation-form";
 
-export const metadata = { title: "차량 재배치 | Workspace Hub" };
+export const metadata = { title: "재배치 추천 | Workspace Portal" };
 
 export default function RelocationPage() {
   return (
-    <div className="p-6 space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold">차량 재배치</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          존별 복합 스코어를 기반으로 차량 재배치 의사결정을 지원합니다.
-        </p>
-      </div>
+    <div className="space-y-6">
+      <section className="rounded-[1.75rem] border border-border/60 bg-card/90 p-6 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.18)]">
+        <div className="max-w-3xl space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Relocation
+          </p>
+          <h2 className="text-3xl font-semibold tracking-[-0.05em] text-foreground">
+            재배치 추천
+          </h2>
+          <p className="text-sm leading-6 text-muted-foreground">
+            가동률, 매출, 사전예약 흐름을 바탕으로 이동 우선순위와 추천 차량 후보를 비교합니다.
+          </p>
+        </div>
+      </section>
+
       <RelocationForm />
     </div>
   );
