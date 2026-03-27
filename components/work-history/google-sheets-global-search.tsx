@@ -29,6 +29,8 @@ export interface SpreadsheetSearchMatch {
 interface SearchPayload {
   indexedFileCount: number;
   results: SpreadsheetSearchMatch[];
+  error?: string;
+  requiresGoogleReconnect?: boolean;
 }
 
 type SearchSortOption = 'relevance' | 'recent' | 'file-name';
@@ -61,6 +63,7 @@ export function GoogleSheetsGlobalSearch({
   const [results, setResults] = useState<SpreadsheetSearchMatch[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [requiresGoogleReconnect, setRequiresGoogleReconnect] = useState(false);
   const [sortBy, setSortBy] = useState<SearchSortOption>('relevance');
   const [isRefreshing, startRefresh] = useTransition();
   const deferredQuery = useDeferredValue(query);
@@ -74,6 +77,7 @@ export function GoogleSheetsGlobalSearch({
     if (!normalized) {
       setResults([]);
       setError(null);
+      setRequiresGoogleReconnect(false);
       return;
     }
 
@@ -82,6 +86,7 @@ export function GoogleSheetsGlobalSearch({
     async function runSearch() {
       setLoading(true);
       setError(null);
+      setRequiresGoogleReconnect(false);
 
       try {
         const params = new URLSearchParams({ query: normalized });
@@ -90,8 +95,9 @@ export function GoogleSheetsGlobalSearch({
           cache: 'no-store',
         });
 
-        const payload = (await response.json()) as SearchPayload & { error?: string };
+        const payload = (await response.json()) as SearchPayload;
         if (!response.ok) {
+          setRequiresGoogleReconnect(Boolean(payload.requiresGoogleReconnect));
           throw new Error(payload.error ?? '통합 검색을 불러오지 못했습니다.');
         }
 
@@ -156,13 +162,16 @@ export function GoogleSheetsGlobalSearch({
 
     startRefresh(async () => {
       setError(null);
+      setRequiresGoogleReconnect(false);
+
       try {
         const params = new URLSearchParams({ query: deferredQuery.trim(), refresh: '1' });
         const response = await fetch(`/api/google/spreadsheets/search?${params.toString()}`, {
           cache: 'no-store',
         });
-        const payload = (await response.json()) as SearchPayload & { error?: string };
+        const payload = (await response.json()) as SearchPayload;
         if (!response.ok) {
+          setRequiresGoogleReconnect(Boolean(payload.requiresGoogleReconnect));
           throw new Error(payload.error ?? '인덱스를 새로 고치지 못했습니다.');
         }
 
@@ -181,8 +190,7 @@ export function GoogleSheetsGlobalSearch({
           <div>
             <CardTitle className="text-base">Google Sheets 통합 검색</CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">
-              내가 만든 여러 스프레드시트의 셀 내용을 한 번에 검색하고, 자주 찾는 키워드로 바로
-              진입할 수 있습니다.
+              내가 만든 여러 스프레드시트의 시트 내용까지 한 번에 검색하고, 자주 찾는 키워드로 바로 진입할 수 있습니다.
             </p>
           </div>
           <SearchCheck className="h-5 w-5 text-primary" />
@@ -250,8 +258,7 @@ export function GoogleSheetsGlobalSearch({
       <CardContent className="space-y-3">
         {!deferredQuery.trim() && (
           <div className="rounded-2xl bg-background/65 px-4 py-6 text-sm text-muted-foreground">
-            검색어를 입력하면 내가 만든 여러 Google Sheets의 셀 내용과 문맥을 한 번에
-            찾아줍니다.
+            검색어를 입력하면 내가 만든 여러 Google Sheets의 시트 내용까지 한 번에 찾아줍니다.
           </div>
         )}
 
@@ -265,12 +272,12 @@ export function GoogleSheetsGlobalSearch({
         {!loading && error && (
           <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-4 text-sm text-amber-700 dark:text-amber-300">
             <p>{error}</p>
-            {error.includes('Google 인증') && (
+            {requiresGoogleReconnect && (
               <a
                 href="/login?callbackUrl=%2Fwork-history"
                 className="mt-3 inline-flex rounded-full border border-amber-500/30 px-3 py-1.5 text-xs font-semibold transition hover:bg-amber-500/10"
               >
-                다시 로그인
+                Google 다시 로그인
               </a>
             )}
           </div>
@@ -292,7 +299,7 @@ export function GoogleSheetsGlobalSearch({
 
         {!loading && !error && deferredQuery.trim() && sortedResults.length === 0 && (
           <div className="rounded-2xl bg-background/65 px-4 py-6 text-sm text-muted-foreground">
-            검색어와 일치하는 시트 내용이 없습니다. 추천 키워드로 다시 시도해 보세요.
+            검색어와 일치하는 시트 내용이 없습니다. 추천 키워드로 다시 시도해보세요.
           </div>
         )}
 
@@ -311,8 +318,7 @@ export function GoogleSheetsGlobalSearch({
                   <div>
                     <p className="text-sm font-semibold text-foreground">{result.fileName}</p>
                     <p className="text-xs text-muted-foreground">
-                      {result.sheetName} · {result.rowNumber}행 · 최근 수정{' '}
-                      {formatDate(result.modifiedTime)}
+                      {result.sheetName} · {result.rowNumber}행 · 최근 수정 {formatDate(result.modifiedTime)}
                     </p>
                     {result.ownerName && (
                       <p className="mt-1 text-xs text-muted-foreground">소유자: {result.ownerName}</p>
@@ -371,6 +377,19 @@ function toResource(result: SpreadsheetSearchMatch): WorkspaceResource {
   };
 }
 
+function scoreResult(result: SpreadsheetSearchMatch, query: string): number {
+  const fileName = result.fileName.toLowerCase();
+  const snippet = result.snippet.toLowerCase();
+  const sheetName = result.sheetName.toLowerCase();
+
+  let score = 0;
+  if (fileName.includes(query)) score += 5;
+  if (sheetName.includes(query)) score += 3;
+  if (snippet.includes(query)) score += 2;
+  if (fileName.startsWith(query)) score += 2;
+  return score;
+}
+
 function formatDate(value?: string): string {
   if (!value) return '정보 없음';
 
@@ -386,28 +405,4 @@ function getTimeValue(value?: string): number {
 
   const time = new Date(value).getTime();
   return Number.isNaN(time) ? 0 : time;
-}
-
-function scoreResult(result: SpreadsheetSearchMatch, query: string): number {
-  if (!query) return 0;
-
-  const fileName = result.fileName.toLowerCase();
-  const sheetName = result.sheetName.toLowerCase();
-  const snippet = result.snippet.toLowerCase();
-  const tokens = query.split(/\s+/).filter(Boolean);
-
-  let score = 0;
-
-  for (const token of tokens) {
-    if (fileName.includes(token)) score += 6;
-    if (sheetName.includes(token)) score += 4;
-    if (snippet.includes(token)) score += 2;
-    if (fileName.startsWith(token)) score += 2;
-  }
-
-  if (fileName.includes(query)) score += 8;
-  if (sheetName.includes(query)) score += 5;
-  if (snippet.includes(query)) score += 3;
-
-  return score;
 }

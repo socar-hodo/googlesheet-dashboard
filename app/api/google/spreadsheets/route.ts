@@ -7,13 +7,27 @@ function escapeDriveQuery(value: string): string {
   return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
+function needsGoogleReconnect(detail: string): boolean {
+  const normalized = detail.toLowerCase();
+  return (
+    normalized.includes('insufficient authentication scopes') ||
+    normalized.includes('access_token_scope_insufficient') ||
+    normalized.includes('insufficientpermissions') ||
+    normalized.includes('invalid credentials') ||
+    normalized.includes('login required')
+  );
+}
+
 export async function GET(req: Request) {
   const session = await auth();
   const accessToken = session?.accessToken;
 
   if (!accessToken) {
     return Response.json(
-      { error: 'Google 인증 세션이 없어 개인 시트 검색을 사용할 수 없습니다.' },
+      {
+        error: 'Google 계정 연결이 없어 시트 목록을 불러올 수 없습니다. Google로 다시 로그인해 주세요.',
+        requiresGoogleReconnect: true,
+      },
       { status: 401 },
     );
   }
@@ -50,8 +64,17 @@ export async function GET(req: Request) {
 
   if (!response.ok) {
     const detail = await response.text();
+    const reconnectRequired =
+      response.status === 401 || (response.status === 403 && needsGoogleReconnect(detail));
+
     return Response.json(
-      { error: 'Google Drive에서 시트 목록을 가져오지 못했습니다.', detail },
+      {
+        error: reconnectRequired
+          ? 'Google Sheets 목록 권한이 현재 세션에 연결되지 않았습니다. Google로 다시 로그인해 권한을 다시 승인해 주세요.'
+          : 'Google Drive에서 시트 목록을 가져오지 못했습니다.',
+        detail,
+        requiresGoogleReconnect: reconnectRequired,
+      },
       { status: response.status },
     );
   }

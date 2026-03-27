@@ -43,6 +43,7 @@ export function GoogleSheetsFinder({
   const [files, setFiles] = useState<GoogleSpreadsheetFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [requiresGoogleReconnect, setRequiresGoogleReconnect] = useState(false);
   const [sortBy, setSortBy] = useState<FileSortOption>('recent');
   const deferredQuery = useDeferredValue(query);
 
@@ -56,6 +57,7 @@ export function GoogleSheetsFinder({
     async function loadFiles() {
       setLoading(true);
       setError(null);
+      setRequiresGoogleReconnect(false);
 
       try {
         const params = new URLSearchParams();
@@ -71,9 +73,11 @@ export function GoogleSheetsFinder({
         const payload = (await response.json()) as {
           error?: string;
           files?: GoogleSpreadsheetFile[];
+          requiresGoogleReconnect?: boolean;
         };
 
         if (!response.ok) {
+          setRequiresGoogleReconnect(Boolean(payload.requiresGoogleReconnect));
           throw new Error(payload.error ?? '시트 목록을 불러오지 못했습니다.');
         }
 
@@ -134,8 +138,7 @@ export function GoogleSheetsFinder({
           <div>
             <CardTitle className="text-base">내 Google Sheets 목록</CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">
-              내가 소유한 스프레드시트를 빠르게 찾고, 최근 수정순이나 이름순으로 정렬해서 볼 수
-              있습니다.
+              내가 소유한 스프레드시트를 빠르게 찾고, 최근 수정순이나 이름순으로 정렬해서 볼 수 있습니다.
             </p>
           </div>
           <FileSpreadsheet className="h-5 w-5 text-primary" />
@@ -199,12 +202,12 @@ export function GoogleSheetsFinder({
         {!loading && error && (
           <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-4 text-sm text-amber-700 dark:text-amber-300">
             <p>{error}</p>
-            {error.includes('Google 인증') && (
+            {requiresGoogleReconnect && (
               <a
                 href="/login?callbackUrl=%2Fwork-history"
                 className="mt-3 inline-flex rounded-full border border-amber-500/30 px-3 py-1.5 text-xs font-semibold transition hover:bg-amber-500/10"
               >
-                다시 로그인
+                Google 다시 로그인
               </a>
             )}
           </div>
@@ -233,8 +236,7 @@ export function GoogleSheetsFinder({
                     최근 수정: {formatDate(file.modifiedTime)}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    소유자:{' '}
-                    {file.owners?.[0]?.displayName ?? file.owners?.[0]?.emailAddress ?? '내 문서'}
+                    소유자 {file.owners?.[0]?.displayName ?? file.owners?.[0]?.emailAddress ?? 'Google Sheets 문서'}
                   </p>
                 </div>
 
@@ -282,7 +284,7 @@ function toResource(file: GoogleSpreadsheetFile): WorkspaceResource {
     title: file.name,
     href: file.webViewLink,
     subtitle: 'Google Sheets',
-    description: file.owners?.[0]?.displayName ?? file.owners?.[0]?.emailAddress ?? '내 문서',
+    description: file.owners?.[0]?.displayName ?? file.owners?.[0]?.emailAddress ?? 'Google Sheets 문서',
     source: 'sheets-list',
   };
 }
