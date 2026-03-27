@@ -43,3 +43,9 @@ dev-server.log
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# git worktrees
+.worktrees/
+
+# test temp files
+tmp-test/

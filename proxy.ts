@@ -5,8 +5,13 @@ export default auth((req) => {
   const { nextUrl } = req;
   const isLoggedIn = !!req.auth;
 
+  // 보호된 경로: /dashboard, /allocation, /work-history
   const isProtectedRoute =
-    nextUrl.pathname.startsWith("/dashboard") || nextUrl.pathname.startsWith("/work-history");
+    nextUrl.pathname.startsWith("/dashboard") ||
+    nextUrl.pathname.startsWith("/allocation") ||
+    nextUrl.pathname.startsWith("/relocation") ||
+    nextUrl.pathname.startsWith("/work-history");
+  // 인증 경로: /login 페이지
   const isAuthRoute = nextUrl.pathname.startsWith("/login");
 
   if (isProtectedRoute && !isLoggedIn) {
@@ -16,7 +21,7 @@ export default auth((req) => {
   }
 
   if (isAuthRoute && isLoggedIn) {
-    return NextResponse.redirect(new URL("/work-history", nextUrl));
+    return NextResponse.redirect(new URL("/dashboard", nextUrl));
   }
 
   return NextResponse.next();
