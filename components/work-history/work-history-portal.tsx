@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useDeferredValue, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Bookmark,
   CalendarDays,
@@ -26,10 +26,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { workCategoryLabels, workStatusLabels } from '@/lib/work-history';
+import { buildWorkspaceOwnerKey } from '@/lib/workspace-owner';
+import { workStatusLabels } from '@/lib/work-history';
 import { cn } from '@/lib/utils';
 import type { GoogleSpreadsheetFile } from '@/types/google-drive';
 import type { WorkCategory, WorkHistoryRecord, WorkStatus } from '@/types/work-history';
+import type { MemoItem, TodoItem, TodoPriority, WorkspaceState } from '@/types/workspace-state';
 import type { WorkspaceResource } from '@/types/workspace-resource';
 import { useSession } from 'next-auth/react';
 
@@ -42,28 +44,6 @@ const WORKSPACE_SETTINGS_STORAGE_KEY = 'workspace-portal-settings';
 const DEFAULT_KEYWORDS = ['지표', '대시보드', '주간', '운영', '리포트', '자동화'];
 
 type TodoFilter = 'all' | 'active' | 'completed';
-type TodoPriority = 'high' | 'medium' | 'low';
-
-interface TodoItem {
-  id: string;
-  title: string;
-  completed: boolean;
-  createdAt: string;
-  completedAt?: string;
-  dueDate?: string;
-  priority: TodoPriority;
-  project: string;
-}
-
-interface MemoItem {
-  id: string;
-  title: string;
-  content: string;
-  tags: string[];
-  pinned: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
 
 type ResourceCardId = 'recent' | 'favorites' | 'recommended';
 
@@ -102,13 +82,74 @@ interface WorkHistoryPortalProps {
   records: WorkHistoryRecord[];
 }
 
+async function fetchWorkspaceState(): Promise<WorkspaceState> {
+  const response = await fetch('/api/workspace/state', {
+    cache: 'no-store',
+  });
+
+  const payload = (await response.json()) as Partial<WorkspaceState> & { error?: string };
+  if (!response.ok) {
+    throw new Error(payload.error ?? '워크스페이스 상태를 불러오지 못했습니다.');
+  }
+
+  return {
+    recentResources: normalizeStoredResources(payload.recentResources),
+    favoriteResources: normalizeStoredResources(payload.favoriteResources),
+    todos: normalizeStoredTodos(payload.todos),
+    localRecords: normalizeStoredWorkLogs(payload.localRecords),
+    memos: normalizeStoredMemos(payload.memos),
+  };
+}
+
+async function saveWorkspaceState(state: WorkspaceState) {
+  const response = await fetch('/api/workspace/state', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(state),
+  });
+
+  const payload = (await response.json()) as Partial<WorkspaceState> & { error?: string };
+  if (!response.ok) {
+    throw new Error(payload.error ?? '워크스페이스 상태를 저장하지 못했습니다.');
+  }
+
+  return payload;
+}
+
+function serializeWorkspaceState(state: WorkspaceState): string {
+  return JSON.stringify({
+    recentResources: normalizeStoredResources(state.recentResources),
+    favoriteResources: normalizeStoredResources(state.favoriteResources),
+    todos: normalizeStoredTodos(state.todos),
+    localRecords: normalizeStoredWorkLogs(state.localRecords),
+    memos: normalizeStoredMemos(state.memos),
+  });
+}
+
 export function WorkHistoryPortal({ records }: WorkHistoryPortalProps) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const workspaceOwnerKey = useMemo(
     () => buildWorkspaceOwnerKey(session?.user?.email, session?.user?.id),
     [session?.user?.email, session?.user?.id],
   );
   const workspaceDisplayName = session?.user?.name?.trim() || session?.user?.email?.split('@')[0] || '나';
+
+  if (status === 'loading') {
+    return (
+      <Card className="border-border/60 bg-card/98 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.25)]">
+        <CardContent className="flex min-h-[220px] items-center justify-center">
+          <div className="space-y-2 text-center">
+            <p className="text-sm font-medium text-foreground">워크스페이스를 불러오는 중입니다.</p>
+            <p className="text-sm text-muted-foreground">
+              로그인 정보를 확인한 뒤 저장된 To-do와 메모를 가져오고 있습니다.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <ScopedWorkHistoryPortal
@@ -128,8 +169,8 @@ function ScopedWorkHistoryPortal({
   workspaceOwnerKey: string;
   workspaceDisplayName: string;
 }) {
+  const lastSyncedWorkspaceState = useRef<string | null>(null);
   const [query, setQuery] = useState('');
-  const [category, setCategory] = useState<'all' | WorkCategory>('all');
   const [status, setStatus] = useState<'all' | WorkStatus>('all');
   const [pinnedOnly, setPinnedOnly] = useState(false);
   const [showDetailedSearch, setShowDetailedSearch] = useState(false);
@@ -157,6 +198,8 @@ function ScopedWorkHistoryPortal({
   const [todos, setTodos] = useState<TodoItem[]>(() => readStoredTodos(todoStorageKey));
   const [localRecords, setLocalRecords] = useState<WorkHistoryRecord[]>(() => readStoredWorkLogs(workLogStorageKey));
   const [memos, setMemos] = useState<MemoItem[]>(() => readStoredMemos(memoStorageKey));
+  const [workspaceStateReady, setWorkspaceStateReady] = useState(false);
+  const [workspaceStateError, setWorkspaceStateError] = useState<string | null>(null);
   const [showWorkspaceSettings, setShowWorkspaceSettings] = useState(false);
   const [draggingResourceCard, setDraggingResourceCard] = useState<ResourceCardId | null>(null);
   const [workspaceSettings, setWorkspaceSettings] = useState<WorkspaceSettings>(() => readStoredWorkspaceSettings(workspaceSettingsStorageKey, defaultWorkspaceSettings));
@@ -167,19 +210,21 @@ function ScopedWorkHistoryPortal({
   const deferredQuery = useDeferredValue(query);
   const normalizedQuery = deferredQuery.trim().toLowerCase();
   const allRecords = useMemo(() => [...localRecords, ...records].sort((a, b) => b.date.localeCompare(a.date)), [localRecords, records]);
-  const projectOptions = useMemo(() => ['미분류', ...new Set(allRecords.map((record) => record.project).filter(Boolean))], [allRecords]);
+  const projectOptions = useMemo(
+    () => [...new Set(['미분류', ...allRecords.map((record) => record.project).filter(Boolean)])],
+    [allRecords],
+  );
 
   const filteredRecords = useMemo(() => {
     return allRecords.filter((record) => {
       const haystack = [record.title, record.summary, record.project, record.outcome, record.source, ...record.tags].join(' ').toLowerCase();
       return (
         (normalizedQuery.length === 0 || haystack.includes(normalizedQuery)) &&
-        (category === 'all' || record.category === category) &&
         (status === 'all' || record.status === status) &&
         (!pinnedOnly || record.pinned)
       );
     });
-  }, [allRecords, normalizedQuery, category, status, pinnedOnly]);
+  }, [allRecords, normalizedQuery, status, pinnedOnly]);
 
   const visibleMemos = useMemo(() => {
     const normalized = (memoQuery.trim() || deferredQuery.trim()).toLowerCase();
@@ -227,10 +272,142 @@ function ScopedWorkHistoryPortal({
   const recommendedResources = useMemo(() => dedupeResources([...favoriteResources, ...recentResources]).slice(0, 6), [favoriteResources, recentResources]);
   const keywordSuggestions = useMemo(() => buildKeywordSuggestions(allRecords, recentResources, favoriteResources, sortedTodos, memos), [allRecords, recentResources, favoriteResources, sortedTodos, memos]);
   const workspaceToneClass = workspaceToneClassMap[workspaceSettings.tone];
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadWorkspaceState() {
+      setWorkspaceStateReady(false);
+      setWorkspaceStateError(null);
+
+      try {
+        const serverState = await fetchWorkspaceState();
+        const localRecentResources = readStoredResources(recentStorageKey);
+        const localFavoriteResources = readStoredResources(favoritesStorageKey);
+        const localTodos = readStoredTodos(todoStorageKey);
+        const localRecords = readStoredWorkLogs(workLogStorageKey);
+        const localMemos = readStoredMemos(memoStorageKey);
+        const nextTodos =
+          serverState.todos.length === 0 && localTodos.length > 0 ? localTodos : serverState.todos;
+        const mergedLocalRecords =
+          serverState.localRecords.length === 0 && localRecords.length > 0
+            ? localRecords
+            : serverState.localRecords;
+        const nextLocalRecords = pruneTodoDerivedWorkLogs(mergedLocalRecords, nextTodos, workspaceOwnerKey);
+        const nextMemos =
+          serverState.memos.length === 0 && localMemos.length > 0 ? localMemos : serverState.memos;
+        const nextRecentResources = pruneRemovedWorkLogResources(
+          serverState.recentResources.length === 0 && localRecentResources.length > 0
+            ? localRecentResources
+            : serverState.recentResources,
+          nextLocalRecords,
+        );
+        const nextFavoriteResources = pruneRemovedWorkLogResources(
+          serverState.favoriteResources.length === 0 && localFavoriteResources.length > 0
+            ? localFavoriteResources
+            : serverState.favoriteResources,
+          nextLocalRecords,
+        );
+
+        if (cancelled) return;
+
+        lastSyncedWorkspaceState.current = serializeWorkspaceState(serverState);
+        setRecentResources(nextRecentResources);
+        setFavoriteResources(nextFavoriteResources);
+        setTodos(nextTodos);
+        setLocalRecords(nextLocalRecords);
+        setMemos(nextMemos);
+      } catch (error) {
+        if (cancelled) return;
+        setWorkspaceStateError(
+          error instanceof Error ? error.message : '워크스페이스 상태를 불러오지 못했습니다.',
+        );
+      } finally {
+        if (!cancelled) {
+          setWorkspaceStateReady(true);
+        }
+      }
+    }
+
+    void loadWorkspaceState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    favoritesStorageKey,
+    memoStorageKey,
+    recentStorageKey,
+    todoStorageKey,
+    workLogStorageKey,
+    workspaceOwnerKey,
+  ]);
+
+  useEffect(() => {
+    writeStoredResources(recentStorageKey, recentResources);
+  }, [recentResources, recentStorageKey]);
+
+  useEffect(() => {
+    writeStoredResources(favoritesStorageKey, favoriteResources);
+  }, [favoriteResources, favoritesStorageKey]);
+
+  useEffect(() => {
+    writeStoredTodos(todoStorageKey, todos);
+  }, [todoStorageKey, todos]);
+
+  useEffect(() => {
+    writeStoredWorkLogs(workLogStorageKey, localRecords);
+  }, [localRecords, workLogStorageKey]);
+
+  useEffect(() => {
+    writeStoredMemos(memoStorageKey, memos);
+  }, [memoStorageKey, memos]);
+
+  useEffect(() => {
+    if (!workspaceStateReady) return;
+    const serializedState = serializeWorkspaceState({
+      recentResources,
+      favoriteResources,
+      todos,
+      localRecords,
+      memos,
+    });
+    if (lastSyncedWorkspaceState.current === serializedState) return;
+
+    let cancelled = false;
+
+    async function persistWorkspaceState() {
+      try {
+        await saveWorkspaceState({
+          recentResources,
+          favoriteResources,
+          todos,
+          localRecords,
+          memos,
+        });
+        if (!cancelled) {
+          lastSyncedWorkspaceState.current = serializedState;
+          setWorkspaceStateError(null);
+        }
+      } catch (error) {
+        if (cancelled) return;
+        setWorkspaceStateError(
+          error instanceof Error ? error.message : '워크스페이스 상태를 저장하지 못했습니다.',
+        );
+      }
+    }
+
+    void persistWorkspaceState();
+
+      return () => {
+        cancelled = true;
+      };
+  }, [workspaceStateReady, recentResources, favoriteResources, todos, localRecords, memos]);
+
   function handleOpenResource(resource: WorkspaceResource) {
     setRecentResources((current) => {
       const existing = current.find((item) => item.id === resource.id);
-      const next = dedupeResources([
+      return dedupeResources([
         {
           ...resource,
           openedAt: new Date().toISOString(),
@@ -238,48 +415,42 @@ function ScopedWorkHistoryPortal({
         },
         ...current,
       ]).slice(0, 8);
-      writeStoredResources(recentStorageKey, next);
-      return next;
     });
   }
 
   function handleToggleFavorite(resource: WorkspaceResource) {
     setFavoriteResources((current) => {
       const exists = current.some((item) => item.id === resource.id);
-      const next = exists
+      return exists
         ? current.filter((item) => item.id !== resource.id)
         : [{ ...resource, openedAt: resource.openedAt ?? new Date().toISOString() }, ...current].slice(0, 8);
-      writeStoredResources(favoritesStorageKey, next);
-      return next;
     });
   }
 
   function handleRemoveRecent(resourceId: string) {
-    setRecentResources((current) => {
-      const next = current.filter((item) => item.id !== resourceId);
-      writeStoredResources(recentStorageKey, next);
-      return next;
-    });
+    setRecentResources((current) => current.filter((item) => item.id !== resourceId));
   }
 
   function handleRemoveFavorite(resourceId: string) {
-    setFavoriteResources((current) => {
-      const next = current.filter((item) => item.id !== resourceId);
-      writeStoredResources(favoritesStorageKey, next);
-      return next;
-    });
+    setFavoriteResources((current) => current.filter((item) => item.id !== resourceId));
   }
 
   function handleAddTodo() {
     const title = todoInput.trim();
     if (!title) return;
     setTodos((current) => {
-      const next = sortTodos([
-        { id: 'todo-' + Date.now(), title, completed: false, createdAt: new Date().toISOString(), dueDate: todoDueDate || undefined, priority: todoPriority, project: todoProject },
+      return sortTodos([
+        {
+          id: `todo-${workspaceOwnerKey}-${crypto.randomUUID()}`,
+          title,
+          completed: false,
+          createdAt: new Date().toISOString(),
+          dueDate: todoDueDate || undefined,
+          priority: todoPriority,
+          project: todoProject,
+        },
         ...current,
       ]);
-      writeStoredTodos(todoStorageKey, next);
-      return next;
     });
     setTodoInput('');
     setTodoDueDate(getTodayDateInputValue());
@@ -289,24 +460,24 @@ function ScopedWorkHistoryPortal({
   }
 
   function handleToggleTodo(todoId: string) {
-    setTodos((current) => {
-      const next = current.map((todo) => todo.id === todoId ? { ...todo, completed: !todo.completed, completedAt: !todo.completed ? new Date().toISOString() : undefined } : todo);
-      writeStoredTodos(todoStorageKey, next);
-      return next;
-    });
+    setTodos((current) =>
+      current.map((todo) => todo.id === todoId ? { ...todo, completed: !todo.completed, completedAt: !todo.completed ? new Date().toISOString() : undefined } : todo),
+    );
   }
 
   function handleRemoveTodo(todoId: string) {
-    setTodos((current) => {
-      const next = current.filter((todo) => todo.id !== todoId);
-      writeStoredTodos(todoStorageKey, next);
-      return next;
-    });
+    const workLogId = buildTodoWorkLogId(workspaceOwnerKey, todoId);
+    const resourceId = `history-${workLogId}`;
+
+    setTodos((current) => current.filter((todo) => todo.id !== todoId));
+    setLocalRecords((current) => current.filter((record) => record.id !== workLogId));
+    setRecentResources((current) => current.filter((resource) => resource.id !== resourceId));
+    setFavoriteResources((current) => current.filter((resource) => resource.id !== resourceId));
   }
 
   function handleCreateWorkLogFromTodo(todo: TodoItem) {
     const record: WorkHistoryRecord = {
-      id: 'local-work-' + todo.id,
+      id: buildTodoWorkLogId(workspaceOwnerKey, todo.id),
       date: getTodayDateInputValue(),
       title: todo.title,
       summary: todo.project + ' 프로젝트에서 완료한 할 일을 업무 기록으로 남겼습니다.',
@@ -320,9 +491,9 @@ function ScopedWorkHistoryPortal({
       pinned: todo.priority === 'high',
     };
     setLocalRecords((current) => {
-      const next = [record, ...current.filter((item) => item.id !== record.id)].sort((a, b) => b.date.localeCompare(a.date));
-      writeStoredWorkLogs(workLogStorageKey, next);
-      return next;
+      return [record, ...current.filter((item) => item.id !== record.id)].sort((a, b) =>
+        b.date.localeCompare(a.date),
+      );
     });
     handleOpenResource(toHistoryResource(record));
   }
@@ -333,9 +504,18 @@ function ScopedWorkHistoryPortal({
     if (!title || !content) return;
     setMemos((current) => {
       const now = new Date().toISOString();
-      const next = sortMemos([{ id: 'memo-' + Date.now(), title, content, tags: parseMemoTags(memoTags), pinned: false, createdAt: now, updatedAt: now }, ...current]);
-      writeStoredMemos(memoStorageKey, next);
-      return next;
+      return sortMemos([
+        {
+          id: `memo-${workspaceOwnerKey}-${crypto.randomUUID()}`,
+          title,
+          content,
+          tags: parseMemoTags(memoTags),
+          pinned: false,
+          createdAt: now,
+          updatedAt: now,
+        },
+        ...current,
+      ]);
     });
     setMemoTitle('');
     setMemoContent('');
@@ -343,19 +523,13 @@ function ScopedWorkHistoryPortal({
   }
 
   function handleToggleMemoPinned(memoId: string) {
-    setMemos((current) => {
-      const next = sortMemos(current.map((memo) => memo.id === memoId ? { ...memo, pinned: !memo.pinned, updatedAt: new Date().toISOString() } : memo));
-      writeStoredMemos(memoStorageKey, next);
-      return next;
-    });
+    setMemos((current) =>
+      sortMemos(current.map((memo) => memo.id === memoId ? { ...memo, pinned: !memo.pinned, updatedAt: new Date().toISOString() } : memo)),
+    );
   }
 
   function handleRemoveMemo(memoId: string) {
-    setMemos((current) => {
-      const next = current.filter((memo) => memo.id !== memoId);
-      writeStoredMemos(memoStorageKey, next);
-      return next;
-    });
+    setMemos((current) => current.filter((memo) => memo.id !== memoId));
   }
 
   function handleWorkspaceSettingChange<Key extends keyof WorkspaceSettings>(
@@ -481,53 +655,117 @@ function ScopedWorkHistoryPortal({
   const autocompleteHasResults = autocompleteItems.length > 0;
 
   return (
-    <div id="workspace-overview" className="space-y-5">
-      <section className="grid gap-4 xl:grid-cols-[1.3fr_1fr]">
-        <Card className={cn('border-border/60 bg-card/95 shadow-[0_20px_60px_-40px_rgba(20,26,36,0.28)]', workspaceToneClass.card)}>
-          <CardContent className="space-y-5 p-5 md:p-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className={cn('rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.18em]', workspaceToneClass.badge)}>Workspace Portal</p>
-                  <span className="text-xs text-muted-foreground">{workspaceDisplayName}님의 공간</span>
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight text-foreground">{workspaceSettings.title}</h2>
-                <p className="max-w-2xl text-sm text-muted-foreground">{workspaceSettings.subtitle}</p>
-              </div>
-              <div className="flex flex-col gap-3 sm:items-end">
-                <Button type="button" variant={showWorkspaceSettings ? 'default' : 'outline'} className="rounded-2xl" onClick={() => { setWorkspaceDraft(workspaceSettings); setShowWorkspaceSettings((current) => !current); }}>
-                  <Settings2 className="mr-2 h-4 w-4" />
-                  워크스페이스 편집
-                </Button>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  <SummaryCard label="기록" value={stats.total + '건'} />
-                  <SummaryCard label="진행 중" value={stats.active + '건'} />
-                  <SummaryCard label="최근 문서" value={stats.recent + '건'} />
-                  <SummaryCard label="즐겨찾기" value={stats.favorites + '건'} />
-                </div>
-              </div>
-            </div>
-
-            {showWorkspaceSettings && (
-              <div className="grid gap-4 rounded-3xl border border-border/70 bg-background/75 p-4 lg:grid-cols-[1.1fr_0.9fr]">
+    <div id="workspace-overview" className="space-y-6">
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_22rem]">
+        <Card
+          className={cn(
+            'overflow-hidden border-0 shadow-[0_36px_90px_-52px_rgba(5,10,90,0.72)]',
+            workspaceToneClass.card,
+          )}
+        >
+          <CardContent className="relative p-6 md:p-7">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(163,209,255,0.24),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(0,120,255,0.2),transparent_32%)]" />
+            <div className="relative space-y-6">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                 <div className="space-y-3">
-                  <p className="text-sm font-semibold text-foreground">헤더 커스텀</p>
-                  <input value={workspaceDraft.title} onChange={(event) => handleWorkspaceSettingChange('title', event.target.value)} placeholder="포털 제목" className="h-11 w-full rounded-2xl border border-border/70 bg-card/80 px-4 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" />
-                  <textarea value={workspaceDraft.subtitle} onChange={(event) => handleWorkspaceSettingChange('subtitle', event.target.value)} placeholder="포털 설명" className="min-h-28 w-full rounded-2xl border border-border/70 bg-card/80 px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" />
-                  <select value={workspaceDraft.tone} onChange={(event) => handleWorkspaceSettingChange('tone', event.target.value as WorkspaceTone)} className="h-11 w-full rounded-2xl border border-border/70 bg-card/80 px-4 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p
+                      className={cn(
+                        'rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em]',
+                        workspaceToneClass.badge,
+                      )}
+                    >
+                      SOCAR Workspace
+                    </p>
+                    <span className="text-xs font-medium text-white/70">
+                      {workspaceDisplayName}님의 업무 허브
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    <h2 className="max-w-3xl text-3xl font-semibold tracking-[-0.04em] text-white md:text-[2.1rem]">
+                      {workspaceSettings.title}
+                    </h2>
+                    <p className="max-w-2xl text-sm leading-6 text-white/74">
+                      {workspaceSettings.subtitle}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded-full border border-white/14 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/80">
+                      오늘 마감 {todoSummary.dueToday}건
+                    </span>
+                    <span className="rounded-full border border-white/14 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/80">
+                      주간 진행률 {weeklySummary.progress}%
+                    </span>
+                    <span className="rounded-full border border-white/14 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/80">
+                      메모 {memoSummary.total}건
+                    </span>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3 lg:min-w-[18rem]">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className={cn(
+                      'h-11 rounded-2xl border border-white/14 bg-white/8 text-white hover:bg-white/14',
+                      showWorkspaceSettings && 'bg-white text-[#0A1491] hover:bg-white/92',
+                    )}
+                    onClick={() => {
+                      setWorkspaceDraft(workspaceSettings);
+                      setShowWorkspaceSettings((current) => !current);
+                    }}
+                  >
+                    <Settings2 className="mr-2 h-4 w-4" />
+                    워크스페이스 편집
+                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-[1.4rem] border border-white/12 bg-white/8 px-4 py-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/56">
+                        기록
+                      </p>
+                      <p className="mt-2 text-2xl font-semibold text-white">{stats.total}건</p>
+                    </div>
+                    <div className="rounded-[1.4rem] border border-white/12 bg-white/8 px-4 py-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/56">
+                        진행 중
+                      </p>
+                      <p className="mt-2 text-2xl font-semibold text-white">{stats.active}건</p>
+                    </div>
+                    <div className="rounded-[1.4rem] border border-white/12 bg-white/8 px-4 py-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/56">
+                        최근 문서
+                      </p>
+                      <p className="mt-2 text-2xl font-semibold text-white">{stats.recent}건</p>
+                    </div>
+                    <div className="rounded-[1.4rem] border border-white/12 bg-white/8 px-4 py-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/56">
+                        즐겨찾기
+                      </p>
+                      <p className="mt-2 text-2xl font-semibold text-white">{stats.favorites}건</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {showWorkspaceSettings && (
+                <div className="grid gap-4 rounded-[1.75rem] border border-white/12 bg-white/8 p-4 backdrop-blur lg:grid-cols-[1.1fr_0.9fr]">
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-white">헤더 커스텀</p>
+                  <input value={workspaceDraft.title} onChange={(event) => handleWorkspaceSettingChange('title', event.target.value)} placeholder="포털 제목" className="h-11 w-full rounded-2xl border border-white/12 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/20" />
+                  <textarea value={workspaceDraft.subtitle} onChange={(event) => handleWorkspaceSettingChange('subtitle', event.target.value)} placeholder="포털 설명" className="min-h-28 w-full rounded-2xl border border-white/12 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/20" />
+                  <select value={workspaceDraft.tone} onChange={(event) => handleWorkspaceSettingChange('tone', event.target.value as WorkspaceTone)} className="h-11 w-full rounded-2xl border border-white/12 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/20">
                     <option value="sand">샌드 톤</option>
                     <option value="sky">스카이 톤</option>
                     <option value="mint">민트 톤</option>
                   </select>
                 </div>
                 <div className="space-y-3">
-                  <p className="text-sm font-semibold text-foreground">보여줄 섹션</p>
+                  <p className="text-sm font-semibold text-white">보여줄 섹션</p>
                   <WorkspaceSettingToggle label="오늘/완료 패널" checked={workspaceDraft.showTodoFocus} onChange={(checked) => handleWorkspaceSettingChange('showTodoFocus', checked)} />
                   <WorkspaceSettingToggle label="주간 진행률 요약" checked={workspaceDraft.showWeeklySummary} onChange={(checked) => handleWorkspaceSettingChange('showWeeklySummary', checked)} />
                   <WorkspaceSettingToggle label="메모 보관함" checked={workspaceDraft.showMemos} onChange={(checked) => handleWorkspaceSettingChange('showMemos', checked)} />
                   <WorkspaceSettingToggle label="최근/즐겨찾기/추천 문서" checked={workspaceDraft.showResources} onChange={(checked) => handleWorkspaceSettingChange('showResources', checked)} />
                   <div className="space-y-2 pt-1">
-                    <p className="text-sm font-semibold text-foreground">카드 순서 드래그 변경</p>
+                    <p className="text-sm font-semibold text-white">카드 순서 드래그 변경</p>
                     {workspaceDraft.resourceCardOrder.map((cardId) => (
                       <button
                         key={cardId}
@@ -540,33 +778,33 @@ function ScopedWorkHistoryPortal({
                           setDraggingResourceCard(null);
                         }}
                         onDragEnd={() => setDraggingResourceCard(null)}
-                        className={cn('flex w-full items-center justify-between rounded-2xl border border-border/70 bg-card/80 px-4 py-3 text-sm text-foreground transition', draggingResourceCard === cardId && 'border-primary/50 bg-primary/5')}
+                        className={cn('flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/8 px-4 py-3 text-sm text-white transition', draggingResourceCard === cardId && 'border-white/30 bg-white/15')}
                       >
                         <span>{resourceCardLabelMap[cardId]}</span>
-                        <span className="text-xs text-muted-foreground">드래그</span>
+                        <span className="text-xs text-white/60">드래그</span>
                       </button>
                     ))}
                   </div>
                   <div className="flex flex-wrap gap-2 pt-2">
-                    <Button type="button" className="rounded-2xl" onClick={handleSaveWorkspaceSettings}>저장</Button>
-                    <Button type="button" variant="outline" className="rounded-2xl" onClick={() => { setWorkspaceDraft(workspaceSettings); setShowWorkspaceSettings(false); }}>취소</Button>
-                    <Button type="button" variant="ghost" className="rounded-2xl" onClick={handleResetWorkspaceSettings}>기본값 복원</Button>
+                    <Button type="button" className="rounded-2xl bg-white text-[#0A1491] hover:bg-white/90" onClick={handleSaveWorkspaceSettings}>저장</Button>
+                    <Button type="button" variant="outline" className="rounded-2xl border-white/16 bg-white/8 text-white hover:bg-white/12" onClick={() => { setWorkspaceDraft(workspaceSettings); setShowWorkspaceSettings(false); }}>취소</Button>
+                    <Button type="button" variant="ghost" className="rounded-2xl text-white/80 hover:bg-white/10 hover:text-white" onClick={handleResetWorkspaceSettings}>기본값 복원</Button>
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="grid gap-3 lg:grid-cols-[1.6fr_repeat(3,minmax(0,0.7fr))]">
+              <div className="grid gap-3 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,0.9fr)_auto]">
               <div className="relative">
                 <label className="relative block">
-                  <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="업무명, 프로젝트, 태그, 결과로 검색" className="h-12 w-full rounded-2xl border border-border/70 bg-background/70 pl-11 pr-4 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" />
+                    <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="업무명, 프로젝트, 태그, 결과로 검색" className="h-13 w-full rounded-[1.4rem] border border-white/12 bg-white pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/20" />
                 </label>
                 {normalizedQuery && (
-                  <div className="absolute left-0 right-0 top-[calc(100%+0.6rem)] z-20 overflow-hidden rounded-3xl border border-border/70 bg-card/98 shadow-[0_24px_60px_-30px_rgba(20,26,36,0.32)] backdrop-blur">
-                    <div className="flex items-center justify-between gap-3 border-b border-border/60 px-4 py-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Quick Results</p>
-                      <span className="text-xs text-muted-foreground">{autocompleteHasResults ? `${autocompleteItems.length}개 미리보기` : '검색 중'}</span>
+                  <div className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-20 overflow-hidden rounded-[1.75rem] border border-white/12 bg-white/98 shadow-[0_26px_70px_-34px_rgba(20,26,36,0.48)] backdrop-blur">
+                    <div className="flex items-center justify-between gap-3 border-b border-slate-200/80 px-4 py-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Quick Results</p>
+                      <span className="text-xs text-slate-500">{autocompleteHasResults ? `${autocompleteItems.length}개 미리보기` : '검색 중'}</span>
                     </div>
                     <div className="max-h-96 overflow-y-auto p-2">
                       {autocompleteItems.map((item) => (
@@ -576,62 +814,59 @@ function ScopedWorkHistoryPortal({
                           target={item.external ? '_blank' : undefined}
                           rel={item.external ? 'noreferrer' : undefined}
                           onClick={item.onOpen}
-                          className="flex items-start justify-between gap-3 rounded-2xl px-3 py-3 transition hover:bg-background"
+                          className="flex items-start justify-between gap-3 rounded-2xl px-3 py-3 transition hover:bg-slate-50"
                         >
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="rounded-full bg-background px-2.5 py-1 text-[11px] font-medium text-muted-foreground">{item.sectionTitle}</span>
-                              <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
+                              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500">{item.sectionTitle}</span>
+                              <p className="truncate text-sm font-medium text-slate-900">{item.title}</p>
                             </div>
-                            <p className="mt-1 truncate text-xs text-muted-foreground">{item.subtitle}</p>
+                            <p className="mt-1 truncate text-xs text-slate-500">{item.subtitle}</p>
                           </div>
-                          <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                          <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
                         </a>
                       ))}
                       {!autocompleteHasResults && autocompleteLoading && (
-                        <div className="rounded-2xl px-3 py-4 text-sm text-muted-foreground">검색 결과를 불러오는 중입니다.</div>
+                        <div className="rounded-2xl px-3 py-4 text-sm text-slate-500">검색 결과를 불러오는 중입니다.</div>
                       )}
                       {!autocompleteHasResults && !autocompleteLoading && (
-                        <div className="rounded-2xl px-3 py-4 text-sm text-muted-foreground">일치하는 결과가 없습니다. 다른 키워드로 다시 검색해보세요.</div>
+                        <div className="rounded-2xl px-3 py-4 text-sm text-slate-500">일치하는 결과가 없습니다. 다른 키워드로 다시 검색해보세요.</div>
                       )}
                     </div>
                   </div>
                 )}
               </div>
-              <select value={category} onChange={(event) => setCategory(event.target.value as 'all' | WorkCategory)} className="h-12 rounded-2xl border border-border/70 bg-background/70 px-4 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10">
-                <option value="all">전체 카테고리</option>
-                {Object.entries(workCategoryLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
-              </select>
-              <select value={status} onChange={(event) => setStatus(event.target.value as 'all' | WorkStatus)} className="h-12 rounded-2xl border border-border/70 bg-background/70 px-4 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10">
+              <select value={status} onChange={(event) => setStatus(event.target.value as 'all' | WorkStatus)} className="h-13 rounded-[1.4rem] border border-white/12 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/20">
                 <option value="all">전체 상태</option>
                 {Object.entries(workStatusLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
               </select>
-              <Button type="button" variant={pinnedOnly ? 'default' : 'outline'} className="h-12 rounded-2xl" onClick={() => setPinnedOnly((current) => !current)}><Filter className="mr-2 h-4 w-4" />중요 기록만 보기</Button>
+              <Button type="button" variant="ghost" className={cn('h-13 rounded-[1.4rem] border px-4 text-sm', pinnedOnly ? 'border-white bg-white text-[#0A1491] hover:bg-white/92' : 'border-white/14 bg-white/8 text-white hover:bg-white/14')} onClick={() => setPinnedOnly((current) => !current)}><Filter className="mr-2 h-4 w-4" />중요 기록만 보기</Button>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {keywordSuggestions.map((keyword) => (
-                <button key={keyword} type="button" onClick={() => setQuery(keyword)} className="rounded-full border border-border/70 bg-background/70 px-3 py-1.5 text-sm text-foreground transition hover:border-primary/40 hover:bg-background">{keyword}</button>
-              ))}
+              <div className="flex flex-wrap gap-2">
+                {keywordSuggestions.map((keyword) => (
+                  <button key={keyword} type="button" onClick={() => setQuery(keyword)} className="rounded-full border border-white/14 bg-white/8 px-3 py-1.5 text-sm text-white/84 transition hover:bg-white/14">{keyword}</button>
+                ))}
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {workspaceSettings.showTodoFocus && (
         <div className="space-y-4">
-          <Card className="border-border/60 bg-card/95">
-            <CardHeader className="pb-3"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><ListTodo className="h-4 w-4 text-primary" /><CardTitle className="text-base">오늘/완료 현황</CardTitle></div><span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{todoSummary.progress}%</span></div></CardHeader>
+          <Card className="border-0 bg-[#141A24] shadow-[0_32px_72px_-48px_rgba(5,10,90,0.78)]">
+            <CardHeader className="pb-3"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><ListTodo className="h-4 w-4 text-[#66B0FF]" /><CardTitle className="text-base text-white">오늘/완료 현황</CardTitle></div><span className="rounded-full bg-[#0078FF]/20 px-2.5 py-1 text-xs font-semibold text-[#A3D1FF]">{todoSummary.progress}%</span></div></CardHeader>
             <CardContent className="space-y-4">
               <Progress value={todoSummary.progress} className="h-2.5" />
               <div className="grid gap-3 sm:grid-cols-2">
-                <SummaryCard label="오늘 할 일" value={todayTodos.length + '건'} />
-                <SummaryCard label="완료한 일" value={todoSummary.completed + '건'} />
+                <div className="rounded-[1.35rem] border border-white/8 bg-white/6 px-4 py-4"><p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/56">오늘 할 일</p><p className="mt-2 text-2xl font-semibold text-white">{todayTodos.length}건</p></div>
+                <div className="rounded-[1.35rem] border border-white/8 bg-white/6 px-4 py-4"><p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/56">완료한 일</p><p className="mt-2 text-2xl font-semibold text-white">{todoSummary.completed}건</p></div>
               </div>
-              <div className="rounded-2xl bg-background/65 p-4 text-sm text-muted-foreground">{weeklySummaryText}</div>
+              <div className="rounded-[1.35rem] border border-white/8 bg-white/6 p-4 text-sm leading-6 text-white/70">{weeklySummaryText}</div>
             </CardContent>
           </Card>
 
-          <Card className="border-border/60 bg-card/95">
+          <Card className="border-border/60 bg-card/98 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.28)]">
             <CardHeader className="pb-3"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-primary" /><CardTitle className="text-base">오늘 할 일</CardTitle></div><span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{todayTodos.length}건</span></div></CardHeader>
             <CardContent className="space-y-3">
               {todayTodos.length === 0 && <div className="rounded-2xl bg-background/65 px-4 py-6 text-sm text-muted-foreground">오늘 처리할 일이 없습니다.</div>}
@@ -644,7 +879,7 @@ function ScopedWorkHistoryPortal({
             </CardContent>
           </Card>
 
-          <Card className="border-border/60 bg-card/95">
+          <Card className="border-border/60 bg-card/98 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.28)]">
             <CardHeader className="pb-3"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><ClipboardCheck className="h-4 w-4 text-primary" /><CardTitle className="text-base">완료한 일</CardTitle></div><span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{completedTodos.length}건</span></div></CardHeader>
             <CardContent className="space-y-3">
               {completedTodos.length === 0 && <div className="rounded-2xl bg-background/65 px-4 py-6 text-sm text-muted-foreground">아직 완료한 일이 없습니다.</div>}
@@ -679,14 +914,23 @@ function ScopedWorkHistoryPortal({
         )}
       </section>
 
+      {workspaceStateError && (
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+          {workspaceStateError}
+          <span className="ml-2 text-amber-600/80 dark:text-amber-200/80">
+            현재 화면 변경은 브라우저 임시 상태에는 남아 있지만 서버 저장은 완료되지 않았을 수 있습니다.
+          </span>
+        </div>
+      )}
+
       {normalizedQuery && (
-        <Card className="border-border/60 bg-card/95">
+        <Card className="border-border/60 bg-card/98 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.25)]">
           <CardHeader className="pb-3"><div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div><CardTitle className="text-base">통합 미리보기</CardTitle><p className="mt-1 text-sm text-muted-foreground">&quot;{deferredQuery.trim()}&quot; 검색 결과를 바로 확인할 수 있도록 검색 영역 아래에 보여줍니다.</p></div><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{previewSections.map((section) => <SummaryCard key={section.key} label={section.title} value={section.count + '건'} />)}</div></div></CardHeader>
           <CardContent className="grid gap-4 xl:grid-cols-4">{previewSections.map((section) => <div key={section.key} className="rounded-2xl border border-border/60 bg-background/65 p-4"><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold text-foreground">{section.title}</p><span className="rounded-full bg-background px-2.5 py-1 text-xs text-muted-foreground">{section.count}건</span></div><div className="mt-3 space-y-2">{section.items.length === 0 && <div className="rounded-2xl bg-background px-3 py-4 text-sm text-muted-foreground">{section.emptyText}</div>}{section.items.map((item) => <a key={item.id} href={item.href} target={item.external ? '_blank' : undefined} rel={item.external ? 'noreferrer' : undefined} onClick={item.onOpen} className="flex items-start justify-between gap-3 rounded-2xl bg-background px-3 py-3 transition hover:bg-card"><div className="min-w-0"><p className="truncate text-sm font-medium text-foreground">{item.title}</p><p className="mt-1 text-xs text-muted-foreground">{item.subtitle}</p></div><ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" /></a>)}</div></div>)}</CardContent>
         </Card>
       )}
 
-      <Card className="border-border/60 bg-card/95">
+      <Card className="border-border/60 bg-card/98 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.25)]">
         <CardHeader className="pb-3"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><ListTodo className="h-4 w-4 text-primary" /><CardTitle className="text-base">To-do 리스트</CardTitle></div><span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{todoSummary.progress}%</span></div></CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2"><div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">완료 {todoSummary.completed} / 전체 {todoSummary.total}</span><span className="font-medium text-foreground">진행중 {todoSummary.active}건</span></div><Progress value={todoSummary.progress} className="h-2.5" /></div>
@@ -725,7 +969,7 @@ function ScopedWorkHistoryPortal({
         <SummaryCard label="주간 진행률" value={weeklySummary.progress + '%'} />
       </section>
 
-      <Card className="border-border/60 bg-card/95">
+      <Card className="border-border/60 bg-card/98 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.25)]">
         <CardHeader className="pb-3"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-primary" /><CardTitle className="text-base">주간 진행률 요약</CardTitle></div><span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">이번 주</span></div></CardHeader>
         <CardContent className="space-y-4"><Progress value={weeklySummary.progress} className="h-2.5" /><div className="grid gap-3 md:grid-cols-3"><div className="rounded-2xl bg-background/65 p-4"><p className="text-sm font-semibold text-foreground">활성 프로젝트</p><p className="mt-1 text-sm text-muted-foreground">{weeklySummary.activeProjects.length > 0 ? weeklySummary.activeProjects.join(', ') : '이번 주 진행 중인 프로젝트가 없습니다.'}</p></div><div className="rounded-2xl bg-background/65 p-4"><p className="text-sm font-semibold text-foreground">완료 흐름</p><p className="mt-1 text-sm text-muted-foreground">To-do {weeklySummary.completedTodos}건 완료, 업무 기록 {weeklySummary.completedRecords}건 생성</p></div><div className="rounded-2xl bg-background/65 p-4"><p className="text-sm font-semibold text-foreground">주의 필요</p><p className="mt-1 text-sm text-muted-foreground">오늘 기준 미완료 To-do {weeklySummary.overdueTodos}건이 남아 있습니다.</p></div></div><div className="rounded-2xl border border-primary/15 bg-primary/5 p-4"><p className="text-sm font-semibold text-foreground">자동 요약</p><p className="mt-2 text-sm leading-6 text-muted-foreground">{weeklySummaryText}</p></div></CardContent>
       </Card>
@@ -734,11 +978,11 @@ function ScopedWorkHistoryPortal({
 
       {workspaceSettings.showMemos && (
       <section id="workspace-memos" className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-        <Card className="border-border/60 bg-card/95">
+        <Card className="border-border/60 bg-card/98 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.25)]">
           <CardHeader className="pb-3"><div className="flex items-center gap-2"><Bookmark className="h-4 w-4 text-primary" /><CardTitle className="text-base">업무 메모 보관함</CardTitle></div></CardHeader>
           <CardContent className="space-y-3"><input value={memoTitle} onChange={(event) => setMemoTitle(event.target.value)} placeholder="메모 제목을 입력하세요" className="h-11 w-full rounded-2xl border border-border/70 bg-background/80 px-4 text-sm outline-none transition focus:border-primary/40" /><input value={memoTags} onChange={(event) => setMemoTags(event.target.value)} placeholder="태그를 쉼표로 구분해 입력하세요" className="h-11 w-full rounded-2xl border border-border/70 bg-background/80 px-4 text-sm outline-none transition focus:border-primary/40" /><textarea value={memoContent} onChange={(event) => setMemoContent(event.target.value)} placeholder="업무 팁, 실수 방지 포인트, 운영 메모를 남겨두세요" className="min-h-44 w-full rounded-2xl border border-border/70 bg-background/80 px-4 py-3 text-sm outline-none transition focus:border-primary/40" /><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs text-muted-foreground">자주 찾는 팁과 체크포인트를 쌓아 두면 포털 검색으로 다시 찾기 쉬워집니다.</p><Button type="button" className="h-11 rounded-2xl px-4" onClick={handleAddMemo}><Plus className="mr-2 h-4 w-4" />메모 저장</Button></div></CardContent>
         </Card>
-        <Card className="border-border/60 bg-card/95">
+        <Card className="border-border/60 bg-card/98 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.25)]">
           <CardHeader className="pb-3"><div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div className="flex items-center gap-2"><Search className="h-4 w-4 text-primary" /><CardTitle className="text-base">메모 검색</CardTitle></div><div className="grid grid-cols-3 gap-2"><SummaryCard label="전체" value={memoSummary.total + '건'} /><SummaryCard label="고정" value={memoSummary.pinned + '건'} /><SummaryCard label="검색결과" value={memoSummary.visible + '건'} /></div></div></CardHeader>
           <CardContent className="space-y-3"><input value={memoQuery} onChange={(event) => setMemoQuery(event.target.value)} placeholder="메모 제목, 내용, 태그로 검색" className="h-11 w-full rounded-2xl border border-border/70 bg-background/80 px-4 text-sm outline-none transition focus:border-primary/40" />{visibleMemos.length === 0 && <div className="rounded-2xl bg-background/65 px-4 py-6 text-sm text-muted-foreground">아직 저장된 메모가 없거나 검색 조건에 맞는 메모가 없습니다.</div>}{visibleMemos.slice(0, 8).map((memo) => <div key={memo.id} className="rounded-2xl border border-border/60 bg-background/65 p-4 transition hover:border-primary/40"><div className="flex items-start justify-between gap-3"><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold text-foreground">{memo.title}</p>{memo.pinned && <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">고정</span>}</div><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{memo.content}</p></div><Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" onClick={() => handleRemoveMemo(memo.id)} aria-label={memo.title + ' 메모 삭제'}><Trash2 className="h-4 w-4" /></Button></div><div className="mt-3 flex flex-wrap gap-2">{memo.tags.map((tag) => <span key={memo.id + '-' + tag} className="rounded-full border border-border/70 bg-background px-2.5 py-1 text-xs text-muted-foreground">#{tag}</span>)}<span className="rounded-full bg-background px-2.5 py-1 text-xs text-muted-foreground">수정 {formatDateTime(memo.updatedAt)}</span></div><div className="mt-3 flex flex-wrap gap-2"><Button type="button" variant="outline" className="rounded-2xl" onClick={() => handleOpenResource(toMemoResource(memo))}>최근 문서에 추가</Button><Button type="button" variant="outline" className="rounded-2xl" onClick={() => handleToggleMemoPinned(memo.id)}>{memo.pinned ? '고정 해제' : '고정'}</Button></div></div>)}</CardContent>
         </Card>
@@ -754,16 +998,11 @@ function ScopedWorkHistoryPortal({
       )}
 
       <section id="workspace-search" className="space-y-4">
-        <Card className="border-border/60 bg-card/95"><CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold text-foreground">상세 시트 검색</p><p className="mt-1 text-sm text-muted-foreground">통합 미리보기만으로 부족할 때만 펼쳐서 전체 결과와 정렬 옵션을 볼 수 있습니다.</p></div><Button type="button" variant={showDetailedSearch ? 'default' : 'outline'} className="rounded-2xl" onClick={() => setShowDetailedSearch((current) => !current)}>{showDetailedSearch ? '상세 검색 숨기기' : '상세 검색 열기'}</Button></CardContent></Card>
+        <Card className="border-border/60 bg-card/98 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.25)]"><CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold text-foreground">상세 시트 검색</p><p className="mt-1 text-sm text-muted-foreground">통합 미리보기만으로 부족할 때만 펼쳐서 전체 결과와 정렬 옵션을 볼 수 있습니다.</p></div><Button type="button" variant={showDetailedSearch ? 'default' : 'outline'} className="rounded-2xl" onClick={() => setShowDetailedSearch((current) => !current)}>{showDetailedSearch ? '상세 검색 숨기기' : '상세 검색 열기'}</Button></CardContent></Card>
         <div className={showDetailedSearch ? 'space-y-4' : 'hidden'}><GoogleSheetsGlobalSearch favorites={favoriteResources} suggestedKeywords={keywordSuggestions} onOpenResource={handleOpenResource} onToggleFavorite={handleToggleFavorite} externalQuery={query} onPreviewChange={setSheetSearchPreview} /><GoogleSheetsFinder favorites={favoriteResources} suggestedKeywords={keywordSuggestions} onOpenResource={handleOpenResource} onToggleFavorite={handleToggleFavorite} externalQuery={query} onPreviewChange={setSheetListPreview} /></div>
       </section>
     </div>
   );
-}
-
-function buildWorkspaceOwnerKey(email?: string | null, id?: string | null): string {
-  const raw = (email || id || 'guest').trim().toLowerCase();
-  return raw.replace(/[^a-z0-9._-]/g, '-');
 }
 
 function buildScopedStorageKey(baseKey: string, ownerKey: string): string {
@@ -837,21 +1076,54 @@ function readStoredResources(key: string): WorkspaceResource[] {
   try {
     const raw = window.localStorage.getItem(key);
     if (!raw) return [];
-    const parsed = JSON.parse(raw) as WorkspaceResource[];
-    if (!Array.isArray(parsed)) return [];
-
-    return dedupeResources(
-      parsed
-        .filter((item): item is WorkspaceResource => Boolean(item?.id && item?.title))
-        .map((item) => ({
-          ...item,
-          source: item.source ?? 'history',
-          openedCount: item.openedCount ?? 0,
-        })),
-    );
+    return normalizeStoredResources(JSON.parse(raw) as WorkspaceResource[]);
   } catch {
     return [];
   }
+}
+
+function normalizeStoredResources(input: unknown): WorkspaceResource[] {
+  if (!Array.isArray(input)) return [];
+
+  return dedupeResources(
+    input
+      .filter(
+        (item): item is Partial<WorkspaceResource> & Pick<WorkspaceResource, 'id' | 'title'> =>
+          Boolean(item?.id && item?.title),
+      )
+      .map((item) => ({
+        id: item.id,
+        title: item.title,
+        href: item.href,
+        subtitle: item.subtitle,
+        description: item.description,
+        source:
+          item.source === 'sheets-search' || item.source === 'sheets-list' || item.source === 'history'
+            ? item.source
+            : 'history',
+        openedAt: item.openedAt,
+        openedCount: typeof item.openedCount === 'number' ? item.openedCount : 0,
+      })),
+  );
+}
+
+function normalizeStoredTodos(input: unknown): TodoItem[] {
+  if (!Array.isArray(input)) return [];
+
+  return sortTodos(
+    input
+      .filter((item): item is Partial<TodoItem> & Pick<TodoItem, 'id' | 'title'> => Boolean(item?.id && item?.title))
+      .map((item) => ({
+        id: item.id,
+        title: item.title,
+        completed: Boolean(item.completed),
+        createdAt: item.createdAt ?? new Date(0).toISOString(),
+        completedAt: item.completedAt,
+        dueDate: item.dueDate,
+        priority: item.priority ?? 'medium',
+        project: item.project?.trim() || '미분류',
+      })),
+  );
 }
 
 function readStoredTodos(key: string): TodoItem[] {
@@ -860,26 +1132,28 @@ function readStoredTodos(key: string): TodoItem[] {
   try {
     const raw = window.localStorage.getItem(key);
     if (!raw) return [];
-    const parsed = JSON.parse(raw) as Partial<TodoItem>[];
-    if (!Array.isArray(parsed)) return [];
-
-    return sortTodos(
-      parsed
-        .filter((item): item is Partial<TodoItem> & Pick<TodoItem, 'id' | 'title'> => Boolean(item?.id && item?.title))
-        .map((item) => ({
-          id: item.id,
-          title: item.title,
-          completed: Boolean(item.completed),
-          createdAt: item.createdAt ?? new Date(0).toISOString(),
-          completedAt: item.completedAt,
-          dueDate: item.dueDate,
-          priority: item.priority ?? 'medium',
-          project: item.project?.trim() || '미분류',
-        })),
-    );
+    return normalizeStoredTodos(JSON.parse(raw) as Partial<TodoItem>[]);
   } catch {
     return [];
   }
+}
+
+function normalizeStoredMemos(input: unknown): MemoItem[] {
+  if (!Array.isArray(input)) return [];
+
+  return sortMemos(
+    input
+      .filter((item): item is Partial<MemoItem> & Pick<MemoItem, 'id' | 'title' | 'content'> => Boolean(item?.id && item?.title && item?.content))
+      .map((item) => ({
+        id: item.id,
+        title: item.title,
+        content: item.content,
+        tags: Array.isArray(item.tags) ? item.tags.filter(Boolean) : [],
+        pinned: Boolean(item.pinned),
+        createdAt: item.createdAt ?? new Date(0).toISOString(),
+        updatedAt: item.updatedAt ?? item.createdAt ?? new Date(0).toISOString(),
+      })),
+  );
 }
 
 function readStoredWorkLogs(key: string): WorkHistoryRecord[] {
@@ -888,29 +1162,35 @@ function readStoredWorkLogs(key: string): WorkHistoryRecord[] {
   try {
     const raw = window.localStorage.getItem(key);
     if (!raw) return [];
-    const parsed = JSON.parse(raw) as Partial<WorkHistoryRecord>[];
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed
-      .filter((item): item is Partial<WorkHistoryRecord> & Pick<WorkHistoryRecord, 'id' | 'title' | 'date'> => Boolean(item?.id && item?.title && item?.date))
-      .map((item) => ({
-        id: item.id,
-        date: item.date,
-        title: item.title,
-        summary: item.summary ?? '',
-        category: item.category ?? 'planning',
-        status: item.status ?? 'done',
-        owner: item.owner ?? '나',
-        tags: Array.isArray(item.tags) ? item.tags.filter(Boolean) : [],
-        project: item.project?.trim() || '미분류',
-        outcome: item.outcome ?? '',
-        source: item.source ?? 'Workspace Portal',
-        pinned: Boolean(item.pinned),
-      }))
-      .sort((left, right) => right.date.localeCompare(left.date));
+    return normalizeStoredWorkLogs(JSON.parse(raw) as Partial<WorkHistoryRecord>[]);
   } catch {
     return [];
   }
+}
+
+function normalizeStoredWorkLogs(input: unknown): WorkHistoryRecord[] {
+  if (!Array.isArray(input)) return [];
+
+  return input
+    .filter(
+      (item): item is Partial<WorkHistoryRecord> & Pick<WorkHistoryRecord, 'id' | 'title' | 'date'> =>
+        Boolean(item?.id && item?.title && item?.date),
+    )
+    .map((item) => ({
+      id: item.id,
+      date: item.date,
+      title: item.title,
+      summary: item.summary ?? '',
+      category: item.category ?? 'planning',
+      status: item.status ?? 'done',
+      owner: item.owner ?? '나',
+      tags: Array.isArray(item.tags) ? item.tags.filter(Boolean) : [],
+      project: item.project?.trim() || '미분류',
+      outcome: item.outcome ?? '',
+      source: item.source ?? 'Workspace Portal',
+      pinned: Boolean(item.pinned),
+    }))
+    .sort((left, right) => right.date.localeCompare(left.date));
 }
 
 function readStoredMemos(key: string): MemoItem[] {
@@ -919,22 +1199,7 @@ function readStoredMemos(key: string): MemoItem[] {
   try {
     const raw = window.localStorage.getItem(key);
     if (!raw) return [];
-    const parsed = JSON.parse(raw) as Partial<MemoItem>[];
-    if (!Array.isArray(parsed)) return [];
-
-    return sortMemos(
-      parsed
-        .filter((item): item is Partial<MemoItem> & Pick<MemoItem, 'id' | 'title' | 'content'> => Boolean(item?.id && item?.title && item?.content))
-        .map((item) => ({
-          id: item.id,
-          title: item.title,
-          content: item.content,
-          tags: Array.isArray(item.tags) ? item.tags.filter(Boolean) : [],
-          pinned: Boolean(item.pinned),
-          createdAt: item.createdAt ?? new Date(0).toISOString(),
-          updatedAt: item.updatedAt ?? item.createdAt ?? new Date(0).toISOString(),
-        })),
-    );
+    return normalizeStoredMemos(JSON.parse(raw) as Partial<MemoItem>[]);
   } catch {
     return [];
   }
@@ -982,6 +1247,37 @@ function toHistoryResource(record: WorkHistoryRecord): WorkspaceResource {
     description: record.summary,
     source: 'history',
   };
+}
+
+function buildTodoWorkLogId(workspaceOwnerKey: string, todoId: string): string {
+  return `local-work-${workspaceOwnerKey}-${todoId}`;
+}
+
+function pruneTodoDerivedWorkLogs(
+  records: WorkHistoryRecord[],
+  todos: TodoItem[],
+  workspaceOwnerKey: string,
+): WorkHistoryRecord[] {
+  const todoDerivedRecordIds = new Set(
+    todos.map((todo) => buildTodoWorkLogId(workspaceOwnerKey, todo.id)),
+  );
+
+  return records.filter((record) => {
+    if (record.source !== 'Workspace Todo') return true;
+    return todoDerivedRecordIds.has(record.id);
+  });
+}
+
+function pruneRemovedWorkLogResources(
+  resources: WorkspaceResource[],
+  records: WorkHistoryRecord[],
+): WorkspaceResource[] {
+  const activeRecordIds = new Set(records.map((record) => `history-${record.id}`));
+
+  return resources.filter((resource) => {
+    if (!resource.id.startsWith('history-local-work-')) return true;
+    return activeRecordIds.has(resource.id);
+  });
 }
 
 function toMemoResource(memo: MemoItem): WorkspaceResource {
@@ -1229,9 +1525,11 @@ function getTimeValue(value?: string): number {
 
 function SummaryCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-border/60 bg-background/65 px-3 py-3">
-      <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
-      <p className="mt-2 text-lg font-semibold text-foreground">{value}</p>
+    <div className="rounded-[1.35rem] border border-border/60 bg-white/78 px-4 py-4 shadow-[0_18px_40px_-34px_rgba(20,26,36,0.35)] backdrop-blur">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-2 text-xl font-semibold tracking-[-0.03em] text-foreground">{value}</p>
     </div>
   );
 }
@@ -1241,16 +1539,16 @@ const workspaceToneClassMap: Record<
   { card: string; badge: string }
 > = {
   sand: {
-    card: 'bg-gradient-to-br from-amber-50/70 via-card to-orange-50/40 dark:from-card dark:via-card dark:to-card',
-    badge: 'bg-amber-500/10 text-amber-700 dark:text-amber-300',
+    card: 'bg-[linear-gradient(140deg,#141A24_0%,#1E315B_58%,#0078FF_100%)]',
+    badge: 'border-white/16 bg-white/8 text-white/92',
   },
   sky: {
-    card: 'bg-gradient-to-br from-sky-50/80 via-card to-blue-50/40 dark:from-card dark:via-card dark:to-card',
-    badge: 'bg-sky-500/10 text-sky-700 dark:text-sky-300',
+    card: 'bg-[linear-gradient(140deg,#141A24_0%,#0A1491_42%,#0078FF_100%)]',
+    badge: 'border-white/16 bg-white/8 text-white/92',
   },
   mint: {
-    card: 'bg-gradient-to-br from-emerald-50/80 via-card to-teal-50/40 dark:from-card dark:via-card dark:to-card',
-    badge: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+    card: 'bg-[linear-gradient(140deg,#141A24_0%,#243A5E_52%,#2C7ED6_100%)]',
+    badge: 'border-white/16 bg-white/8 text-white/92',
   },
 };
 
@@ -1264,13 +1562,13 @@ function WorkspaceSettingToggle({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card/80 px-4 py-3">
-      <span className="text-sm text-foreground">{label}</span>
+    <label className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/8 px-4 py-3">
+      <span className="text-sm text-white">{label}</span>
       <input
         type="checkbox"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
-        className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+        className="h-4 w-4 rounded border-white/20 bg-white text-primary focus:ring-primary"
       />
     </label>
   );
@@ -1316,7 +1614,7 @@ function ResourcePanel({
   removeLabel?: string;
 }) {
   return (
-    <Card className="border-border/60 bg-card/95">
+    <Card className="border-border/60 bg-card/98 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.25)]">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
           <Icon className="h-4 w-4 text-primary" />
