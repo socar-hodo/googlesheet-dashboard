@@ -1,21 +1,11 @@
 import { auth } from '@/auth';
+import { buildGoogleApiMessage, classifyGoogleApiError } from '@/lib/google-api-error';
 import {
   isGoogleApiError,
   searchAcrossOwnedSpreadsheets,
 } from '@/lib/google-spreadsheets-index';
 
 export const dynamic = 'force-dynamic';
-
-function needsGoogleReconnect(detail: string): boolean {
-  const normalized = detail.toLowerCase();
-  return (
-    normalized.includes('insufficient authentication scopes') ||
-    normalized.includes('access_token_scope_insufficient') ||
-    normalized.includes('insufficientpermissions') ||
-    normalized.includes('invalid credentials') ||
-    normalized.includes('login required')
-  );
-}
 
 export async function GET(req: Request) {
   const session = await auth();
@@ -47,16 +37,14 @@ export async function GET(req: Request) {
     return Response.json(result);
   } catch (error) {
     if (isGoogleApiError(error)) {
-      const reconnectRequired =
-        error.status === 401 || (error.status === 403 && needsGoogleReconnect(error.detail));
+      const issue = classifyGoogleApiError(error.detail);
+      const reconnectRequired = error.status === 401 || issue === 'reconnect';
+
+      console.error('[google-spreadsheets:search]', error.status, issue, error.detail);
 
       return Response.json(
         {
-          error: reconnectRequired
-            ? 'Google Sheets 통합 검색 권한이 현재 세션에 연결되지 않았습니다. Google로 다시 로그인해 권한을 다시 승인해 주세요.'
-            : error.status === 403
-              ? 'Google Sheets 또는 Drive 권한이 부족해 통합 검색을 불러오지 못했습니다.'
-              : 'Google Sheets 통합 검색을 불러오지 못했습니다.',
+          error: buildGoogleApiMessage(issue, 'search'),
           detail: error.detail,
           requiresGoogleReconnect: reconnectRequired,
         },

@@ -1,21 +1,11 @@
 import { auth } from '@/auth';
+import { buildGoogleApiMessage, classifyGoogleApiError } from '@/lib/google-api-error';
 import type { GoogleSpreadsheetFile } from '@/types/google-drive';
 
 export const dynamic = 'force-dynamic';
 
 function escapeDriveQuery(value: string): string {
   return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-}
-
-function needsGoogleReconnect(detail: string): boolean {
-  const normalized = detail.toLowerCase();
-  return (
-    normalized.includes('insufficient authentication scopes') ||
-    normalized.includes('access_token_scope_insufficient') ||
-    normalized.includes('insufficientpermissions') ||
-    normalized.includes('invalid credentials') ||
-    normalized.includes('login required')
-  );
 }
 
 export async function GET(req: Request) {
@@ -64,14 +54,14 @@ export async function GET(req: Request) {
 
   if (!response.ok) {
     const detail = await response.text();
-    const reconnectRequired =
-      response.status === 401 || (response.status === 403 && needsGoogleReconnect(detail));
+    const issue = classifyGoogleApiError(detail);
+    const reconnectRequired = response.status === 401 || issue === 'reconnect';
+
+    console.error('[google-spreadsheets:list]', response.status, issue, detail);
 
     return Response.json(
       {
-        error: reconnectRequired
-          ? 'Google Sheets 목록 권한이 현재 세션에 연결되지 않았습니다. Google로 다시 로그인해 권한을 다시 승인해 주세요.'
-          : 'Google Drive에서 시트 목록을 가져오지 못했습니다.',
+        error: buildGoogleApiMessage(issue, 'list'),
         detail,
         requiresGoogleReconnect: reconnectRequired,
       },
