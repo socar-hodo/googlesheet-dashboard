@@ -1,9 +1,11 @@
 ﻿'use client';
 
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Bookmark,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   CheckCircle2,
   ClipboardCheck,
   Circle,
@@ -43,8 +45,6 @@ const MEMO_STORAGE_KEY = 'workspace-portal-memos';
 const WORKSPACE_SETTINGS_STORAGE_KEY = 'workspace-portal-settings';
 const DEFAULT_KEYWORDS = ['지표', '대시보드', '주간', '운영', '리포트', '자동화'];
 
-type TodoFilter = 'all' | 'active' | 'completed';
-
 type ResourceCardId = 'recent' | 'favorites' | 'recommended';
 
 type WorkspaceTone = 'sand' | 'sky' | 'mint';
@@ -54,17 +54,10 @@ interface WorkspaceSettings {
   subtitle: string;
   tone: WorkspaceTone;
   showTodoFocus: boolean;
-  showWeeklySummary: boolean;
   showMemos: boolean;
   showResources: boolean;
   resourceCardOrder: ResourceCardId[];
 }
-
-const todoFilters: Array<{ value: TodoFilter; label: string }> = [
-  { value: 'all', label: '전체' },
-  { value: 'active', label: '진행중' },
-  { value: 'completed', label: '완료' },
-];
 
 const todoPriorities: Array<{ value: TodoPriority; label: string }> = [
   { value: 'high', label: '높음' },
@@ -174,12 +167,17 @@ function ScopedWorkHistoryPortal({
   const [status, setStatus] = useState<'all' | WorkStatus>('all');
   const [pinnedOnly, setPinnedOnly] = useState(false);
   const [showDetailedSearch, setShowDetailedSearch] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(getTodayDateInputValue());
+  const [calendarMonth, setCalendarMonth] = useState(getMonthStartKey(getTodayDateInputValue()));
 
-  const [todoInput, setTodoInput] = useState('');
-  const [todoFilter, setTodoFilter] = useState<TodoFilter>('all');
-  const [todoPriority, setTodoPriority] = useState<TodoPriority>('medium');
-  const [todoDueDate, setTodoDueDate] = useState(getTodayDateInputValue());
-  const [todoProject, setTodoProject] = useState('미분류');
+  const [selectedDateTodoInput, setSelectedDateTodoInput] = useState('');
+  const [selectedDateTodoPriority, setSelectedDateTodoPriority] = useState<TodoPriority>('medium');
+  const [selectedDateTodoProject, setSelectedDateTodoProject] = useState('미분류');
+  const [editingTodoId, setEditingTodoId] = useState<string | null>(null);
+  const [editingTodoTitle, setEditingTodoTitle] = useState('');
+  const [editingTodoPriority, setEditingTodoPriority] = useState<TodoPriority>('medium');
+  const [editingTodoProject, setEditingTodoProject] = useState('미분류');
+  const [editingTodoDueDate, setEditingTodoDueDate] = useState(getTodayDateInputValue());
 
   const [memoTitle, setMemoTitle] = useState('');
   const [memoContent, setMemoContent] = useState('');
@@ -237,14 +235,16 @@ function ScopedWorkHistoryPortal({
   }, [memos, memoQuery, deferredQuery]);
 
   const sortedTodos = useMemo(() => sortTodos(todos), [todos]);
-  const visibleTodos = useMemo(() => {
-    if (todoFilter === 'active') return sortedTodos.filter((todo) => !todo.completed);
-    if (todoFilter === 'completed') return sortedTodos.filter((todo) => todo.completed);
-    return sortedTodos;
-  }, [sortedTodos, todoFilter]);
-
   const todayTodos = useMemo(() => sortedTodos.filter((todo) => !todo.completed && isTodayTask(todo)), [sortedTodos]);
   const completedTodos = useMemo(() => sortedTodos.filter((todo) => todo.completed).slice(0, 8), [sortedTodos]);
+  const selectedDateTodos = useMemo(
+    () => sortTodos(sortedTodos.filter((todo) => todo.dueDate === selectedDate)),
+    [selectedDate, sortedTodos],
+  );
+  const calendarDays = useMemo(
+    () => buildCalendarDays(calendarMonth, sortedTodos),
+    [calendarMonth, sortedTodos],
+  );
 
   const stats = useMemo(() => ({
     total: filteredRecords.length,
@@ -266,8 +266,6 @@ function ScopedWorkHistoryPortal({
     };
   }, [sortedTodos]);
 
-  const weeklySummary = useMemo(() => buildWeeklySummary(sortedTodos, allRecords), [sortedTodos, allRecords]);
-  const weeklySummaryText = useMemo(() => buildWeeklySummaryText(weeklySummary), [weeklySummary]);
   const memoSummary = useMemo(() => ({ total: memos.length, pinned: memos.filter((memo) => memo.pinned).length, visible: visibleMemos.length }), [memos, visibleMemos]);
   const recommendedResources = useMemo(() => dedupeResources([...favoriteResources, ...recentResources]).slice(0, 6), [favoriteResources, recentResources]);
   const keywordSuggestions = useMemo(() => buildKeywordSuggestions(allRecords, recentResources, favoriteResources, sortedTodos, memos), [allRecords, recentResources, favoriteResources, sortedTodos, memos]);
@@ -435,9 +433,33 @@ function ScopedWorkHistoryPortal({
     setFavoriteResources((current) => current.filter((item) => item.id !== resourceId));
   }
 
-  function handleAddTodo() {
-    const title = todoInput.trim();
+  function handleAddSelectedDateTodo() {
+    const title = selectedDateTodoInput.trim();
     if (!title) return;
+    const project = selectedDateTodoProject.trim() || '미분류';
+
+    appendTodo({
+      title,
+      dueDate: selectedDate,
+      priority: selectedDateTodoPriority,
+      project,
+    });
+    setSelectedDateTodoInput('');
+    setSelectedDateTodoProject('미분류');
+    setSelectedDateTodoPriority('medium');
+  }
+
+  function appendTodo({
+    title,
+    dueDate,
+    priority,
+    project,
+  }: {
+    title: string;
+    dueDate?: string;
+    priority: TodoPriority;
+    project: string;
+  }) {
     setTodos((current) => {
       return sortTodos([
         {
@@ -445,18 +467,13 @@ function ScopedWorkHistoryPortal({
           title,
           completed: false,
           createdAt: new Date().toISOString(),
-          dueDate: todoDueDate || undefined,
-          priority: todoPriority,
-          project: todoProject,
+          dueDate,
+          priority,
+          project,
         },
         ...current,
       ]);
     });
-    setTodoInput('');
-    setTodoDueDate(getTodayDateInputValue());
-    setTodoPriority('medium');
-    setTodoProject('미분류');
-    setTodoFilter('all');
   }
 
   function handleToggleTodo(todoId: string) {
@@ -466,7 +483,10 @@ function ScopedWorkHistoryPortal({
   }
 
   function handleRestoreTodoToToday(todoId: string) {
-    const today = getTodayDateInputValue();
+    handleRestoreTodoToDate(todoId, getTodayDateInputValue());
+  }
+
+  function handleRestoreTodoToDate(todoId: string, dateKey: string) {
     setTodos((current) =>
       current.map((todo) =>
         todo.id === todoId
@@ -474,11 +494,51 @@ function ScopedWorkHistoryPortal({
               ...todo,
               completed: false,
               completedAt: undefined,
-              dueDate: today,
+              dueDate: dateKey,
             }
           : todo,
       ),
     );
+  }
+
+  function handleStartEditingTodo(todo: TodoItem) {
+    setEditingTodoId(todo.id);
+    setEditingTodoTitle(todo.title);
+    setEditingTodoPriority(todo.priority);
+    setEditingTodoProject(todo.project);
+    setEditingTodoDueDate(todo.dueDate ?? selectedDate);
+  }
+
+  function handleCancelEditingTodo() {
+    setEditingTodoId(null);
+    setEditingTodoTitle('');
+    setEditingTodoPriority('medium');
+    setEditingTodoProject('미분류');
+    setEditingTodoDueDate(getTodayDateInputValue());
+  }
+
+  function handleSaveEditedTodo() {
+    const title = editingTodoTitle.trim();
+    const project = editingTodoProject.trim() || '미분류';
+    const dueDate = editingTodoDueDate || selectedDate;
+    if (!editingTodoId || !title) return;
+
+    setTodos((current) =>
+      sortTodos(
+        current.map((todo) =>
+          todo.id === editingTodoId
+            ? {
+                ...todo,
+                title,
+                priority: editingTodoPriority,
+                project,
+                dueDate,
+              }
+            : todo,
+        ),
+      ),
+    );
+    handleCancelEditingTodo();
   }
 
   function handleRemoveTodo(todoId: string) {
@@ -489,6 +549,9 @@ function ScopedWorkHistoryPortal({
     setLocalRecords((current) => current.filter((record) => record.id !== workLogId));
     setRecentResources((current) => current.filter((resource) => resource.id !== resourceId));
     setFavoriteResources((current) => current.filter((resource) => resource.id !== resourceId));
+    if (editingTodoId === todoId) {
+      handleCancelEditingTodo();
+    }
   }
 
   function handleCreateWorkLogFromTodo(todo: TodoItem) {
@@ -733,8 +796,8 @@ function ScopedWorkHistoryPortal({
                       <p className="mt-1 text-lg font-semibold text-foreground">{todoSummary.dueToday}건</p>
                     </div>
                     <div className="rounded-2xl border border-border/60 bg-background/70 px-4 py-3">
-                      <p className="text-xs font-medium text-muted-foreground">주간 진행률</p>
-                      <p className="mt-1 text-lg font-semibold text-foreground">{weeklySummary.progress}%</p>
+                      <p className="text-xs font-medium text-muted-foreground">To-do 진행률</p>
+                      <p className="mt-1 text-lg font-semibold text-foreground">{todoSummary.progress}%</p>
                     </div>
                     <div className="rounded-2xl border border-border/60 bg-background/70 px-4 py-3">
                       <p className="text-xs font-medium text-muted-foreground">메모</p>
@@ -759,7 +822,6 @@ function ScopedWorkHistoryPortal({
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-foreground">보여줄 섹션</p>
                   <WorkspaceSettingToggle label="오늘/완료 패널" checked={workspaceDraft.showTodoFocus} onChange={(checked) => handleWorkspaceSettingChange('showTodoFocus', checked)} />
-                  <WorkspaceSettingToggle label="주간 진행률 요약" checked={workspaceDraft.showWeeklySummary} onChange={(checked) => handleWorkspaceSettingChange('showWeeklySummary', checked)} />
                   <WorkspaceSettingToggle label="메모 보관함" checked={workspaceDraft.showMemos} onChange={(checked) => handleWorkspaceSettingChange('showMemos', checked)} />
                   <WorkspaceSettingToggle label="최근/즐겨찾기/추천 문서" checked={workspaceDraft.showResources} onChange={(checked) => handleWorkspaceSettingChange('showResources', checked)} />
                   <div className="space-y-2 pt-1">
@@ -846,6 +908,295 @@ function ScopedWorkHistoryPortal({
                   <button key={keyword} type="button" onClick={() => setQuery(keyword)} className="rounded-full border border-border/70 bg-background px-3 py-1.5 text-sm text-foreground transition hover:border-foreground/30 hover:bg-background/80">{keyword}</button>
                 ))}
               </div>
+
+              <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+                <div className="rounded-[1.5rem] border border-border/60 bg-background/75 p-4 shadow-[0_18px_40px_-34px_rgba(20,26,36,0.14)]">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">월간 일정</p>
+                      <p className="mt-1 text-sm text-muted-foreground">날짜를 선택하면 그날 마감인 To-do를 바로 볼 수 있습니다.</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 rounded-full"
+                        onClick={() => setCalendarMonth(shiftMonthKey(calendarMonth, -1))}
+                        aria-label="이전 달"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <div className="min-w-[7rem] text-center text-sm font-semibold text-foreground">
+                        {formatMonthLabel(calendarMonth)}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 rounded-full"
+                        onClick={() => setCalendarMonth(shiftMonthKey(calendarMonth, 1))}
+                        aria-label="다음 달"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-[auto_repeat(7,minmax(0,1fr))] gap-2">
+                    <div className="px-2 py-1 text-center text-xs font-semibold text-muted-foreground">
+                      주차
+                    </div>
+                    {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
+                      <div
+                        key={day}
+                        className={cn(
+                          'px-2 py-1 text-center text-xs font-semibold',
+                          day === '일' && 'text-rose-500 dark:text-rose-300',
+                          day === '토' && 'text-sky-500 dark:text-sky-300',
+                          day !== '일' && day !== '토' && 'text-muted-foreground',
+                        )}
+                      >
+                        {day}
+                      </div>
+                    ))}
+                    {calendarDays.map((week) => (
+                      <Fragment key={week.weekKey}>
+                        <div className="flex items-start justify-center px-2 py-3">
+                          <span className="rounded-full bg-background px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+                            {week.isoWeek}
+                          </span>
+                        </div>
+                        {week.days.map((day) => (
+                          <button
+                            key={day.dateKey}
+                            type="button"
+                            onClick={() => {
+                              setSelectedDate(day.dateKey);
+                              if (!day.inMonth) {
+                                setCalendarMonth(getMonthStartKey(day.dateKey));
+                              }
+                            }}
+                            className={cn(
+                              'min-h-[5.75rem] rounded-2xl border px-2 py-2 text-left transition',
+                              day.inMonth
+                                ? 'border-border/60 bg-background/80 hover:border-foreground/20'
+                                : 'border-border/30 bg-background/35 text-muted-foreground/55',
+                              day.dateKey === selectedDate && 'border-primary bg-primary/8 ring-2 ring-primary/20',
+                              day.isToday && 'shadow-[inset_0_0_0_1px_rgba(0,120,255,0.25)]',
+                            )}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span
+                                className={cn(
+                                  'text-sm font-medium',
+                                  day.isHoliday && 'text-rose-500 dark:text-rose-300',
+                                  !day.isHoliday && day.dayOfWeek === 0 && 'text-rose-500 dark:text-rose-300',
+                                  !day.isHoliday && day.dayOfWeek === 6 && 'text-sky-500 dark:text-sky-300',
+                                  !day.isHoliday && day.dayOfWeek !== 0 && day.dayOfWeek !== 6 && (day.isToday ? 'text-primary' : 'text-foreground'),
+                                )}
+                              >
+                                {day.dayNumber}
+                              </span>
+                              {day.total > 0 && (
+                                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                                  {day.total}
+                                </span>
+                              )}
+                            </div>
+                            <div className="mt-2 space-y-1">
+                              {day.holidayLabel && (
+                                <div className="truncate text-[11px] font-medium text-rose-500 dark:text-rose-300">
+                                  {day.holidayLabel}
+                                </div>
+                              )}
+                              {day.total === 0 ? (
+                                <div className="text-[11px] text-muted-foreground/70">일정 없음</div>
+                              ) : (
+                                <>
+                                  <div className="text-[11px] text-muted-foreground">진행중 {day.active}건</div>
+                                  {day.completed > 0 && (
+                                    <div className="text-[11px] text-muted-foreground">완료 {day.completed}건</div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </Fragment>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-[1.5rem] border border-border/60 bg-background/75 p-4 shadow-[0_18px_40px_-34px_rgba(20,26,36,0.14)]">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">선택한 날짜 To-do</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{formatSelectedDateLabel(selectedDate)}</p>
+                    </div>
+                    <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                      {selectedDateTodos.length}건
+                    </span>
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    <div className="rounded-2xl border border-border/60 bg-background/80 p-4">
+                      <div className="grid gap-3">
+                        <input
+                          value={selectedDateTodoInput}
+                          onChange={(event) => setSelectedDateTodoInput(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                              event.preventDefault();
+                              handleAddSelectedDateTodo();
+                            }
+                          }}
+                          placeholder={`${formatSelectedDateLabel(selectedDate)}에 할 일을 추가하세요`}
+                          className="h-11 rounded-2xl border border-border/70 bg-background px-4 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                        />
+                        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_9rem_auto]">
+                          <input
+                            value={selectedDateTodoProject}
+                            onChange={(event) => setSelectedDateTodoProject(event.target.value)}
+                            list="todo-project-suggestions"
+                            placeholder="분류를 입력하세요"
+                            className="h-11 rounded-2xl border border-border/70 bg-background px-4 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                          />
+                          <select
+                            value={selectedDateTodoPriority}
+                            onChange={(event) => setSelectedDateTodoPriority(event.target.value as TodoPriority)}
+                            className="h-11 rounded-2xl border border-border/70 bg-background px-4 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                          >
+                            {todoPriorities.map((option) => (
+                              <option key={`selected-date-priority-${option.value}`} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                          <Button type="button" className="h-11 rounded-2xl px-4" onClick={handleAddSelectedDateTodo}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            추가
+                          </Button>
+                        </div>
+                        <datalist id="todo-project-suggestions">
+                          {projectOptions.map((project) => (
+                            <option key={`project-suggestion-${project}`} value={project} />
+                          ))}
+                        </datalist>
+                      </div>
+                    </div>
+
+                    {selectedDateTodos.length === 0 && (
+                      <div className="rounded-2xl bg-background/70 px-4 py-8 text-sm text-muted-foreground">
+                        선택한 날짜에 연결된 To-do가 없습니다.
+                      </div>
+                    )}
+                    {selectedDateTodos.map((todo) => {
+                      const isEditing = editingTodoId === todo.id;
+
+                      return (
+                        <div key={todo.id} className="rounded-2xl border border-border/60 bg-background/80 px-4 py-3">
+                          <div className="flex items-start gap-3">
+                            <button
+                              type="button"
+                              onClick={() => (todo.completed ? handleRestoreTodoToDate(todo.id, selectedDate) : handleToggleTodo(todo.id))}
+                              className="mt-0.5 shrink-0 text-primary transition hover:opacity-80"
+                              aria-label={todo.completed ? `${todo.title} 다시 진행` : `${todo.title} 완료 처리`}
+                            >
+                              {todo.completed ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}
+                            </button>
+                            <div className="min-w-0 flex-1">
+                              {isEditing ? (
+                                <div className="space-y-3">
+                                  <input
+                                    value={editingTodoTitle}
+                                    onChange={(event) => setEditingTodoTitle(event.target.value)}
+                                    onKeyDown={(event) => {
+                                      if (event.key === 'Enter') {
+                                        event.preventDefault();
+                                        handleSaveEditedTodo();
+                                      }
+                                      if (event.key === 'Escape') {
+                                        event.preventDefault();
+                                        handleCancelEditingTodo();
+                                      }
+                                    }}
+                                    className="h-10 w-full rounded-2xl border border-border/70 bg-background px-4 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                                  />
+                                  <div className="grid gap-3 sm:grid-cols-3">
+                                    <input
+                                      value={editingTodoProject}
+                                      onChange={(event) => setEditingTodoProject(event.target.value)}
+                                      list="todo-project-suggestions"
+                                      placeholder="분류를 입력하세요"
+                                      className="h-10 rounded-2xl border border-border/70 bg-background px-4 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                                    />
+                                    <input
+                                      type="date"
+                                      value={editingTodoDueDate}
+                                      onChange={(event) => setEditingTodoDueDate(event.target.value)}
+                                      className="h-10 rounded-2xl border border-border/70 bg-background px-4 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                                    />
+                                    <select
+                                      value={editingTodoPriority}
+                                      onChange={(event) => setEditingTodoPriority(event.target.value as TodoPriority)}
+                                      className="h-10 rounded-2xl border border-border/70 bg-background px-4 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                                    >
+                                      {todoPriorities.map((option) => (
+                                        <option key={`editing-priority-${todo.id}-${option.value}`} value={option.value}>
+                                          {option.label}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div className="flex flex-wrap gap-2">
+                                    <Button type="button" className="h-9 rounded-2xl px-3" onClick={handleSaveEditedTodo}>
+                                      저장
+                                    </Button>
+                                    <Button type="button" variant="outline" className="h-9 rounded-2xl px-3" onClick={handleCancelEditingTodo}>
+                                      취소
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  <p className={cn('text-sm font-medium text-foreground', todo.completed && 'text-muted-foreground line-through')}>
+                                    {todo.title}
+                                  </p>
+                                  <div className="mt-2 flex flex-wrap gap-2">
+                                    <PriorityBadge priority={todo.priority} />
+                                    <span className="rounded-full bg-background px-2.5 py-1 text-xs text-muted-foreground">
+                                      {todo.project}
+                                    </span>
+                                    {todo.completed && (
+                                      <span className="rounded-full bg-background px-2.5 py-1 text-xs text-muted-foreground">
+                                        완료 {formatDateTime(todo.completedAt ?? todo.createdAt)}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="mt-3 flex flex-wrap gap-2">
+                                    <Button type="button" variant="outline" className="h-9 rounded-2xl px-3" onClick={() => handleStartEditingTodo(todo)}>
+                                      수정
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      className="h-9 rounded-2xl px-3 text-muted-foreground hover:text-foreground"
+                                      onClick={() => handleRemoveTodo(todo.id)}
+                                    >
+                                      삭제
+                                    </Button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -860,7 +1211,9 @@ function ScopedWorkHistoryPortal({
                 <div className="rounded-[1.35rem] border border-border/60 bg-background/65 px-4 py-4"><p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">오늘 할 일</p><p className="mt-2 text-2xl font-semibold text-foreground">{todayTodos.length}건</p></div>
                 <div className="rounded-[1.35rem] border border-border/60 bg-background/65 px-4 py-4"><p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">완료한 일</p><p className="mt-2 text-2xl font-semibold text-foreground">{todoSummary.completed}건</p></div>
               </div>
-              <div className="rounded-[1.35rem] border border-border/60 bg-background/65 p-4 text-sm leading-6 text-muted-foreground">{weeklySummaryText}</div>
+              <div className="rounded-[1.35rem] border border-border/60 bg-background/65 p-4 text-sm leading-6 text-muted-foreground">
+                전체 To-do {todoSummary.total}건 중 {todoSummary.completed}건을 완료했고, 현재 {todoSummary.active}건이 진행 중입니다.
+              </div>
             </CardContent>
           </Card>
 
@@ -938,52 +1291,6 @@ function ScopedWorkHistoryPortal({
         </Card>
       )}
 
-      <Card className="border-border/60 bg-card/98 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.25)]">
-        <CardHeader className="pb-3"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><ListTodo className="h-4 w-4 text-primary" /><CardTitle className="text-base">To-do 리스트</CardTitle></div><span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{todoSummary.progress}%</span></div></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2"><div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">완료 {todoSummary.completed} / 전체 {todoSummary.total}</span><span className="font-medium text-foreground">진행중 {todoSummary.active}건</span></div><Progress value={todoSummary.progress} className="h-2.5" /></div>
-          <div className="grid gap-3 xl:grid-cols-[1.2fr_0.8fr_0.7fr_0.7fr_auto]">
-            <input value={todoInput} onChange={(event) => setTodoInput(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); handleAddTodo(); } }} placeholder="할 일을 입력하세요" className="h-11 rounded-2xl border border-border/70 bg-background/70 px-4 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" />
-            <select value={todoProject} onChange={(event) => setTodoProject(event.target.value)} className="h-11 rounded-2xl border border-border/70 bg-background/70 px-4 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10">{projectOptions.map((project) => <option key={project} value={project}>{project}</option>)}</select>
-            <input type="date" value={todoDueDate} onChange={(event) => setTodoDueDate(event.target.value)} className="h-11 rounded-2xl border border-border/70 bg-background/70 px-4 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" />
-            <select value={todoPriority} onChange={(event) => setTodoPriority(event.target.value as TodoPriority)} className="h-11 rounded-2xl border border-border/70 bg-background/70 px-4 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10">{todoPriorities.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
-            <Button type="button" className="h-11 rounded-2xl px-4" onClick={handleAddTodo}><Plus className="mr-2 h-4 w-4" />추가</Button>
-          </div>
-          <div className="flex flex-wrap gap-2">{todoFilters.map((option) => <button key={option.value} type="button" onClick={() => setTodoFilter(option.value)} className={cn('rounded-full border px-3 py-1.5 text-sm transition', todoFilter === option.value ? 'border-primary bg-primary text-primary-foreground' : 'border-border/70 bg-background/70 text-foreground hover:border-primary/40')}>{option.label}</button>)}</div>
-          <div className="space-y-2">
-            {visibleTodos.length === 0 && <div className="rounded-2xl bg-background/65 px-4 py-6 text-sm text-muted-foreground">{todoSummary.total === 0 ? '아직 등록된 할 일이 없습니다.' : '현재 필터에 맞는 할 일이 없습니다.'}</div>}
-            {groupTodosByProject(visibleTodos).map((group) => (
-              <div key={group.project} className="space-y-2">
-                <div className="flex items-center justify-between rounded-2xl bg-background/55 px-3 py-2"><p className="text-sm font-semibold text-foreground">{group.project}</p><span className="text-xs text-muted-foreground">{group.todos.length}건</span></div>
-                {group.todos.map((todo) => (
-                  <div key={todo.id} className="flex items-center gap-3 rounded-2xl border border-border/60 bg-background/65 px-3 py-3">
-                    <button type="button" onClick={() => handleToggleTodo(todo.id)} className="shrink-0 text-primary transition hover:opacity-80" aria-label={todo.completed ? '미완료로 변경' : '완료로 변경'}>{todo.completed ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}</button>
-                    <div className="min-w-0 flex-1"><p className={cn('text-sm font-medium text-foreground', todo.completed && 'text-muted-foreground line-through')}>{todo.title}</p><div className="mt-2 flex flex-wrap gap-2"><PriorityBadge priority={todo.priority} /><TodoDateBadge dueDate={todo.dueDate} /><span className="rounded-full bg-background px-2.5 py-1 text-xs text-muted-foreground">추가 {formatDateTime(todo.createdAt)}</span></div></div>
-                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" onClick={() => handleRemoveTodo(todo.id)} aria-label={todo.title + ' 삭제'}><Trash2 className="h-4 w-4" /></Button>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {workspaceSettings.showWeeklySummary && (
-      <>
-      <section className="grid gap-4 lg:grid-cols-4">
-        <SummaryCard label="이번 주 완료 To-do" value={weeklySummary.completedTodos + '건'} />
-        <SummaryCard label="이번 주 생성 To-do" value={weeklySummary.createdTodos + '건'} />
-        <SummaryCard label="이번 주 업무 기록" value={weeklySummary.completedRecords + '건'} />
-        <SummaryCard label="주간 진행률" value={weeklySummary.progress + '%'} />
-      </section>
-
-      <Card className="border-border/60 bg-card/98 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.25)]">
-        <CardHeader className="pb-3"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-primary" /><CardTitle className="text-base">주간 진행률 요약</CardTitle></div><span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">이번 주</span></div></CardHeader>
-        <CardContent className="space-y-4"><Progress value={weeklySummary.progress} className="h-2.5" /><div className="grid gap-3 md:grid-cols-3"><div className="rounded-2xl bg-background/65 p-4"><p className="text-sm font-semibold text-foreground">활성 프로젝트</p><p className="mt-1 text-sm text-muted-foreground">{weeklySummary.activeProjects.length > 0 ? weeklySummary.activeProjects.join(', ') : '이번 주 진행 중인 프로젝트가 없습니다.'}</p></div><div className="rounded-2xl bg-background/65 p-4"><p className="text-sm font-semibold text-foreground">완료 흐름</p><p className="mt-1 text-sm text-muted-foreground">To-do {weeklySummary.completedTodos}건 완료, 업무 기록 {weeklySummary.completedRecords}건 생성</p></div><div className="rounded-2xl bg-background/65 p-4"><p className="text-sm font-semibold text-foreground">주의 필요</p><p className="mt-1 text-sm text-muted-foreground">오늘 기준 미완료 To-do {weeklySummary.overdueTodos}건이 남아 있습니다.</p></div></div><div className="rounded-2xl border border-primary/15 bg-primary/5 p-4"><p className="text-sm font-semibold text-foreground">자동 요약</p><p className="mt-2 text-sm leading-6 text-muted-foreground">{weeklySummaryText}</p></div></CardContent>
-      </Card>
-      </>
-      )}
-
       {workspaceSettings.showMemos && (
       <section id="workspace-memos" className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
         <Card className="border-border/60 bg-card/98 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.25)]">
@@ -1046,7 +1353,6 @@ function createDefaultWorkspaceSettings(displayName: string): WorkspaceSettings 
     subtitle: '문서, 업무 기록, 메모, 할 일을 한 화면에서 찾고 관리하는 개인 작업 공간입니다.',
     tone: 'sand',
     showTodoFocus: true,
-    showWeeklySummary: true,
     showMemos: true,
     showResources: true,
     resourceCardOrder: defaultResourceCardOrder,
@@ -1406,50 +1712,6 @@ function mapTodoPriorityToCategory(priority: TodoPriority): WorkCategory {
   return 'planning';
 }
 
-function buildWeeklySummary(todos: TodoItem[], records: WorkHistoryRecord[]) {
-  const range = getCurrentWeekRange();
-  const createdTodos = todos.filter((todo) => isDateInRange(todo.createdAt, range.start, range.end)).length;
-  const completedTodos = todos.filter((todo) => todo.completed && isDateInRange(todo.completedAt, range.start, range.end)).length;
-  const completedRecords = records.filter((record) => isDateInRange(record.date, range.start, range.end)).length;
-  const overdueTodos = todos.filter((todo) => !todo.completed && Boolean(todo.dueDate) && todo.dueDate! < getTodayDateInputValue()).length;
-  const activeProjects = [...new Set(todos.filter((todo) => !todo.completed).map((todo) => todo.project).filter(Boolean))].slice(0, 5);
-  const progress = todos.length === 0 ? 0 : Math.round((todos.filter((todo) => todo.completed).length / todos.length) * 100);
-
-  return {
-    createdTodos,
-    completedTodos,
-    completedRecords,
-    overdueTodos,
-    activeProjects,
-    progress,
-    start: range.start,
-    end: range.end,
-  };
-}
-
-function buildWeeklySummaryText(summary: ReturnType<typeof buildWeeklySummary>): string {
-  const projectText = summary.activeProjects.length > 0 ? `${summary.activeProjects.join(', ')} 프로젝트를 중심으로` : '이번 주에는';
-  return `${projectText} To-do ${summary.createdTodos}건을 만들고 ${summary.completedTodos}건을 완료했습니다. 업무 기록은 ${summary.completedRecords}건 남겼고, 오늘 기준 미완료 항목은 ${summary.overdueTodos}건입니다.`;
-}
-
-function getCurrentWeekRange() {
-  const now = new Date();
-  const day = now.getDay();
-  const diffToMonday = day === 0 ? -6 : 1 - day;
-  const start = new Date(now);
-  start.setDate(now.getDate() + diffToMonday);
-  start.setHours(0, 0, 0, 0);
-
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  end.setHours(23, 59, 59, 999);
-
-  return {
-    start: formatDateKey(start),
-    end: formatDateKey(end),
-  };
-}
-
 function formatDateKey(value: Date): string {
   const year = value.getFullYear();
   const month = String(value.getMonth() + 1).padStart(2, '0');
@@ -1457,10 +1719,123 @@ function formatDateKey(value: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-function isDateInRange(value: string | undefined, start: string, end: string): boolean {
-  if (!value) return false;
-  const key = value.slice(0, 10);
-  return key >= start && key <= end;
+function getMonthStartKey(dateKey: string): string {
+  return `${dateKey.slice(0, 7)}-01`;
+}
+
+function shiftMonthKey(monthKey: string, offset: number): string {
+  const date = new Date(`${monthKey}T00:00:00`);
+  date.setMonth(date.getMonth() + offset);
+  date.setDate(1);
+  return formatDateKey(date);
+}
+
+function formatMonthLabel(monthKey: string): string {
+  const date = new Date(`${monthKey}T00:00:00`);
+  return new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+  }).format(date);
+}
+
+function formatSelectedDateLabel(dateKey: string): string {
+  const date = new Date(`${dateKey}T00:00:00`);
+  return new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long',
+  }).format(date);
+}
+
+function buildCalendarDays(monthKey: string, todos: TodoItem[]) {
+  const monthStart = new Date(`${monthKey}T00:00:00`);
+  const firstWeekday = monthStart.getDay();
+  const gridStart = new Date(monthStart);
+  gridStart.setDate(monthStart.getDate() - firstWeekday);
+  const holidays = getKoreanPublicHolidays(monthStart.getFullYear());
+
+  const dueDateSummary = new Map<string, { total: number; active: number; completed: number }>();
+  for (const todo of todos) {
+    if (!todo.dueDate) continue;
+    const current = dueDateSummary.get(todo.dueDate) ?? { total: 0, active: 0, completed: 0 };
+    current.total += 1;
+    if (todo.completed) current.completed += 1;
+    else current.active += 1;
+    dueDateSummary.set(todo.dueDate, current);
+  }
+
+  return Array.from({ length: 6 }, (_, weekIndex) => {
+    const weekStart = new Date(gridStart);
+    weekStart.setDate(gridStart.getDate() + weekIndex * 7);
+
+    return {
+      weekKey: formatDateKey(weekStart),
+      isoWeek: getIsoWeekNumber(addDays(weekStart, 1)),
+      days: Array.from({ length: 7 }, (_, dayIndex) => {
+        const date = addDays(weekStart, dayIndex);
+        const dateKey = formatDateKey(date);
+        const summary = dueDateSummary.get(dateKey) ?? { total: 0, active: 0, completed: 0 };
+        const holidayLabel = holidays.get(dateKey);
+
+        return {
+          dateKey,
+          dayNumber: date.getDate(),
+          inMonth: date.getMonth() === monthStart.getMonth(),
+          isToday: dateKey === getTodayDateInputValue(),
+          dayOfWeek: date.getDay(),
+          isHoliday: Boolean(holidayLabel),
+          holidayLabel,
+          total: summary.total,
+          active: summary.active,
+          completed: summary.completed,
+        };
+      }),
+    };
+  });
+}
+
+function addDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function getIsoWeekNumber(date: Date): number {
+  const target = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNumber = target.getUTCDay() || 7;
+  target.setUTCDate(target.getUTCDate() + 4 - dayNumber);
+  const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1));
+  return Math.ceil((((target.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+function getKoreanPublicHolidays(year: number): Map<string, string> {
+  const holidaysByYear: Record<number, Array<[string, string]>> = {
+    2026: [
+      ['2026-01-01', '신정'],
+      ['2026-02-16', '설날 연휴'],
+      ['2026-02-17', '설날'],
+      ['2026-02-18', '설날 연휴'],
+      ['2026-03-01', '삼일절'],
+      ['2026-03-02', '삼일절 대체'],
+      ['2026-05-05', '어린이날'],
+      ['2026-05-24', '부처님오신날'],
+      ['2026-05-25', '석가탄신일 대체'],
+      ['2026-06-03', '전국동시지방선거'],
+      ['2026-06-06', '현충일'],
+      ['2026-08-15', '광복절'],
+      ['2026-08-17', '광복절 대체'],
+      ['2026-09-24', '추석 연휴'],
+      ['2026-09-25', '추석'],
+      ['2026-09-26', '추석 연휴'],
+      ['2026-10-03', '개천절'],
+      ['2026-10-05', '개천절 대체'],
+      ['2026-10-09', '한글날'],
+      ['2026-12-25', '성탄절'],
+    ],
+  };
+
+  return new Map(holidaysByYear[year] ?? []);
 }
 
 function groupTodosByProject(todos: TodoItem[]) {
