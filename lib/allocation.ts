@@ -18,6 +18,8 @@ export function validateParams(params: AllocationParams): string[] {
   }
   if (totalCars < 1) {
     errors.push("총 배분 물량은 1 이상이어야 합니다.");
+  } else if (totalCars > 10000) {
+    errors.push("총 배분 물량은 10,000 이하여야 합니다.");
   }
   if (!(SEGMENTS as readonly string[]).includes(carSegment)) {
     errors.push(`세그먼트 값이 올바르지 않습니다: ${carSegment}`);

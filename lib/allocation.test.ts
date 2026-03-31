@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { writeFileSync, mkdirSync } from "fs";
 import { resolve } from "path";
-import { validateParams, computeSpearman, loadSql } from "./allocation";
+import { validateParams, computeSpearman, loadSql, loadSqlR2 } from "./allocation";
 
 describe("validateParams", () => {
   const valid = {
@@ -73,6 +73,21 @@ describe("loadSql", () => {
     expect(result).not.toContain("{car_model}");
   });
 
+  it("빈 carModel이면 __NO_MODEL__로 치환됨", () => {
+    const tmpDir = resolve(process.cwd(), "tmp-test");
+    mkdirSync(tmpDir, { recursive: true });
+    const tmpSql = resolve(tmpDir, "test-nomodel.sql");
+    writeFileSync(tmpSql, "SELECT '{car_model}' AS m");
+
+    const result = loadSql(
+      { carModel: "", carSegment: "준중형", totalCars: 50, baseDate: "2026-01-01" },
+      0.5,
+      tmpSql
+    );
+    expect(result).toContain("__NO_MODEL__");
+    expect(result).not.toContain("{car_model}");
+  });
+
   it("선두 주석 블록(--) 제거됨", () => {
     const tmpDir = resolve(process.cwd(), "tmp-test");
     mkdirSync(tmpDir, { recursive: true });
@@ -85,5 +100,76 @@ describe("loadSql", () => {
       tmpSql
     );
     expect(result.trim()).toBe("SELECT 1");
+  });
+});
+
+describe("loadSqlR2", () => {
+  it("region1List가 IN절로 치환됨", () => {
+    const tmpDir = resolve(process.cwd(), "tmp-test");
+    mkdirSync(tmpDir, { recursive: true });
+    const tmpSql = resolve(tmpDir, "test-r2.sql");
+    writeFileSync(tmpSql, "WHERE p.region1 IN ({region1_list}) AND m = '{car_segment}' AND a = {alpha}");
+
+    const result = loadSqlR2(
+      { carModel: "", carSegment: "준중형", totalCars: 20, baseDate: "2026-01-01", region1List: ["경상남도", "울산광역시"] },
+      0.5,
+      tmpSql
+    );
+    expect(result).toContain("'경상남도', '울산광역시'");
+    expect(result).not.toContain("{region1_list}");
+  });
+
+  it("화이트리스트에 없는 region은 제외됨", () => {
+    const tmpDir = resolve(process.cwd(), "tmp-test");
+    mkdirSync(tmpDir, { recursive: true });
+    const tmpSql = resolve(tmpDir, "test-r2-wl.sql");
+    writeFileSync(tmpSql, "IN ({region1_list})");
+
+    const result = loadSqlR2(
+      { carModel: "", carSegment: "준중형", totalCars: 20, baseDate: "2026-01-01", region1List: ["경상남도", "INJECTED'; DROP TABLE--"] },
+      0.5,
+      tmpSql
+    );
+    expect(result).toContain("'경상남도'");
+    expect(result).not.toContain("INJECTED");
+  });
+
+  it("중복 region이 제거됨", () => {
+    const tmpDir = resolve(process.cwd(), "tmp-test");
+    mkdirSync(tmpDir, { recursive: true });
+    const tmpSql = resolve(tmpDir, "test-r2-dup.sql");
+    writeFileSync(tmpSql, "IN ({region1_list})");
+
+    const result = loadSqlR2(
+      { carModel: "", carSegment: "준중형", totalCars: 20, baseDate: "2026-01-01", region1List: ["경상남도", "경상남도"] },
+      0.5,
+      tmpSql
+    );
+    expect(result).toBe("IN ('경상남도')");
+  });
+});
+
+describe("validateParams — 추가 검증", () => {
+  const valid = {
+    carModel: "아반떼",
+    carSegment: "준중형",
+    totalCars: 50,
+    baseDate: "2026-01-01",
+  };
+
+  it("totalCars 10000 초과 시 오류", () => {
+    expect(validateParams({ ...valid, totalCars: 10001 })).toHaveLength(1);
+  });
+
+  it("carModel 빈 문자열 허용", () => {
+    expect(validateParams({ ...valid, carModel: "" })).toEqual([]);
+  });
+
+  it("region2 모드에서 region1List 비어있으면 오류", () => {
+    expect(validateParams({ ...valid, mode: "region2", region1List: [] })).toHaveLength(1);
+  });
+
+  it("region2 모드에서 올바른 region1List 통과", () => {
+    expect(validateParams({ ...valid, mode: "region2", region1List: ["경상남도"] })).toEqual([]);
   });
 });

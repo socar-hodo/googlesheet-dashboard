@@ -65,7 +65,7 @@ export function AllocationForm() {
       ...result.rows.map((row) =>
         CSV_HEADERS.map((header) => {
           const value = row[header];
-          return value === null || value === undefined ? "" : String(value);
+          return value === null || value === undefined ? "N/A" : String(value);
         }).join(","),
       ),
     ].join("\n");
@@ -102,7 +102,7 @@ export function AllocationForm() {
                       ? "bg-foreground text-background"
                       : "hover:bg-muted"
                   }`}
-                  onClick={() => setForm((current) => ({ ...current, mode: "region1" }))}
+                  onClick={() => setForm((current) => ({ ...current, mode: "region1", region1List: [] }))}
                 >
                   1단계 전국
                 </button>
@@ -123,9 +123,21 @@ export function AllocationForm() {
             {/* 2단계: 광역 복수 선택 */}
             {form.mode === "region2" && (
               <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground">
-                  대상 광역 ({form.region1List.length}개 선택)
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    대상 광역 ({form.region1List.length}개 선택)
+                  </label>
+                  <button
+                    type="button"
+                    className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => setForm((current) => ({
+                      ...current,
+                      region1List: current.region1List.length === REGION1_LIST.length ? [] : [...REGION1_LIST],
+                    }))}
+                  >
+                    {form.region1List.length === REGION1_LIST.length ? "전체 해제" : "전체 선택"}
+                  </button>
+                </div>
                 <div className="max-h-48 overflow-y-auto rounded-2xl border border-border/70 bg-background p-2 space-y-0.5">
                   {REGION1_LIST.map((r) => (
                     <label
