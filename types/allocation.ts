@@ -5,12 +5,12 @@ export type AllocationMode = "region1" | "region2";
 
 /** 폼 입력 파라미터 */
 export interface AllocationParams {
-  carModel: string;    // 차종 모델명 (예: 아반떼)
+  carModel: string;    // 차종 모델명 (예: 아반떼) — 빈 문자열이면 세그먼트 기준만 사용
   carSegment: string;  // 세그먼트 (예: 준중형)
   totalCars: number;   // 총 배분 물량
   baseDate: string;    // 기준 날짜 (YYYY-MM-DD)
   mode?: AllocationMode; // 배분 모드 (기본: region1)
-  region1?: string;    // 2단계 모드 시 대상 광역
+  region1List?: string[]; // 2단계 모드 시 대상 광역 (복수 선택)
 }
 
 /** 배분 대상 광역 목록 (제주 제외) */

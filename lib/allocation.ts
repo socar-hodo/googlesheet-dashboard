@@ -11,9 +11,9 @@ const DEFAULT_SQL_R2_PATH = resolve(process.cwd(), "sql/allocation_r2.sql");
 /** 입력 파라미터 검증. 오류 메시지 배열 반환 (비어있으면 통과). */
 export function validateParams(params: AllocationParams): string[] {
   const errors: string[] = [];
-  const { carModel, carSegment, totalCars, baseDate, mode = "region1", region1 } = params;
+  const { carModel, carSegment, totalCars, baseDate, mode = "region1", region1List } = params;
 
-  if (carModel.includes("'")) {
+  if (carModel && carModel.includes("'")) {
     errors.push("차종 모델명에 단따옴표(')가 포함될 수 없습니다.");
   }
   if (totalCars < 1) {
@@ -24,12 +24,14 @@ export function validateParams(params: AllocationParams): string[] {
   }
 
   if (mode === "region2") {
-    if (!region1) {
-      errors.push("2단계 배분 시 광역(시/도)을 선택해야 합니다.");
-    } else if (!(REGION1_LIST as readonly string[]).includes(region1)) {
-      errors.push(`올바르지 않은 광역입니다: ${region1}`);
-    } else if (region1.includes("'")) {
-      errors.push("광역명에 단따옴표(')가 포함될 수 없습니다.");
+    if (!region1List || region1List.length === 0) {
+      errors.push("2단계 배분 시 광역(시/도)을 1개 이상 선택해야 합니다.");
+    } else {
+      for (const r of region1List) {
+        if (!(REGION1_LIST as readonly string[]).includes(r)) {
+          errors.push(`올바르지 않은 광역입니다: ${r}`);
+        }
+      }
     }
   }
 
@@ -60,8 +62,10 @@ export function loadSql(
   sqlPath: string = DEFAULT_SQL_PATH
 ): string {
   const raw = readFileSync(sqlPath, "utf-8");
+  // carModel이 빈 문자열이면 매칭 불가 값으로 대체 → model ref_type 스킵, segment/fallback만 사용
+  const carModel = params.carModel || "__NO_MODEL__";
   const formatted = raw
-    .replace(/\{car_model\}/g, params.carModel)
+    .replace(/\{car_model\}/g, carModel)
     .replace(/\{car_segment\}/g, params.carSegment)
     .replace(/\{total_cars\}/g, String(params.totalCars))
     .replace(/\{base_date\}/g, params.baseDate)
@@ -100,13 +104,18 @@ export function loadSqlR2(
   sqlPath: string = DEFAULT_SQL_R2_PATH
 ): string {
   const raw = readFileSync(sqlPath, "utf-8");
+  // region1List를 SQL IN 절로 변환: ('경상남도', '울산광역시')
+  const region1InClause = (params.region1List ?? [])
+    .map((r) => `'${r}'`)
+    .join(", ");
+  const carModel = params.carModel || "__NO_MODEL__";
   const formatted = raw
-    .replace(/\{car_model\}/g, params.carModel)
+    .replace(/\{car_model\}/g, carModel)
     .replace(/\{car_segment\}/g, params.carSegment)
     .replace(/\{total_cars\}/g, String(params.totalCars))
     .replace(/\{base_date\}/g, params.baseDate)
     .replace(/\{alpha\}/g, String(alpha))
-    .replace(/\{region1\}/g, params.region1 ?? "");
+    .replace(/\{region1_list\}/g, region1InClause);
 
   // 선두 주석 블록(-- ...) 제거
   const lines = formatted.split("\n");
@@ -171,7 +180,7 @@ export async function runAllocationR2(params: AllocationParams): Promise<Allocat
     rows,
     spearman,
     totalAllocated: rows.reduce((s, r) => s + r.allocated_cars, 0),
-    region1Count:   1,
+    region1Count:   new Set(rows.map((r) => r.region1)).size,
     region2Count:   rows.length,
     mode: "region2",
   };

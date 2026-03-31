@@ -32,7 +32,7 @@ car_count_segment AS (
     AND p.car_sharing_type IN ('socar', 'zplus')
     AND p.car_state IN ('운영', '수리')
     AND p.region1 != '제주특별자치도'
-    AND p.region1 = '{region1}'
+    AND p.region1 IN ({region1_list})
   GROUP BY p.region1, p.region2
 ),
 

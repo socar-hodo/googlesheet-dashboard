@@ -15,11 +15,20 @@ export function AllocationForm() {
     totalCars: "50",
     baseDate: "",
     mode: "region1" as AllocationMode,
-    region1: REGION1_LIST[0] as string,
+    region1List: [] as string[],
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AllocationResult | null>(null);
+
+  function toggleRegion(region: string) {
+    setForm((current) => {
+      const list = current.region1List.includes(region)
+        ? current.region1List.filter((r) => r !== region)
+        : [...current.region1List, region];
+      return { ...current, region1List: list };
+    });
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,7 +42,7 @@ export function AllocationForm() {
       body: JSON.stringify({
         ...form,
         totalCars: Number(form.totalCars),
-        region1: form.mode === "region2" ? form.region1 : undefined,
+        region1List: form.mode === "region2" ? form.region1List : undefined,
       }),
     });
 
@@ -65,7 +74,7 @@ export function AllocationForm() {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    const suffix = form.mode === "region2" ? `_r2_${form.region1}` : "";
+    const suffix = form.mode === "region2" ? `_r2_${form.region1List.join("_")}` : "";
     anchor.download = `allocation${suffix}.csv`;
     anchor.click();
     URL.revokeObjectURL(url);
@@ -111,30 +120,42 @@ export function AllocationForm() {
               </div>
             </div>
 
-            {/* 2단계: 광역 선택 */}
+            {/* 2단계: 광역 복수 선택 */}
             {form.mode === "region2" && (
               <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground">대상 광역</label>
-                <select
-                  className="h-11 w-full rounded-2xl border border-border/70 bg-background px-4 text-sm outline-none transition focus:border-foreground focus:ring-4 focus:ring-foreground/10"
-                  value={form.region1}
-                  onChange={(e) => setForm((current) => ({ ...current, region1: e.target.value }))}
-                >
+                <label className="text-xs font-medium text-muted-foreground">
+                  대상 광역 ({form.region1List.length}개 선택)
+                </label>
+                <div className="max-h-48 overflow-y-auto rounded-2xl border border-border/70 bg-background p-2 space-y-0.5">
                   {REGION1_LIST.map((r) => (
-                    <option key={r} value={r}>{r}</option>
+                    <label
+                      key={r}
+                      className={`flex cursor-pointer items-center gap-2 rounded-xl px-3 py-1.5 text-sm transition-colors ${
+                        form.region1List.includes(r) ? "bg-foreground/10 font-medium" : "hover:bg-muted"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        className="h-3.5 w-3.5 rounded accent-foreground"
+                        checked={form.region1List.includes(r)}
+                        onChange={() => toggleRegion(r)}
+                      />
+                      {r}
+                    </label>
                   ))}
-                </select>
+                </div>
               </div>
             )}
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">차종 모델명</label>
+              <label className="text-xs font-medium text-muted-foreground">
+                차종 모델명 <span className="text-muted-foreground/60">(선택)</span>
+              </label>
               <input
                 className="h-11 w-full rounded-2xl border border-border/70 bg-background px-4 text-sm outline-none transition focus:border-foreground focus:ring-4 focus:ring-foreground/10"
-                placeholder="예: 아반떼"
+                placeholder="비워두면 세그먼트 기준만 사용"
                 value={form.carModel}
                 onChange={(e) => setForm((current) => ({ ...current, carModel: e.target.value }))}
-                required
               />
             </div>
 
@@ -219,7 +240,7 @@ export function AllocationForm() {
               <div>
                 <h3 className="text-lg font-semibold tracking-[-0.03em] text-foreground">
                   {result.mode === "region2"
-                    ? `${form.region1} 내 시/군/구 배분 결과`
+                    ? `${form.region1List.join(", ")} 내 시/군/구 배분 결과`
                     : "배분 결과"}
                 </h3>
                 <p className="text-sm text-muted-foreground">

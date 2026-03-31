@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     totalCars:  Number(body.totalCars ?? 0),
     baseDate:   body.baseDate   ?? "",
     mode:       body.mode       ?? "region1",
-    region1:    body.region1    ?? "",
+    region1List: Array.isArray(body.region1List) ? body.region1List : [],
   };
 
   const errors = validateParams(params);
