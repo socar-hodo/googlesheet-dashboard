@@ -176,7 +176,7 @@ fallback_stats AS (
     AVG(r.rev_per_car)  AS avg_rev_per_car,
     AVG(u.util_rate)    AS avg_util_rate
   FROM current_rev r
-  JOIN current_util u USING (region1)
+  JOIN current_util u USING (region1, region2)
   WHERE r.ref_type != 'fallback'
 )
 ,

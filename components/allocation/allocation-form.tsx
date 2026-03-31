@@ -194,6 +194,8 @@ export function AllocationForm() {
                 <input
                   type="number"
                   min={1}
+                  max={10000}
+                  step={1}
                   className="h-11 w-full rounded-2xl border border-border/70 bg-background px-4 text-sm outline-none transition focus:border-foreground focus:ring-4 focus:ring-foreground/10"
                   value={form.totalCars}
                   onChange={(e) => setForm((current) => ({ ...current, totalCars: e.target.value }))}

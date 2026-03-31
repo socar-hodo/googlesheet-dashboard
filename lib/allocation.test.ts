@@ -52,6 +52,10 @@ describe("computeSpearman", () => {
   it("길이 0이면 null 반환", () => {
     expect(computeSpearman([], [])).toBeNull();
   });
+
+  it("길이 1이면 null 반환 (n<2 가드)", () => {
+    expect(computeSpearman([1], [1])).toBeNull();
+  });
 });
 
 describe("loadSql", () => {

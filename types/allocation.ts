@@ -30,6 +30,7 @@ export interface AllocationRow {
   rev_yoy: number | null;
   util_yoy: number | null;
   allocated_cars: number;
+  is_equal_dist: boolean; // 점수 합계 0 → 균등 배분 적용 여부
   score_s1: number;  // α=0.3 (가동률 중시)
   score_s2: number;  // α=0.4
   score_s3: number;  // α=0.5 (채택값)

@@ -1,7 +1,7 @@
 -- ============================================================
 -- 신차 2단계 배분 쿼리 (광역 내 시/군/구 배분)
 -- 파라미터:
---   {car_model}, {car_segment}, {total_cars}, {base_date}, {alpha}, {region1}
+--   {car_segment}, {total_cars}, {base_date}, {alpha}, {region1_list}
 -- ============================================================
 
 WITH

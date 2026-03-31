@@ -90,7 +90,7 @@ export function loadSql(
  */
 export function computeSpearman(rankS1: number[], rankS5: number[]): number | null {
   const n = rankS1.length;
-  if (n === 0 || n !== rankS5.length) return null;
+  if (n < 2 || n !== rankS5.length) return null;
 
   const sumD2 = rankS1.reduce((acc, r1, i) => acc + (r1 - rankS5[i]) ** 2, 0);
   const rho = 1 - (6 * sumD2) / (n * (n * n - 1));
@@ -110,6 +110,9 @@ export function loadSqlR2(
   const safeRegions = [...new Set(params.region1List ?? [])].filter((r) =>
     (REGION1_LIST as readonly string[]).includes(r)
   );
+  if (safeRegions.length === 0) {
+    throw new Error("유효한 광역이 없습니다. 광역 선택을 확인해주세요.");
+  }
   const region1InClause = safeRegions.map((r) => `'${r}'`).join(", ");
   const carModel = params.carModel || "__NO_MODEL__";
   const formatted = raw
@@ -141,6 +144,7 @@ function mapRows(rawRows: Record<string, unknown>[]): AllocationRow[] {
     rev_yoy:       r.rev_yoy != null ? Number(r.rev_yoy) : null,
     util_yoy:      r.util_yoy != null ? Number(r.util_yoy) : null,
     allocated_cars: Number(r.allocated_cars ?? 0),
+    is_equal_dist: r.is_equal_dist === true,
     score_s1:      Number(r.score_s1 ?? 0),
     score_s2:      Number(r.score_s2 ?? 0),
     score_s3:      Number(r.score_s3 ?? 0),

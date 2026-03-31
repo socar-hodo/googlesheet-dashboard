@@ -63,7 +63,9 @@ export function ResultsTabs({
       {
         scoreSum: number;
         revSum: number;
+        revCount: number;
         utilSum: number;
+        utilCount: number;
         cars: number;
         count: number;
         refTypes: Record<string, number>;
@@ -74,15 +76,17 @@ export function ResultsTabs({
       const current = grouped.get(row.region1) ?? {
         scoreSum: 0,
         revSum: 0,
+        revCount: 0,
         utilSum: 0,
+        utilCount: 0,
         cars: 0,
         count: 0,
         refTypes: {},
       };
 
       current.scoreSum += row.final_score;
-      current.revSum += row.rev_yoy ?? 0;
-      current.utilSum += row.util_yoy ?? 0;
+      if (row.rev_yoy !== null) { current.revSum += row.rev_yoy; current.revCount += 1; }
+      if (row.util_yoy !== null) { current.utilSum += row.util_yoy; current.utilCount += 1; }
       current.cars += row.allocated_cars;
       current.count += 1;
       current.refTypes[row.ref_type] = (current.refTypes[row.ref_type] ?? 0) + 1;
@@ -93,8 +97,8 @@ export function ResultsTabs({
       .map(([region1, value]) => ({
         region1,
         avgScore: value.scoreSum / value.count,
-        avgRev: value.revSum / value.count,
-        avgUtil: value.utilSum / value.count,
+        avgRev: value.revCount > 0 ? value.revSum / value.revCount : null,
+        avgUtil: value.utilCount > 0 ? value.utilSum / value.utilCount : null,
         totalCars: value.cars,
         topRef: Object.entries(value.refTypes).sort((left, right) => right[1] - left[1])[0][0],
       }))
@@ -103,8 +107,16 @@ export function ResultsTabs({
 
   const region2Data = useMemo(() => [...rows].sort((left, right) => right.final_score - left.final_score), [rows]);
 
+  const hasEqualDist = rows.some((r) => r.is_equal_dist);
+
   return (
     <div className="space-y-4">
+      {hasEqualDist && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
+          전체 점수 합계가 0이어서 <strong>균등 배분</strong>이 적용되었습니다. 데이터 기간이나 세그먼트 조건을 확인해주세요.
+        </div>
+      )}
+
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryStat label="총 배분" value={`${totalAllocated}대`} />
         <SummaryStat label="권역 수" value={`${region1Count}개`} />
