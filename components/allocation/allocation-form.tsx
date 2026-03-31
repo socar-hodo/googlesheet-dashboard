@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ResultsTabs } from "./results-tabs";
 import { ScoreRationale } from "./score-rationale";
-import { SEGMENTS, CSV_HEADERS } from "@/types/allocation";
-import type { AllocationResult } from "@/types/allocation";
+import { SEGMENTS, REGION1_LIST, CSV_HEADERS } from "@/types/allocation";
+import type { AllocationMode, AllocationResult } from "@/types/allocation";
 
 export function AllocationForm() {
   const [form, setForm] = useState({
@@ -14,6 +14,8 @@ export function AllocationForm() {
     carSegment: SEGMENTS[0] as string,
     totalCars:  "50",
     baseDate:   "",
+    mode:       "region1" as AllocationMode,
+    region1:    REGION1_LIST[0] as string,
   });
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
@@ -28,7 +30,11 @@ export function AllocationForm() {
     const res = await fetch("/api/allocation/run", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, totalCars: Number(form.totalCars) }),
+      body: JSON.stringify({
+        ...form,
+        totalCars: Number(form.totalCars),
+        region1: form.mode === "region2" ? form.region1 : undefined,
+      }),
     });
 
     const data = await res.json();
@@ -58,7 +64,8 @@ export function AllocationForm() {
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement("a");
     a.href     = url;
-    a.download = "allocation.csv";
+    const suffix = form.mode === "region2" ? `_r2_${form.region1}` : "";
+    a.download = `allocation${suffix}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -73,6 +80,51 @@ export function AllocationForm() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-3 text-sm">
+              {/* 모드 선택 */}
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">배분 모드</label>
+                <div className="flex rounded-md border overflow-hidden">
+                  <button
+                    type="button"
+                    className={`flex-1 px-2 py-1.5 text-xs font-medium transition-colors ${
+                      form.mode === "region1"
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-muted"
+                    }`}
+                    onClick={() => setForm((f) => ({ ...f, mode: "region1" }))}
+                  >
+                    1단계 전국
+                  </button>
+                  <button
+                    type="button"
+                    className={`flex-1 px-2 py-1.5 text-xs font-medium transition-colors border-l ${
+                      form.mode === "region2"
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-muted"
+                    }`}
+                    onClick={() => setForm((f) => ({ ...f, mode: "region2" }))}
+                  >
+                    2단계 광역내
+                  </button>
+                </div>
+              </div>
+
+              {/* 2단계: 광역 선택 */}
+              {form.mode === "region2" && (
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-muted-foreground">대상 광역</label>
+                  <select
+                    className="w-full rounded-md border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    value={form.region1}
+                    onChange={(e) => setForm((f) => ({ ...f, region1: e.target.value }))}
+                  >
+                    {REGION1_LIST.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div className="space-y-1">
                 <label className="text-xs font-medium text-muted-foreground">차종 모델명</label>
                 <input
@@ -98,7 +150,9 @@ export function AllocationForm() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">총 배분 물량</label>
+                <label className="text-xs font-medium text-muted-foreground">
+                  {form.mode === "region2" ? "광역 쿼터 (대)" : "총 배분 물량"}
+                </label>
                 <input
                   type="number"
                   min={1}
@@ -145,7 +199,11 @@ export function AllocationForm() {
         {result && !loading && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold">배분 결과</h2>
+              <h2 className="text-base font-semibold">
+                {result.mode === "region2"
+                  ? `${form.region1} 내 시/군/구 배분 결과`
+                  : "전국 배분 결과"}
+              </h2>
               <Button variant="outline" size="sm" onClick={handleDownload}>
                 CSV 다운로드
               </Button>
@@ -157,6 +215,7 @@ export function AllocationForm() {
               region1Count={result.region1Count}
               region2Count={result.region2Count}
               spearman={result.spearman}
+              mode={result.mode}
             />
 
             <ScoreRationale rows={result.rows} spearman={result.spearman} />

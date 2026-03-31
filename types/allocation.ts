@@ -1,12 +1,25 @@
 // 신차 배분 시스템 타입 정의
 
+/** 배분 모드 */
+export type AllocationMode = "region1" | "region2";
+
 /** 폼 입력 파라미터 */
 export interface AllocationParams {
   carModel: string;    // 차종 모델명 (예: 아반떼)
   carSegment: string;  // 세그먼트 (예: 준중형)
   totalCars: number;   // 총 배분 물량
   baseDate: string;    // 기준 날짜 (YYYY-MM-DD)
+  mode?: AllocationMode; // 배분 모드 (기본: region1)
+  region1?: string;    // 2단계 모드 시 대상 광역
 }
+
+/** 배분 대상 광역 목록 (제주 제외) */
+export const REGION1_LIST = [
+  "서울특별시", "부산광역시", "대구광역시", "인천광역시",
+  "광주광역시", "대전광역시", "울산광역시", "세종특별자치시",
+  "경기도", "강원특별자치도", "충청북도", "충청남도",
+  "전북특별자치도", "전라남도", "경상북도", "경상남도",
+] as const;
 
 /** BigQuery 결과 한 행 */
 export interface AllocationRow {
@@ -33,6 +46,7 @@ export interface AllocationResult {
   totalAllocated: number;
   region1Count: number;
   region2Count: number;
+  mode: AllocationMode;
 }
 
 /** /api/allocation/run 에러 응답 */

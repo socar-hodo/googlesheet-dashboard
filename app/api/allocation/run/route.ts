@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateParams, runAllocation } from "@/lib/allocation";
+import { validateParams, runAllocation, runAllocationR2 } from "@/lib/allocation";
 import type { AllocationParams } from "@/types/allocation";
 
 export async function POST(req: NextRequest) {
@@ -9,6 +9,8 @@ export async function POST(req: NextRequest) {
     carSegment: body.carSegment ?? "",
     totalCars:  Number(body.totalCars ?? 0),
     baseDate:   body.baseDate   ?? "",
+    mode:       body.mode       ?? "region1",
+    region1:    body.region1    ?? "",
   };
 
   const errors = validateParams(params);
@@ -17,14 +19,16 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await runAllocation(params);
+    const result = params.mode === "region2"
+      ? await runAllocationR2(params)
+      : await runAllocation(params);
     return NextResponse.json(result);
   } catch (err) {
     console.error("[allocation/run]", err);
     let message = "BQ 실행 중 오류가 발생했습니다. 서버 로그를 확인해주세요.";
     if (err instanceof Error) {
       if (err.message.includes("ENOENT")) {
-        message = "SQL 파일을 찾을 수 없습니다 (sql/allocation.sql).";
+        message = "SQL 파일을 찾을 수 없습니다.";
       } else if (err.message.includes("GOOGLE_APPLICATION_CREDENTIALS")) {
         message = "BigQuery 인증이 설정되지 않았습니다 (GOOGLE_APPLICATION_CREDENTIALS_B64).";
       }

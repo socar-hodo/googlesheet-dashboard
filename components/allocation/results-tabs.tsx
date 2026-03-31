@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { AllocationRow } from "@/types/allocation";
+import type { AllocationMode, AllocationRow } from "@/types/allocation";
 
 interface ResultsTabsProps {
   rows: AllocationRow[];
@@ -10,6 +10,7 @@ interface ResultsTabsProps {
   region1Count: number;
   region2Count: number;
   spearman: number | null;
+  mode?: AllocationMode;
 }
 
 function RefBadge({ refType }: { refType: string }) {
@@ -36,7 +37,7 @@ function YoyCell({ value }: { value: number | null }) {
   );
 }
 
-export function ResultsTabs({ rows, totalAllocated, region1Count, region2Count, spearman }: ResultsTabsProps) {
+export function ResultsTabs({ rows, totalAllocated, region1Count, region2Count, spearman, mode = "region1" }: ResultsTabsProps) {
   // 시/도별 집계 (avg_score 내림차순)
   const region1Data = useMemo(() => {
     const map = new Map<string, {
@@ -83,7 +84,7 @@ export function ResultsTabs({ rows, totalAllocated, region1Count, region2Count, 
         )}
       </div>
 
-      <Tabs defaultValue="region1">
+      <Tabs defaultValue={mode === "region2" ? "region2" : "region1"}>
         <TabsList>
           <TabsTrigger value="region1">시/도별</TabsTrigger>
           <TabsTrigger value="region2">시/군/구별</TabsTrigger>
