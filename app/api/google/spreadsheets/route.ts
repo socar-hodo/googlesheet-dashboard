@@ -1,4 +1,5 @@
 import { auth } from '@/auth';
+import { buildGoogleApiMessage, classifyGoogleApiError } from '@/lib/google-api-error';
 import type { GoogleSpreadsheetFile } from '@/types/google-drive';
 
 export const dynamic = 'force-dynamic';
@@ -13,7 +14,10 @@ export async function GET(req: Request) {
 
   if (!accessToken) {
     return Response.json(
-      { error: 'Google 인증 세션이 없어 개인 시트 검색을 사용할 수 없습니다.' },
+      {
+        error: 'Google 계정 연결이 없어 시트 목록을 불러올 수 없습니다. Google로 다시 로그인해 주세요.',
+        requiresGoogleReconnect: true,
+      },
       { status: 401 },
     );
   }
@@ -50,8 +54,17 @@ export async function GET(req: Request) {
 
   if (!response.ok) {
     const detail = await response.text();
+    const issue = classifyGoogleApiError(detail);
+    const reconnectRequired = response.status === 401 || issue === 'reconnect';
+
+    console.error('[google-spreadsheets:list]', response.status, issue, detail);
+
     return Response.json(
-      { error: 'Google Drive에서 시트 목록을 가져오지 못했습니다.', detail },
+      {
+        error: buildGoogleApiMessage(issue, 'list'),
+        detail,
+        requiresGoogleReconnect: reconnectRequired,
+      },
       { status: response.status },
     );
   }

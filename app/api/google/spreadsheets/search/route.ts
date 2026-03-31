@@ -1,4 +1,5 @@
 import { auth } from '@/auth';
+import { buildGoogleApiMessage, classifyGoogleApiError } from '@/lib/google-api-error';
 import {
   isGoogleApiError,
   searchAcrossOwnedSpreadsheets,
@@ -13,7 +14,10 @@ export async function GET(req: Request) {
 
   if (!accessToken) {
     return Response.json(
-      { error: 'Google 인증 세션이 없어 통합 검색을 사용할 수 없습니다.' },
+      {
+        error: 'Google 계정 연결이 없어 통합 검색을 사용할 수 없습니다. Google로 다시 로그인해 주세요.',
+        requiresGoogleReconnect: true,
+      },
       { status: 401 },
     );
   }
@@ -33,15 +37,16 @@ export async function GET(req: Request) {
     return Response.json(result);
   } catch (error) {
     if (isGoogleApiError(error)) {
+      const issue = classifyGoogleApiError(error.detail);
+      const reconnectRequired = error.status === 401 || issue === 'reconnect';
+
+      console.error('[google-spreadsheets:search]', error.status, issue, error.detail);
+
       return Response.json(
         {
-          error:
-            error.status === 401
-              ? 'Google 인증이 만료되어 통합 검색을 계속할 수 없습니다. 다시 로그인해 주세요.'
-              : error.status === 403
-                ? 'Google Sheets 또는 Drive 권한이 부족해 통합 검색을 불러오지 못했습니다.'
-                : 'Google Sheets 통합 검색을 불러오지 못했습니다.',
+          error: buildGoogleApiMessage(issue, 'search'),
           detail: error.detail,
+          requiresGoogleReconnect: reconnectRequired,
         },
         { status: error.status },
       );

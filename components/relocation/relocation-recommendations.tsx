@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { RelocationRecommendation, RelocationCarCandidate } from "@/types/relocation";
-import { ArrowRight, ChevronDown, ChevronUp, Car } from "lucide-react";
+import type { RelocationCarCandidate, RelocationRecommendation } from "@/types/relocation";
+import { ArrowRight, Car, ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface Props {
@@ -21,24 +21,20 @@ export function RelocationRecommendations({ recommendations, pastDays }: Props) 
   const [cardStates, setCardStates] = useState<Record<number, CardState>>({});
 
   if (recommendations.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground py-4 text-center">
-        추천할 재배치 경로가 없습니다.
-      </p>
-    );
+    return <p className="py-4 text-center text-sm text-muted-foreground">추천할 이동 경로가 없습니다.</p>;
   }
 
-  async function toggleCandidates(idx: number, fromZone: string, limit: number) {
-    const current = cardStates[idx];
+  async function toggleCandidates(index: number, fromZone: string, limit: number) {
+    const current = cardStates[index];
 
     if (current !== undefined) {
-      setCardStates((s) => ({ ...s, [idx]: { ...current, open: !current.open } }));
+      setCardStates((state) => ({ ...state, [index]: { ...current, open: !current.open } }));
       return;
     }
 
-    setCardStates((s) => ({
-      ...s,
-      [idx]: { open: true, loading: true, candidates: null, error: null },
+    setCardStates((state) => ({
+      ...state,
+      [index]: { open: true, loading: true, candidates: null, error: null },
     }));
 
     try {
@@ -47,96 +43,115 @@ export function RelocationRecommendations({ recommendations, pastDays }: Props) 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ zones: [fromZone], limit, pastDays }),
       });
+
       const data = await res.json();
+
       if (!res.ok) {
-        setCardStates((s) => ({
-          ...s,
-          [idx]: { open: true, loading: false, candidates: null, error: data.errors?.[0] ?? "조회 실패" },
+        setCardStates((state) => ({
+          ...state,
+          [index]: {
+            open: true,
+            loading: false,
+            candidates: null,
+            error: data.errors?.[0] ?? "차량 후보를 불러오지 못했습니다.",
+          },
         }));
       } else {
-        setCardStates((s) => ({
-          ...s,
-          [idx]: { open: true, loading: false, candidates: data.candidates, error: null },
+        setCardStates((state) => ({
+          ...state,
+          [index]: {
+            open: true,
+            loading: false,
+            candidates: data.candidates,
+            error: null,
+          },
         }));
       }
     } catch {
-      setCardStates((s) => ({
-        ...s,
-        [idx]: { open: true, loading: false, candidates: null, error: "네트워크 오류" },
+      setCardStates((state) => ({
+        ...state,
+        [index]: {
+          open: true,
+          loading: false,
+          candidates: null,
+          error: "네트워크 오류가 발생했습니다.",
+        },
       }));
     }
   }
 
   return (
-    <div className="space-y-2">
-      {recommendations.map((rec, i) => {
-        const state = cardStates[i];
+    <div className="space-y-3">
+      {recommendations.map((recommendation, index) => {
+        const state = cardStates[index];
         const isOpen = state?.open ?? false;
 
         return (
-          <div key={i} className="rounded-xl border bg-card text-sm overflow-hidden">
+          <div key={index} className="overflow-hidden rounded-[1.35rem] border border-border/60 bg-background/65 text-sm">
             <div className="flex items-center gap-2 px-4 py-3">
-              <div className="flex flex-col min-w-0">
-                <span className="text-xs text-muted-foreground">{rec.fromRegion1}</span>
-                <span className="font-semibold text-red-600 dark:text-red-400 truncate">{rec.fromZone}</span>
+              <div className="min-w-0">
+                <span className="text-xs text-muted-foreground">{recommendation.fromRegion1}</span>
+                <p className="truncate font-semibold text-red-600 dark:text-red-300">{recommendation.fromZone}</p>
               </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
-              <div className="flex flex-col min-w-0">
-                <span className="text-xs text-muted-foreground">{rec.toRegion1}</span>
-                <span className="font-semibold text-green-600 dark:text-green-400 truncate">{rec.toZone}</span>
+              <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <div className="min-w-0">
+                <span className="text-xs text-muted-foreground">{recommendation.toRegion1}</span>
+                <p className="truncate font-semibold text-green-600 dark:text-green-300">{recommendation.toZone}</p>
               </div>
-              <div className="ml-auto flex items-center gap-2 shrink-0">
-                <span className="font-medium">{rec.carCount}대 이동 권장</span>
-                {rec.sameRegion && (
-                  <Badge variant="secondary" className="text-xs">동일 시/도</Badge>
+              <div className="ml-auto flex shrink-0 items-center gap-2">
+                <span className="font-medium">{recommendation.carCount}대 이동 권장</span>
+                {recommendation.sameRegion && (
+                  <Badge variant="secondary" className="text-xs">
+                    동일 권역
+                  </Badge>
                 )}
                 <button
-                  onClick={() => toggleCandidates(i, rec.fromZone, rec.carCount)}
-                  className="flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-muted transition-colors"
+                  onClick={() => toggleCandidates(index, recommendation.fromZone, recommendation.carCount)}
+                  className="flex items-center gap-1 rounded-full border border-border/70 bg-background px-3 py-1.5 text-xs transition-colors hover:bg-muted/50"
                   title="차량 후보 보기"
                 >
                   <Car className="h-3 w-3" />
-                  차량
+                  차량 후보
                   {isOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                 </button>
               </div>
             </div>
 
             {isOpen && (
-              <div className="border-t bg-muted/30 px-4 py-3">
-                {state?.loading && (
-                  <p className="text-xs text-muted-foreground">차량 목록 조회 중…</p>
-                )}
-                {state?.error && (
-                  <p className="text-xs text-red-500">{state.error}</p>
-                )}
+              <div className="border-t border-border/60 bg-muted/20 px-4 py-3">
+                {state?.loading && <p className="text-xs text-muted-foreground">차량 후보를 조회하는 중입니다.</p>}
+                {state?.error && <p className="text-xs text-red-500">{state.error}</p>}
                 {state?.candidates && (
                   <>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      이동 권장 차량 — {rec.fromZone} 내 가동률 하위 {state.candidates.length}대 (최근 {pastDays}일 기준)
+                    <p className="mb-2 text-xs text-muted-foreground">
+                      {recommendation.fromZone}에서 가동률이 낮은 차량 {state.candidates.length}대를 기준으로 추렸습니다.
+                      최근 {pastDays}일 데이터 기준입니다.
                     </p>
                     <div className="max-h-48 overflow-y-auto">
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="text-muted-foreground border-b">
-                            <th className="text-left pb-1 font-medium">차량번호</th>
-                            <th className="text-left pb-1 font-medium">모델</th>
-                            <th className="text-right pb-1 font-medium">가동률</th>
-                            <th className="text-left pb-1 font-medium">차량 ID</th>
+                          <tr className="border-b border-border/60 text-muted-foreground">
+                            <th className="pb-1 text-left font-medium">차량번호</th>
+                            <th className="pb-1 text-left font-medium">모델명</th>
+                            <th className="pb-1 text-right font-medium">가동률</th>
+                            <th className="pb-1 text-left font-medium">차량 ID</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {state.candidates.map((c) => (
-                            <tr key={c.carId} className="border-b border-muted last:border-0">
-                              <td className="py-1 font-medium">{c.carNum}</td>
-                              <td className="py-1 text-muted-foreground">{c.carName}</td>
+                          {state.candidates.map((candidate) => (
+                            <tr key={candidate.carId} className="border-b border-border/40 last:border-0">
+                              <td className="py-1 font-medium">{candidate.carNum}</td>
+                              <td className="py-1 text-muted-foreground">{candidate.carName}</td>
                               <td className="py-1 text-right">
-                                {c.utilRate != null
-                                  ? <span className="text-red-500">{(c.utilRate * 100).toFixed(1)}%</span>
-                                  : <span className="text-muted-foreground">-</span>
-                                }
+                                {candidate.utilRate != null ? (
+                                  <span className="text-red-500 dark:text-red-300">
+                                    {(candidate.utilRate * 100).toFixed(1)}%
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground">-</span>
+                                )}
                               </td>
-                              <td className="py-1 text-muted-foreground">{c.carId}</td>
+                              <td className="py-1 text-muted-foreground">{candidate.carId}</td>
                             </tr>
                           ))}
                         </tbody>

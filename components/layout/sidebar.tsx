@@ -5,23 +5,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ArrowLeftRight,
-  CarFront,
+  Car,
   ChevronLeft,
   ChevronRight,
   LayoutDashboard,
   Menu,
   SearchCheck,
   X,
-  Car,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { icon: LayoutDashboard, label: "대시보드",    href: "/dashboard"   },
-  { icon: Car,             label: "신차 배분",   href: "/allocation"  },
-  { icon: ArrowLeftRight,  label: "차량 재배치", href: "/relocation"  },
-  { icon: SearchCheck,     label: "워크스페이스", href: "/work-history"},
+  { icon: LayoutDashboard, label: "대시보드", href: "/dashboard" },
+  { icon: Car, label: "신차 배분", href: "/allocation" },
+  { icon: ArrowLeftRight, label: "재배치 추천", href: "/relocation" },
+  { icon: SearchCheck, label: "워크스페이스", href: "/work-history" },
 ];
 
 export function Sidebar() {
@@ -34,7 +33,7 @@ export function Sidebar() {
       <Button
         variant="ghost"
         size="icon"
-        className="fixed top-3 left-3 z-50 border border-border/70 bg-white/80 shadow-[0_12px_30px_-20px_rgba(20,26,36,0.45)] backdrop-blur md:hidden"
+        className="fixed left-3 top-3 z-50 border border-border/70 bg-white/80 shadow-[0_12px_30px_-20px_rgba(20,26,36,0.45)] backdrop-blur md:hidden"
         onClick={() => setMobileOpen(true)}
       >
         <Menu className="h-5 w-5" />
@@ -42,44 +41,59 @@ export function Sidebar() {
 
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-[#141A24]/50 md:hidden"
+          className="fixed inset-0 z-40 bg-[#141A24]/56 md:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
       <aside
         className={cn(
-          "flex h-screen flex-col border-r border-sidebar-border bg-sidebar backdrop-blur-xl transition-all duration-300",
-          "hidden md:flex",
+          "hidden h-screen flex-col border-r border-sidebar-border bg-sidebar/95 backdrop-blur-xl transition-all duration-300 md:flex",
           collapsed ? "w-20" : "w-72",
-          mobileOpen && "!fixed inset-y-0 left-0 z-50 !flex w-72"
+          mobileOpen && "!fixed inset-y-0 left-0 z-50 !flex w-72",
         )}
       >
-        <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
-          {!collapsed && (
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#0078FF] text-white shadow-[0_16px_30px_-18px_rgba(0,120,255,0.95)]">
-                <CarFront className="h-5 w-5" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  SOCAR
-                </p>
-                <span className="block truncate text-base font-semibold text-sidebar-foreground">
-                  Workspace Hub
-                </span>
-              </div>
-            </div>
-          )}
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={() => setMobileOpen(false)}
+        <div className="border-b border-sidebar-border px-4 py-4">
+          <div
+            className={cn(
+              "rounded-[1.5rem] border border-border/70 bg-background/80 p-4 shadow-[0_18px_40px_-34px_rgba(20,26,36,0.35)]",
+              collapsed && "flex items-center justify-center p-3",
+            )}
           >
-            <X className="h-5 w-5" />
-          </Button>
+            {collapsed ? (
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-foreground text-background">
+                <SearchCheck className="h-5 w-5" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-foreground text-background">
+                    <SearchCheck className="h-5 w-5" />
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-xl md:hidden"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                    Workspace
+                  </p>
+                  <p className="mt-1 text-lg font-semibold tracking-[-0.03em] text-foreground">
+                    Search-first hub
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    자주 찾는 문서와 실행 화면을 조용한 탐색 흐름으로 정리합니다.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <nav className="flex-1 space-y-2 p-3">
@@ -94,8 +108,8 @@ export function Sidebar() {
                 className={cn(
                   "flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all",
                   active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-[0_12px_26px_-22px_rgba(0,120,255,0.8)] ring-1 ring-[#0078FF]/10"
-                    : "text-muted-foreground hover:bg-white/60 hover:text-sidebar-foreground dark:hover:bg-white/5"
+                    ? "bg-foreground text-background shadow-[0_14px_30px_-24px_rgba(20,26,36,0.55)]"
+                    : "text-muted-foreground hover:bg-white/60 hover:text-sidebar-foreground dark:hover:bg-white/5",
                 )}
               >
                 <item.icon className="h-5 w-5 shrink-0" />

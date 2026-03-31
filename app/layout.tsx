@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GU Dashboard",
-  description: "경남 울산 사업팀 매출 대시보드",
+  title: "Workspace Portal",
+  description: "문서 검색, 업무 기록, 메모, To-do를 한 화면에서 정리하는 개인 워크스페이스 포털",
 };
 
 export default function RootLayout({
