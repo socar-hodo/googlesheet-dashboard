@@ -128,9 +128,9 @@ export function loadSqlR2(
   return formatted;
 }
 
-/** BigQuery 결과를 AllocationRow로 매핑 */
+/** BigQuery 결과를 AllocationRow로 매핑 (0대 배분 지역 제외) */
 function mapRows(rawRows: Record<string, unknown>[]): AllocationRow[] {
-  return rawRows.map((r) => ({
+  return rawRows.filter((r) => Number(r.allocated_cars ?? 0) > 0).map((r) => ({
     region1:       String(r.region1 ?? ""),
     region2:       String(r.region2 ?? ""),
     ref_type:      (r.ref_type as "model" | "segment" | "fallback") ?? "fallback",
