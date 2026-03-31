@@ -104,10 +104,11 @@ export function loadSqlR2(
   sqlPath: string = DEFAULT_SQL_R2_PATH
 ): string {
   const raw = readFileSync(sqlPath, "utf-8");
-  // region1List를 SQL IN 절로 변환: ('경상남도', '울산광역시')
-  const region1InClause = (params.region1List ?? [])
-    .map((r) => `'${r}'`)
-    .join(", ");
+  // region1List를 SQL IN 절로 변환 — 화이트리스트 검증 후 안전한 값만 사용
+  const safeRegions = [...new Set(params.region1List ?? [])].filter((r) =>
+    (REGION1_LIST as readonly string[]).includes(r)
+  );
+  const region1InClause = safeRegions.map((r) => `'${r}'`).join(", ");
   const carModel = params.carModel || "__NO_MODEL__";
   const formatted = raw
     .replace(/\{car_model\}/g, carModel)
@@ -128,9 +129,9 @@ export function loadSqlR2(
   return formatted;
 }
 
-/** BigQuery 결과를 AllocationRow로 매핑 (0대 배분 지역 제외) */
+/** BigQuery 결과를 AllocationRow로 매핑 */
 function mapRows(rawRows: Record<string, unknown>[]): AllocationRow[] {
-  return rawRows.filter((r) => Number(r.allocated_cars ?? 0) > 0).map((r) => ({
+  return rawRows.map((r) => ({
     region1:       String(r.region1 ?? ""),
     region2:       String(r.region2 ?? ""),
     ref_type:      (r.ref_type as "model" | "segment" | "fallback") ?? "fallback",
@@ -148,14 +149,13 @@ function mapRows(rawRows: Record<string, unknown>[]): AllocationRow[] {
   }));
 }
 
-/** SQL 실행 후 AllocationResult 반환 (1단계 전국 배분). */
-export async function runAllocation(params: AllocationParams): Promise<AllocationResult> {
-  const sql = loadSql(params);
-  const rawRows = await runQuery(sql);
-  if (!rawRows) throw new Error("BigQuery가 설정되지 않았습니다 (GOOGLE_APPLICATION_CREDENTIALS_B64).");
-
-  const rows = mapRows(rawRows);
-  const spearman = computeSpearman(rows.map((r) => r.rank_s1), rows.map((r) => r.rank_s5));
+/** 공통 결과 생성: Spearman은 전체 행으로 계산, 표시용은 0대 제외 */
+function buildResult(rawRows: Record<string, unknown>[], mode: "region1" | "region2"): AllocationResult {
+  const allRows = mapRows(rawRows);
+  // Spearman은 0대 포함 전체 행에서 계산 (SQL 순위와 일치)
+  const spearman = computeSpearman(allRows.map((r) => r.rank_s1), allRows.map((r) => r.rank_s5));
+  // 표시용 결과에서 0대 배분 지역 제외
+  const rows = allRows.filter((r) => r.allocated_cars > 0);
 
   return {
     rows,
@@ -163,8 +163,16 @@ export async function runAllocation(params: AllocationParams): Promise<Allocatio
     totalAllocated: rows.reduce((s, r) => s + r.allocated_cars, 0),
     region1Count:   new Set(rows.map((r) => r.region1)).size,
     region2Count:   rows.length,
-    mode: "region1",
+    mode,
   };
+}
+
+/** SQL 실행 후 AllocationResult 반환 (1단계 전국 배분). */
+export async function runAllocation(params: AllocationParams): Promise<AllocationResult> {
+  const sql = loadSql(params);
+  const rawRows = await runQuery(sql);
+  if (!rawRows) throw new Error("BigQuery가 설정되지 않았습니다 (GOOGLE_APPLICATION_CREDENTIALS_B64).");
+  return buildResult(rawRows, "region1");
 }
 
 /** SQL 실행 후 AllocationResult 반환 (2단계 광역 내 배분). */
@@ -172,16 +180,5 @@ export async function runAllocationR2(params: AllocationParams): Promise<Allocat
   const sql = loadSqlR2(params);
   const rawRows = await runQuery(sql);
   if (!rawRows) throw new Error("BigQuery가 설정되지 않았습니다 (GOOGLE_APPLICATION_CREDENTIALS_B64).");
-
-  const rows = mapRows(rawRows);
-  const spearman = computeSpearman(rows.map((r) => r.rank_s1), rows.map((r) => r.rank_s5));
-
-  return {
-    rows,
-    spearman,
-    totalAllocated: rows.reduce((s, r) => s + r.allocated_cars, 0),
-    region1Count:   new Set(rows.map((r) => r.region1)).size,
-    region2Count:   rows.length,
-    mode: "region2",
-  };
+  return buildResult(rawRows, "region2");
 }

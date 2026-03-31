@@ -63,6 +63,7 @@ current_rev AS (
     AND p.car_sharing_type IN ('socar', 'zplus')
     AND p.car_state IN ('운영', '수리')
     AND p.car_model = '{car_segment}'
+    AND p.region1 IN ({region1_list})
   GROUP BY p.region1, p.region2, ref.ref_type
 ),
 
@@ -82,6 +83,7 @@ current_util AS (
     AND p.car_sharing_type IN ('socar', 'zplus')
     AND p.car_state IN ('운영', '수리')
     AND p.car_model = '{car_segment}'
+    AND p.region1 IN ({region1_list})
   GROUP BY p.region1, p.region2, ref.ref_type
 )
 ,
@@ -102,6 +104,7 @@ yoy_rev AS (
     AND p.car_sharing_type IN ('socar', 'zplus')
     AND p.car_state IN ('운영', '수리')
     AND p.car_model = '{car_segment}'
+    AND p.region1 IN ({region1_list})
   GROUP BY p.region1, p.region2, ref.ref_type
 ),
 
@@ -122,6 +125,7 @@ yoy_util AS (
     AND p.car_sharing_type IN ('socar', 'zplus')
     AND p.car_state IN ('운영', '수리')
     AND p.car_model = '{car_segment}'
+    AND p.region1 IN ({region1_list})
   GROUP BY p.region1, p.region2, ref.ref_type
 ),
 
