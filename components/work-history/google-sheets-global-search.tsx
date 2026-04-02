@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { WorkspaceResource } from '@/types/workspace-resource';
 
 export interface SpreadsheetSearchMatch {
@@ -199,23 +201,24 @@ export function GoogleSheetsGlobalSearch({
         <div className="flex flex-col gap-3 lg:flex-row">
           <label className="relative block flex-1">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
+            <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="예: 운영, 지표, 대시보드, 주간"
-              className="h-11 w-full rounded-2xl border border-border/70 bg-background/70 pl-11 pr-4 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+              className="h-11 w-full rounded-2xl pl-11 pr-4"
             />
           </label>
 
-          <select
-            value={sortBy}
-            onChange={(event) => setSortBy(event.target.value as SearchSortOption)}
-            className="h-11 rounded-2xl border border-border/70 bg-background/70 px-4 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
-          >
-            <option value="relevance">관련도순</option>
-            <option value="recent">최근 수정순</option>
-            <option value="file-name">파일명순</option>
-          </select>
+          <Select value={sortBy} onValueChange={(value) => setSortBy(value as SearchSortOption)}>
+            <SelectTrigger className="h-11 w-36 rounded-2xl">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="relevance">관련도순</SelectItem>
+              <SelectItem value="recent">최근 수정순</SelectItem>
+              <SelectItem value="file-name">파일명순</SelectItem>
+            </SelectContent>
+          </Select>
 
           <Button
             type="button"

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist_Mono, IBM_Plex_Sans_KR } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { SessionProvider } from "@/components/providers/session-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const ibmPlexSansKr = IBM_Plex_Sans_KR({
@@ -37,7 +39,10 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
+            <TooltipProvider>
+              {children}
+            </TooltipProvider>
+            <Toaster />
           </ThemeProvider>
         </SessionProvider>
       </body>
