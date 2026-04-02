@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { toast } from 'sonner';
 import type { WorkspaceResource } from '@/types/workspace-resource';
 import type { GoogleSpreadsheetFile } from '@/types/google-drive';
 import type { SpreadsheetSearchMatch } from '@/components/work-history/google-sheets-global-search';
@@ -65,11 +66,41 @@ export function useWorkspaceResources(
   }, []);
 
   const handleRemoveRecent = useCallback((resourceId: string) => {
-    setRecentResources((current) => current.filter((item) => item.id !== resourceId));
+    let removedResource: WorkspaceResource | undefined;
+    setRecentResources((current) => {
+      removedResource = current.find((item) => item.id === resourceId);
+      return current.filter((item) => item.id !== resourceId);
+    });
+    toast('최근 문서에서 제거했습니다.', {
+      action: {
+        label: '되돌리기',
+        onClick: () => {
+          if (removedResource) {
+            setRecentResources((current) => [removedResource!, ...current]);
+            toast('문서를 복원했습니다.');
+          }
+        },
+      },
+    });
   }, []);
 
   const handleRemoveFavorite = useCallback((resourceId: string) => {
-    setFavoriteResources((current) => current.filter((item) => item.id !== resourceId));
+    let removedResource: WorkspaceResource | undefined;
+    setFavoriteResources((current) => {
+      removedResource = current.find((item) => item.id === resourceId);
+      return current.filter((item) => item.id !== resourceId);
+    });
+    toast('즐겨찾기에서 제거했습니다.', {
+      action: {
+        label: '되돌리기',
+        onClick: () => {
+          if (removedResource) {
+            setFavoriteResources((current) => [removedResource!, ...current]);
+            toast('즐겨찾기를 복원했습니다.');
+          }
+        },
+      },
+    });
   }, []);
 
   return {

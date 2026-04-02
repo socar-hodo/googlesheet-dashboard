@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ExternalLink, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -33,23 +34,112 @@ export function WorkspaceSearchBar({
   autocompleteHasResults,
   keywordSuggestions,
 }: WorkspaceSearchBarProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+
+  // Show dropdown when there's a query and user hasn't dismissed it
+  const showDropdown = isDropdownOpen && !!normalizedQuery;
+
+  // Open dropdown when query changes
+  useEffect(() => {
+    if (normalizedQuery) {
+      setIsDropdownOpen(true);
+      setActiveIndex(-1);
+    }
+  }, [normalizedQuery]);
+
+  // Outside click detection (Item #2)
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+        setActiveIndex(-1);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Keyboard navigation handler (Item #1)
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (!showDropdown) return;
+
+      switch (event.key) {
+        case 'ArrowDown': {
+          event.preventDefault();
+          setActiveIndex((prev) =>
+            prev < autocompleteItems.length - 1 ? prev + 1 : 0,
+          );
+          break;
+        }
+        case 'ArrowUp': {
+          event.preventDefault();
+          setActiveIndex((prev) =>
+            prev > 0 ? prev - 1 : autocompleteItems.length - 1,
+          );
+          break;
+        }
+        case 'Enter': {
+          if (activeIndex >= 0 && activeIndex < autocompleteItems.length) {
+            event.preventDefault();
+            const item = autocompleteItems[activeIndex];
+            item.onOpen();
+            if (item.href && item.external) {
+              window.open(item.href, '_blank', 'noreferrer');
+            }
+            setIsDropdownOpen(false);
+            setActiveIndex(-1);
+          }
+          break;
+        }
+        case 'Escape': {
+          event.preventDefault();
+          setIsDropdownOpen(false);
+          setActiveIndex(-1);
+          inputRef.current?.blur();
+          break;
+        }
+      }
+    },
+    [showDropdown, activeIndex, autocompleteItems],
+  );
+
+  // Focus handler to reopen dropdown
+  const handleFocus = useCallback(() => {
+    if (normalizedQuery) {
+      setIsDropdownOpen(true);
+    }
+  }, [normalizedQuery]);
+
+  const activeDescendantId =
+    activeIndex >= 0 && activeIndex < autocompleteItems.length
+      ? `autocomplete-item-${autocompleteItems[activeIndex].id}`
+      : undefined;
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" ref={containerRef}>
       <div className="relative">
         <label className="relative block">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
+            ref={inputRef}
             role="combobox"
-            aria-expanded={!!normalizedQuery}
+            aria-expanded={showDropdown}
             aria-controls="workspace-autocomplete"
             aria-autocomplete="list"
+            aria-activedescendant={activeDescendantId}
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
+            onKeyDown={handleKeyDown}
+            onFocus={handleFocus}
             placeholder="업무명, 프로젝트, 태그, 결과로 검색"
             className="h-13 w-full rounded-[1.4rem] pl-11 pr-4"
           />
         </label>
-        {normalizedQuery && (
+        {showDropdown && (
           <div
             id="workspace-autocomplete"
             role="listbox"
@@ -66,16 +156,25 @@ export function WorkspaceSearchBar({
               </span>
             </div>
             <div className="max-h-96 overflow-y-auto p-2">
-              {autocompleteItems.map((item) => (
+              {autocompleteItems.map((item, index) => (
                 <a
                   key={item.id}
+                  id={`autocomplete-item-${item.id}`}
                   role="option"
-                  aria-selected={false}
+                  aria-selected={index === activeIndex}
                   href={item.href ?? '#'}
                   target={item.external ? '_blank' : undefined}
                   rel={item.external ? 'noreferrer' : undefined}
-                  onClick={item.onOpen}
-                  className="flex items-start justify-between gap-3 rounded-2xl px-3 py-3 transition hover:bg-accent"
+                  onClick={(event) => {
+                    item.onOpen();
+                    setIsDropdownOpen(false);
+                    setActiveIndex(-1);
+                  }}
+                  onMouseEnter={() => setActiveIndex(index)}
+                  className={cn(
+                    'flex items-start justify-between gap-3 rounded-2xl px-3 py-3 transition hover:bg-accent',
+                    index === activeIndex && 'bg-accent',
+                  )}
                 >
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">

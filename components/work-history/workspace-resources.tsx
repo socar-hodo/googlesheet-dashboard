@@ -9,6 +9,7 @@ export interface ResourcePanelProps {
   icon: LucideIcon;
   title: string;
   emptyText: string;
+  emptyContent?: React.ReactNode;
   resources: WorkspaceResource[];
   onRemove?: (resourceId: string) => void;
   removeLabel?: string;
@@ -18,6 +19,7 @@ export function ResourcePanel({
   icon: Icon,
   title,
   emptyText,
+  emptyContent,
   resources,
   onRemove,
   removeLabel,
@@ -33,7 +35,7 @@ export function ResourcePanel({
       <CardContent className="space-y-3">
         {resources.length === 0 && (
           <div className="rounded-2xl border border-dashed border-border/70 bg-background/65 px-4 py-6 text-sm text-muted-foreground">
-            {emptyText}
+            {emptyContent ?? emptyText}
           </div>
         )}
         {resources.map((resource) => (

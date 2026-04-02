@@ -41,33 +41,75 @@ export function getIsoWeekNumber(date: Date): number {
   return Math.ceil(((target.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 }
 
-export function getKoreanPublicHolidays(year: number): Map<string, string> {
-  const holidaysByYear: Record<number, Array<[string, string]>> = {
-    2026: [
-      ['2026-01-01', '신정'],
-      ['2026-02-16', '설날 연휴'],
-      ['2026-02-17', '설날'],
-      ['2026-02-18', '설날 연휴'],
-      ['2026-03-01', '삼일절'],
-      ['2026-03-02', '삼일절 대체'],
-      ['2026-05-05', '어린이날'],
-      ['2026-05-24', '부처님오신날'],
-      ['2026-05-25', '석가탄신일 대체'],
-      ['2026-06-03', '전국동시지방선거'],
-      ['2026-06-06', '현충일'],
-      ['2026-08-15', '광복절'],
-      ['2026-08-17', '광복절 대체'],
-      ['2026-09-24', '추석 연휴'],
-      ['2026-09-25', '추석'],
-      ['2026-09-26', '추석 연휴'],
-      ['2026-10-03', '개천절'],
-      ['2026-10-05', '개천절 대체'],
-      ['2026-10-09', '한글날'],
-      ['2026-12-25', '성탄절'],
-    ],
-  };
+// Fixed solar holidays that repeat every year (Item #15)
+const FIXED_SOLAR_HOLIDAYS: Array<[string, string]> = [
+  ['01-01', '신정'],
+  ['03-01', '삼일절'],
+  ['05-05', '어린이날'],
+  ['06-06', '현충일'],
+  ['08-15', '광복절'],
+  ['10-03', '개천절'],
+  ['10-09', '한글날'],
+  ['12-25', '성탄절'],
+];
 
-  return new Map(holidaysByYear[year] ?? []);
+// Year-specific lunar/variable holidays and substitute holidays
+const VARIABLE_HOLIDAYS_BY_YEAR: Record<number, Array<[string, string]>> = {
+  2026: [
+    ['2026-02-16', '설날 연휴'],
+    ['2026-02-17', '설날'],
+    ['2026-02-18', '설날 연휴'],
+    ['2026-03-02', '삼일절 대체'],
+    ['2026-05-24', '부처님오신날'],
+    ['2026-05-25', '석가탄신일 대체'],
+    ['2026-06-03', '전국동시지방선거'],
+    ['2026-08-17', '광복절 대체'],
+    ['2026-09-24', '추석 연휴'],
+    ['2026-09-25', '추석'],
+    ['2026-09-26', '추석 연휴'],
+    ['2026-10-05', '개천절 대체'],
+  ],
+  2027: [
+    ['2027-02-05', '설날 연휴'],
+    ['2027-02-06', '설날'],
+    ['2027-02-07', '설날 연휴'],
+    ['2027-02-08', '설날 대체'],
+    ['2027-05-13', '부처님오신날'],
+    ['2027-05-06', '어린이날 대체'],
+    ['2027-09-14', '추석 연휴'],
+    ['2027-09-15', '추석'],
+    ['2027-09-16', '추석 연휴'],
+    ['2027-10-11', '한글날 대체'],
+  ],
+  2028: [
+    ['2028-01-25', '설날 연휴'],
+    ['2028-01-26', '설날'],
+    ['2028-01-27', '설날 연휴'],
+    ['2028-05-02', '부처님오신날'],
+    ['2028-05-05', '어린이날'],
+    ['2028-10-02', '추석 연휴'],
+    ['2028-10-03', '추석'],
+    ['2028-10-04', '추석 연휴'],
+  ],
+};
+
+export function getKoreanPublicHolidays(year: number): Map<string, string> {
+  const holidays = new Map<string, string>();
+
+  // Auto-generate fixed solar holidays for any year (Item #15)
+  for (const [monthDay, label] of FIXED_SOLAR_HOLIDAYS) {
+    holidays.set(`${year}-${monthDay}`, label);
+  }
+
+  // Add year-specific variable holidays
+  const variable = VARIABLE_HOLIDAYS_BY_YEAR[year];
+  if (variable) {
+    for (const [dateKey, label] of variable) {
+      holidays.set(dateKey, label);
+    }
+  }
+
+  return holidays;
 }
 
 export interface CalendarDay {

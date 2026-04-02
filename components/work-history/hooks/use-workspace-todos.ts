@@ -87,6 +87,9 @@ export function useWorkspaceTodos(
     setSelectedDateTodoPriority('medium');
   }, [selectedDateTodoInput, selectedDateTodoProject, selectedDate, selectedDateTodoPriority, appendTodo]);
 
+  // Track recently toggled todo for animation (Item #9)
+  const [recentlyToggledId, setRecentlyToggledId] = useState<string | null>(null);
+
   const handleToggleTodo = useCallback((todoId: string) => {
     setTodos((current) =>
       current.map((todo) => {
@@ -100,6 +103,9 @@ export function useWorkspaceTodos(
         return next;
       }),
     );
+    // Trigger animation (Item #9)
+    setRecentlyToggledId(todoId);
+    setTimeout(() => setRecentlyToggledId(null), 500);
   }, []);
 
   const handleRestoreTodoToToday = useCallback((todoId: string) => {
@@ -159,14 +165,52 @@ export function useWorkspaceTodos(
       const workLogId = buildTodoWorkLogId(workspaceOwnerKey, todoId);
       const resourceId = `history-${workLogId}`;
 
-      setTodos((current) => current.filter((todo) => todo.id !== todoId));
-      setLocalRecords((current) => current.filter((record) => record.id !== workLogId));
-      setRecentResources((current) => current.filter((resource) => resource.id !== resourceId));
-      setFavoriteResources((current) => current.filter((resource) => resource.id !== resourceId));
+      // Snapshot for undo (Item #4)
+      let removedTodo: TodoItem | undefined;
+      let removedRecord: import('@/types/work-history').WorkHistoryRecord | undefined;
+      let removedRecentResource: import('@/types/workspace-resource').WorkspaceResource | undefined;
+      let removedFavoriteResource: import('@/types/workspace-resource').WorkspaceResource | undefined;
+
+      setTodos((current) => {
+        removedTodo = current.find((todo) => todo.id === todoId);
+        return current.filter((todo) => todo.id !== todoId);
+      });
+      setLocalRecords((current) => {
+        removedRecord = current.find((record) => record.id === workLogId);
+        return current.filter((record) => record.id !== workLogId);
+      });
+      setRecentResources((current) => {
+        removedRecentResource = current.find((resource) => resource.id === resourceId);
+        return current.filter((resource) => resource.id !== resourceId);
+      });
+      setFavoriteResources((current) => {
+        removedFavoriteResource = current.find((resource) => resource.id === resourceId);
+        return current.filter((resource) => resource.id !== resourceId);
+      });
       if (editingTodoId === todoId) {
         handleCancelEditingTodo();
       }
-      toast('할 일을 삭제했습니다.');
+      // Undo toast (Item #4)
+      toast('할 일을 삭제했습니다.', {
+        action: {
+          label: '되돌리기',
+          onClick: () => {
+            if (removedTodo) {
+              setTodos((current) => sortTodos([removedTodo!, ...current]));
+            }
+            if (removedRecord) {
+              setLocalRecords((current) => [removedRecord!, ...current].sort((a, b) => b.date.localeCompare(a.date)));
+            }
+            if (removedRecentResource) {
+              setRecentResources((current) => [removedRecentResource!, ...current]);
+            }
+            if (removedFavoriteResource) {
+              setFavoriteResources((current) => [removedFavoriteResource!, ...current]);
+            }
+            toast('할 일을 복원했습니다.');
+          },
+        },
+      });
     },
     [workspaceOwnerKey, editingTodoId, handleCancelEditingTodo, setLocalRecords, setRecentResources, setFavoriteResources],
   );
@@ -209,6 +253,9 @@ export function useWorkspaceTodos(
     setSelectedDateTodoPriority,
     selectedDateTodoProject,
     setSelectedDateTodoProject,
+
+    // Animation state (Item #9)
+    recentlyToggledId,
 
     // Edit form
     editingTodoId,
