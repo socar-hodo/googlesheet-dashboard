@@ -16,10 +16,11 @@ interface Props {
   rows: RelocationRow[];
 }
 
+// These colors work in both light and dark mode — muted enough for dark backgrounds
 const TIER_COLOR: Record<RelocationRow["tier"], string> = {
-  top:    "#22c55e",  // green-500
-  mid:    "#94a3b8",  // slate-400
-  bottom: "#ef4444",  // red-500
+  top:    "hsl(142, 71%, 45%)",   // green — visible in both modes
+  mid:    "hsl(215, 16%, 57%)",   // slate — neutral mid-tone
+  bottom: "hsl(0, 84%, 60%)",     // red — visible in both modes
 };
 
 export function RelocationChart({ rows }: Props) {
@@ -32,7 +33,7 @@ export function RelocationChart({ rows }: Props) {
 
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={data} margin={{ top: 4, right: 8, bottom: 40, left: 0 }}>
+      <BarChart data={data} margin={{ top: 4, right: 8, bottom: 40, left: 0 }} aria-label="권역별 종합 점수 분포 차트">
         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
         <XAxis
           dataKey="name"

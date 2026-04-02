@@ -98,7 +98,7 @@ export function RelocationForm() {
 
   return (
     <div className="grid gap-5 xl:grid-cols-[20rem_minmax(0,1fr)]">
-      <Card className="h-fit border-border/60 bg-card/95 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.16)] xl:sticky xl:top-24">
+      <Card className="h-fit max-h-[calc(100dvh-7rem)] overflow-y-auto border-border/60 bg-card/95 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.16)] xl:sticky xl:top-24">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">조회 파라미터</CardTitle>
           <p className="text-sm text-muted-foreground">
@@ -108,8 +108,9 @@ export function RelocationForm() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4 text-sm">
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">권역 필터</label>
+              <label htmlFor="reloc-region" className="text-xs font-medium text-muted-foreground">권역 필터</label>
               <select
+                id="reloc-region"
                 className="h-11 w-full rounded-2xl border border-border/70 bg-background px-4 text-sm outline-none transition focus:border-foreground focus:ring-4 focus:ring-foreground/10"
                 value={form.region1}
                 onChange={(e) => setForm((current) => ({ ...current, region1: e.target.value }))}
@@ -123,14 +124,16 @@ export function RelocationForm() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">과거 실적 기간</label>
-              <div className="grid grid-cols-3 gap-2">
+              <label id="past-days-label" className="text-xs font-medium text-muted-foreground">과거 실적 기간</label>
+              <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-labelledby="past-days-label">
                 {PAST_DAYS_OPTIONS.map((days) => (
                   <button
                     key={days}
                     type="button"
+                    role="radio"
+                    aria-checked={form.pastDays === days}
                     onClick={() => setForm((current) => ({ ...current, pastDays: days }))}
-                    className={`rounded-2xl border px-2 py-2 text-xs transition-colors ${
+                    className={`rounded-2xl border px-2 py-2 text-xs font-medium transition-colors ${
                       form.pastDays === days
                         ? "border-primary bg-primary text-primary-foreground"
                         : "border-border/70 bg-background hover:bg-muted/50"
@@ -143,14 +146,16 @@ export function RelocationForm() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">사전예약 조회</label>
-              <div className="grid grid-cols-3 gap-2">
+              <label id="future-days-label" className="text-xs font-medium text-muted-foreground">사전예약 조회</label>
+              <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-labelledby="future-days-label">
                 {FUTURE_DAYS_OPTIONS.map((days) => (
                   <button
                     key={days}
                     type="button"
+                    role="radio"
+                    aria-checked={form.futureDays === days}
                     onClick={() => setForm((current) => ({ ...current, futureDays: days }))}
-                    className={`rounded-2xl border px-2 py-2 text-xs transition-colors ${
+                    className={`rounded-2xl border px-2 py-2 text-xs font-medium transition-colors ${
                       form.futureDays === days
                         ? "border-primary bg-primary text-primary-foreground"
                         : "border-border/70 bg-background hover:bg-muted/50"
@@ -162,21 +167,26 @@ export function RelocationForm() {
               </div>
             </div>
 
-            <div className="space-y-3">
-              <label className="text-xs font-medium text-muted-foreground">
-                가중치 합계 {(form.weightUtil + form.weightRev + form.weightPre).toFixed(2)}
-              </label>
+            <fieldset className="space-y-3">
+              <legend className="text-xs font-medium text-muted-foreground">
+                가중치 합계{" "}
+                <span aria-live="polite">{(form.weightUtil + form.weightRev + form.weightPre).toFixed(2)}</span>
+              </legend>
+              <p className="text-[11px] leading-5 text-muted-foreground/80">
+                슬라이더를 움직이면 나머지 두 항목이 비율에 맞춰 자동 재배분됩니다. 세 값의 합은 항상 1.00입니다.
+              </p>
               {[
-                { key: "weightUtil" as const, label: "가동률", value: form.weightUtil },
-                { key: "weightRev" as const, label: "매출", value: form.weightRev },
-                { key: "weightPre" as const, label: "사전예약", value: form.weightPre },
-              ].map(({ key, label, value }) => (
+                { key: "weightUtil" as const, label: "가동률", value: form.weightUtil, id: "w-util" },
+                { key: "weightRev" as const, label: "매출", value: form.weightRev, id: "w-rev" },
+                { key: "weightPre" as const, label: "사전예약", value: form.weightPre, id: "w-pre" },
+              ].map(({ key, label, value, id }) => (
                 <div key={key} className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{label}</span>
-                    <span>{value.toFixed(2)}</span>
+                    <label htmlFor={id}>{label}</label>
+                    <output htmlFor={id} aria-live="polite">{value.toFixed(2)}</output>
                   </div>
                   <input
+                    id={id}
                     type="range"
                     min={0}
                     max={1}
@@ -184,12 +194,16 @@ export function RelocationForm() {
                     value={value}
                     onChange={(e) => handleWeightChange(key, parseFloat(e.target.value))}
                     className="w-full"
+                    aria-valuemin={0}
+                    aria-valuemax={1}
+                    aria-valuenow={value}
+                    aria-valuetext={`${label} ${(value * 100).toFixed(0)}%`}
                   />
                 </div>
               ))}
-            </div>
+            </fieldset>
 
-            <Button type="submit" className="h-11 w-full rounded-2xl" disabled={loading}>
+            <Button type="submit" className="h-11 w-full rounded-2xl" disabled={loading} aria-busy={loading}>
               {loading ? "조회 중..." : "조회 실행"}
             </Button>
           </form>
@@ -198,7 +212,7 @@ export function RelocationForm() {
 
       <div className="min-w-0 space-y-5">
         {error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
+          <div role="alert" aria-live="assertive" className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         )}
