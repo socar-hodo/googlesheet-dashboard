@@ -33,7 +33,7 @@ export function Sidebar() {
       <Button
         variant="ghost"
         size="icon"
-        className="fixed left-3 top-3 z-50 border border-border/70 bg-white/80 shadow-[0_12px_30px_-20px_rgba(20,26,36,0.45)] backdrop-blur md:hidden"
+        className="fixed left-3 top-3 z-50 border border-border/70 bg-card/80 shadow-[0_12px_30px_-20px_rgba(20,26,36,0.45)] backdrop-blur md:hidden"
         onClick={() => setMobileOpen(true)}
       >
         <Menu className="h-5 w-5" />
@@ -41,7 +41,7 @@ export function Sidebar() {
 
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-[#141A24]/56 md:hidden"
+          className="fixed inset-0 z-40 bg-black/56 md:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}

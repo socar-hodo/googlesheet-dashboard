@@ -48,6 +48,7 @@
 }
 
 :root {
+  --shadow-card: 0 18px 44px -34px rgba(20, 26, 36, 0.28);
   --radius: 1rem;
   --background: #f6f7fb;
   --foreground: #141a24;
@@ -83,6 +84,7 @@
 }
 
 .dark {
+  --shadow-card: 0 18px 44px -34px rgba(0, 0, 0, 0.5);
   --background: #0e131b;
   --foreground: #f4f7fb;
   --card: rgba(20, 27, 38, 0.9);
@@ -114,6 +116,26 @@
   --sidebar-accent-foreground: #dfe8f5;
   --sidebar-border: rgba(167, 178, 194, 0.14);
   --sidebar-ring: #7ab8ff;
+}
+
+/* Table scroll indicator — fading right edge */
+.table-scroll-container {
+  position: relative;
+}
+.table-scroll-container::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 2rem;
+  pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--card, white));
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.table-scroll-container[data-scroll-end="false"]::after {
+  opacity: 0.7;
 }
 
 @layer base {

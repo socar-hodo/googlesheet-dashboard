@@ -5,8 +5,8 @@ import type { CustomerTypeRow, DailyRecord, WeeklyRecord } from '@/types/dashboa
 // 타입 정의
 // ---------------------------------------------------------------------------
 
-/** Daily 탭: 4가지, Weekly 탭: 2가지 기간 키 */
-export type PeriodKey = 'this-week' | 'last-week' | 'this-month' | 'last-month';
+/** Daily 탭: 4가지 + custom, Weekly 탭: 2가지 기간 키 */
+export type PeriodKey = 'this-week' | 'last-week' | 'this-month' | 'last-month' | 'custom';
 
 /** 날짜 범위 — YYYY-MM-DD 형식 문자열 쌍 */
 export interface DateRange {
@@ -35,6 +35,7 @@ export const PERIOD_LABELS: Record<PeriodKey, string> = {
   'last-week': '지난 주',
   'this-month': '이번 달',
   'last-month': '지난 달',
+  'custom': '직접 선택',
 };
 
 /** Daily 탭 기본 기간 */
@@ -77,7 +78,9 @@ function getMonday(d: Date): Date {
  * @param period - 기간 키
  * @param today  - 기준일 (기본값: 오늘)
  */
-export function getDateRange(period: PeriodKey, today: Date = new Date()): DateRange {
+export function getDateRange(period: PeriodKey, today: Date = new Date(), customRange?: DateRange): DateRange {
+  if (period === 'custom' && customRange) return customRange;
+
   const year = today.getFullYear();
   const month = today.getMonth(); // 0-indexed
 
@@ -111,6 +114,12 @@ export function getDateRange(period: PeriodKey, today: Date = new Date()): DateR
       // new Date(year, month, 0): 이번 달 0일 = 전월 말일
       const lastDay = new Date(year, month, 0);
       return { start: toISODate(firstDay), end: toISODate(lastDay) };
+    }
+
+    case 'custom': {
+      // custom without range: fall back to this-month
+      const firstDay = new Date(year, month, 1);
+      return { start: toISODate(firstDay), end: toISODate(today) };
     }
   }
 }

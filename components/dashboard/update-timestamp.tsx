@@ -47,7 +47,7 @@ export function UpdateTimestamp({ fetchedAt }: UpdateTimestampProps) {
   }
 
   return (
-    <p className="text-sm text-muted-foreground">
+    <p className="text-sm text-muted-foreground" aria-live="polite">
       마지막 업데이트: {getRelativeTime(fetchedAt)} ({getAbsoluteTime(fetchedAt)})
     </p>
   );

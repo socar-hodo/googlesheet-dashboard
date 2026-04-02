@@ -2,6 +2,7 @@
 // CHART-04: 이용건수/이용시간 이중 YAxis Bar 차트
 "use client";
 
+import { useRef } from 'react';
 import {
   ComposedChart,
   Bar,
@@ -10,12 +11,14 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  Brush,
   ResponsiveContainer,
 } from 'recharts';
 import { useTheme } from 'next-themes';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { DailyRecord, WeeklyRecord } from '@/types/dashboard';
 import { getChartColors } from './chart-colors';
+import { ChartDownloadButton } from './chart-download-button';
 
 interface UsageTrendChartProps {
   records: DailyRecord[] | WeeklyRecord[];
@@ -23,6 +26,7 @@ interface UsageTrendChartProps {
 }
 
 export function UsageTrendChart({ records, tab }: UsageTrendChartProps) {
+  const chartRef = useRef<HTMLDivElement>(null);
   const { resolvedTheme } = useTheme();
   const colors = getChartColors(resolvedTheme === 'dark');
 
@@ -37,11 +41,13 @@ export function UsageTrendChart({ records, tab }: UsageTrendChartProps) {
   }));
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="group/chart">
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>이용건수 / 이용시간</CardTitle>
+        <ChartDownloadButton chartRef={chartRef} filename="이용건수_이용시간" />
       </CardHeader>
       <CardContent>
+        <div ref={chartRef} role="img" aria-label="이용건수 및 이용시간 차트">
         <ResponsiveContainer width="100%" height={280} minWidth={0}>
             <ComposedChart
               data={chartData}
@@ -73,6 +79,7 @@ export function UsageTrendChart({ records, tab }: UsageTrendChartProps) {
                   name === '이용건수' ? `${value}건` : `${value}h`,
                   name,
                 ]}
+                labelFormatter={(label) => `${label}`}
                 contentStyle={{
                   backgroundColor: colors.tooltip.bg,
                   border: `1px solid ${colors.tooltip.border}`,
@@ -81,6 +88,9 @@ export function UsageTrendChart({ records, tab }: UsageTrendChartProps) {
                 }}
               />
               <Legend />
+              {chartData.length > 14 && (
+                <Brush dataKey="label" height={20} stroke="var(--chart-1)" travellerWidth={8} />
+              )}
               {/* yAxisId가 YAxis의 yAxisId prop과 반드시 일치해야 함 */}
               <Bar
                 yAxisId="left"
@@ -98,6 +108,7 @@ export function UsageTrendChart({ records, tab }: UsageTrendChartProps) {
               />
             </ComposedChart>
         </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );

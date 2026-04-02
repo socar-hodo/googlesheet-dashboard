@@ -2,6 +2,7 @@
 // components/dashboard/charts/revenue-trend-chart.tsx
 // CHART-01: 매출 추이 — ComposedChart (Bar + 조건부 Line)
 
+import { useRef } from "react";
 import {
   ComposedChart,
   Bar,
@@ -10,12 +11,14 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Brush,
   ResponsiveContainer,
 } from "recharts";
 import { useTheme } from "next-themes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DailyRecord, WeeklyRecord } from "@/types/dashboard";
 import { getChartColors } from "./chart-colors";
+import { ChartDownloadButton } from "./chart-download-button";
 
 interface RevenueTrendChartProps {
   records: DailyRecord[] | WeeklyRecord[];
@@ -34,6 +37,7 @@ function formatWeeklyLabel(week: string): string {
 }
 
 export function RevenueTrendChart({ records, tab }: RevenueTrendChartProps) {
+  const chartRef = useRef<HTMLDivElement>(null);
   const { resolvedTheme } = useTheme();
   const colors = getChartColors(resolvedTheme === "dark");
 
@@ -48,11 +52,13 @@ export function RevenueTrendChart({ records, tab }: RevenueTrendChartProps) {
   }));
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="group/chart">
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>매출 추이</CardTitle>
+        <ChartDownloadButton chartRef={chartRef} filename="매출추이" />
       </CardHeader>
       <CardContent>
+        <div ref={chartRef} role="img" aria-label="매출 추이 차트">
         <ResponsiveContainer width="100%" height={280} minWidth={0}>
             <ComposedChart
               data={chartData}
@@ -75,6 +81,7 @@ export function RevenueTrendChart({ records, tab }: RevenueTrendChartProps) {
                   `₩${Math.round(Number(value) / 10000).toLocaleString()}만`,
                   name === "revenue" ? "실적" : "목표",
                 ]}
+                labelFormatter={(label) => `${label}`}
                 contentStyle={{
                   backgroundColor: colors.tooltip.bg,
                   border: `1px solid ${colors.tooltip.border}`,
@@ -82,6 +89,9 @@ export function RevenueTrendChart({ records, tab }: RevenueTrendChartProps) {
                   fontSize: "12px",
                 }}
               />
+              {chartData.length > 14 && (
+                <Brush dataKey="label" height={20} stroke="var(--chart-1)" travellerWidth={8} />
+              )}
               <Bar
                 dataKey="revenue"
                 fill={colors.chart1}
@@ -100,6 +110,7 @@ export function RevenueTrendChart({ records, tab }: RevenueTrendChartProps) {
               )}
             </ComposedChart>
         </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );

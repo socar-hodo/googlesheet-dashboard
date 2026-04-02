@@ -116,6 +116,7 @@ export function CustomerTypeTrend({ data, tab }: CustomerTypeTrendProps) {
         <CardTitle>유형별 이용건수 추이</CardTitle>
       </CardHeader>
       <CardContent>
+        <div role="img" aria-label="유형별 이용건수 추이 차트">
         <ResponsiveContainer width="100%" height={280} minWidth={0}>
           <BarChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
@@ -140,6 +141,7 @@ export function CustomerTypeTrend({ data, tab }: CustomerTypeTrendProps) {
             <Bar dataKey="편도" stackId="a" fill={colors.chart3} radius={[2, 2, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );

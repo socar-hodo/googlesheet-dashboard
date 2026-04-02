@@ -3,6 +3,7 @@
 // components/dashboard/charts/charts-section.tsx
 
 import type { TeamDashboardData, DailyRecord, WeeklyRecord } from '@/types/dashboard';
+import { ChartErrorBoundary } from './chart-error-boundary';
 import { RevenueTrendChart } from './revenue-trend-chart';
 import { ProfitTrendChart } from './profit-trend-chart';
 import { UtilizationTrendChart } from './utilization-trend-chart';
@@ -35,10 +36,22 @@ export function ChartsSection({ data, tab }: ChartsSectionProps) {
 
   return (
     <div className="space-y-6">
-      <RevenueTrendChart records={records} tab={tab} />
-      <ProfitTrendChart records={records} tab={tab} />
-      <UtilizationTrendChart records={records} tab={tab} />
-      <UsageTrendChart records={records} tab={tab} />
+      <h2 className="text-lg font-semibold text-foreground">추이 차트</h2>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <ChartErrorBoundary title="매출 추이">
+          <RevenueTrendChart records={records} tab={tab} />
+        </ChartErrorBoundary>
+        <ChartErrorBoundary title="GPM 추이">
+          <ProfitTrendChart records={records} tab={tab} />
+        </ChartErrorBoundary>
+        <ChartErrorBoundary title="가동률 추이">
+          <UtilizationTrendChart records={records} tab={tab} />
+        </ChartErrorBoundary>
+        <ChartErrorBoundary title="이용건수 / 이용시간">
+          <UsageTrendChart records={records} tab={tab} />
+        </ChartErrorBoundary>
+      </div>
+      <h2 className="text-lg font-semibold text-foreground">고객 유형 분석</h2>
       <CustomerTypeSection
         daily={data.customerTypeDaily}
         weekly={data.customerTypeWeekly}

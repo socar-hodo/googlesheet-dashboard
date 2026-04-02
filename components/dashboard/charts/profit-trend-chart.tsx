@@ -2,6 +2,7 @@
 // components/dashboard/charts/profit-trend-chart.tsx
 // CHART-02: GPM 추이 — BarChart + Cell (양수 녹색, 음수 빨간색)
 
+import { useRef } from "react";
 import {
   BarChart,
   Bar,
@@ -10,12 +11,14 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Brush,
   ResponsiveContainer,
 } from "recharts";
 import { useTheme } from "next-themes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DailyRecord, WeeklyRecord } from "@/types/dashboard";
 import { getChartColors } from "./chart-colors";
+import { ChartDownloadButton } from "./chart-download-button";
 
 interface ProfitTrendChartProps {
   records: DailyRecord[] | WeeklyRecord[];
@@ -34,6 +37,7 @@ function formatWeeklyLabel(week: string): string {
 }
 
 export function ProfitTrendChart({ records, tab: _tab }: ProfitTrendChartProps) {
+  const chartRef = useRef<HTMLDivElement>(null);
   const { resolvedTheme } = useTheme();
   const colors = getChartColors(resolvedTheme === "dark");
 
@@ -46,11 +50,13 @@ export function ProfitTrendChart({ records, tab: _tab }: ProfitTrendChartProps) 
   }));
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="group/chart">
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>GPM 추이</CardTitle>
+        <ChartDownloadButton chartRef={chartRef} filename="GPM추이" />
       </CardHeader>
       <CardContent>
+        <div ref={chartRef} role="img" aria-label="GPM 추이 차트">
         <ResponsiveContainer width="100%" height={280} minWidth={0}>
             <BarChart
               data={chartData}
@@ -71,6 +77,7 @@ export function ProfitTrendChart({ records, tab: _tab }: ProfitTrendChartProps) 
                   `${Number(value).toFixed(1)}%`,
                   "GPM",
                 ]}
+                labelFormatter={(label) => `${label}`}
                 contentStyle={{
                   backgroundColor: colors.tooltip.bg,
                   border: `1px solid ${colors.tooltip.border}`,
@@ -78,6 +85,9 @@ export function ProfitTrendChart({ records, tab: _tab }: ProfitTrendChartProps) 
                   fontSize: "12px",
                 }}
               />
+              {chartData.length > 14 && (
+                <Brush dataKey="label" height={20} stroke="var(--chart-1)" travellerWidth={8} />
+              )}
               <Bar dataKey="gpm" name="GPM" radius={[2, 2, 0, 0]}>
                 {chartData.map((entry, index) => (
                   <Cell
@@ -92,6 +102,7 @@ export function ProfitTrendChart({ records, tab: _tab }: ProfitTrendChartProps) 
               </Bar>
             </BarChart>
         </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );

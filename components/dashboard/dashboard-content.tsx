@@ -5,9 +5,11 @@
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useState, useCallback, useMemo } from 'react';
 import type { TeamDashboardData } from '@/types/dashboard';
+import { toast } from 'sonner';
 import { exportToCsv, exportToXlsx } from '@/lib/export-utils';
 import {
   type PeriodKey,
+  type DateRange,
   getDateRange,
   filterDailyByPeriod,
   filterWeeklyByPeriod,
@@ -65,6 +67,7 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
 
   // 기간 상태 — URL 파라미터를 검증하여 초기값 설정
   const [period, setPeriodState] = useState<PeriodKey>(() => parsePeriod(initialPeriod, tab));
+  const [customRange, setCustomRange] = useState<DateRange | undefined>();
 
   /** 기간 변경 핸들러 — 상태 업데이트와 URL 동기화를 함께 처리 */
   const handlePeriodChange = useCallback(
@@ -77,10 +80,22 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
     [router, searchParams, pathname],
   );
 
+  /** 커스텀 날짜 범위 변경 핸들러 */
+  const handleCustomRange = useCallback(
+    (range: DateRange) => {
+      setCustomRange(range);
+      setPeriodState('custom');
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('period', 'custom');
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [router, searchParams, pathname],
+  );
+
   /** 선택된 기간에 맞게 데이터를 필터링한다 */
   const filteredData = useMemo<TeamDashboardData>(() => {
     if (tab === 'forecast') {
-      const range = getDateRange(period);
+      const range = getDateRange(period, undefined, customRange);
       // 예측 탭: 미래 데이터도 포함해야 하므로 end를 전체 기간 말일까지 확장
       // this-week → 이번 주 일요일 / this-month → 이번 달 말일
       const today = new Date();
@@ -99,7 +114,7 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
       return { ...data, forecastDaily: filteredForecastDaily };
     }
     if (tab === 'daily') {
-      const range = getDateRange(period);
+      const range = getDateRange(period, undefined, customRange);
       const filtered = filterDailyByPeriod(data.daily, range);
       // 고객 유형 일별 데이터도 동일한 날짜 범위로 필터링
       const filteredCustomerTypeDaily = data.customerTypeDaily.filter(
@@ -116,20 +131,30 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
       const filteredCustomerTypeWeekly = filterCustomerTypeWeekly(data.customerTypeWeekly, weeklyPeriod);
       return { ...data, weekly: filtered, customerTypeWeekly: filteredCustomerTypeWeekly };
     }
-  }, [data, tab, period]);
+  }, [data, tab, period, customRange]);
 
   /** CSV 내보내기 핸들러 — 현재 필터링된 데이터를 .csv로 다운로드 */
   const handleExportCsv = useCallback(() => {
     if (tab === 'forecast') return;
     const records = tab === 'daily' ? filteredData.daily : filteredData.weekly;
-    exportToCsv(records, tab);
+    try {
+      exportToCsv(records, tab);
+      toast.success('CSV 파일이 다운로드되었습니다.');
+    } catch {
+      toast.error('CSV 내보내기에 실패했습니다.');
+    }
   }, [filteredData, tab]);
 
   /** Excel 내보내기 핸들러 — 현재 필터링된 데이터를 .xlsx로 다운로드 */
   const handleExportXlsx = useCallback(() => {
     if (tab === 'forecast') return;
     const records = tab === 'daily' ? filteredData.daily : filteredData.weekly;
-    exportToXlsx(records, tab);
+    try {
+      exportToXlsx(records, tab);
+      toast.success('Excel 파일이 다운로드되었습니다.');
+    } catch {
+      toast.error('Excel 내보내기에 실패했습니다.');
+    }
   }, [filteredData, tab]);
 
   return (
@@ -141,21 +166,38 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
         onPeriodChange={handlePeriodChange}
         onExportCsv={handleExportCsv}
         onExportXlsx={handleExportXlsx}
+        onCustomRange={handleCustomRange}
+        customRange={customRange}
       />
 
       {/* 예측 탭: ForecastChart만 렌더링 */}
       {tab === 'forecast' ? (
-        <ForecastChart data={filteredData.forecastDaily} />
+        <section>
+          <h2 className="mb-4 text-lg font-semibold text-foreground">매출 예측</h2>
+          {filteredData.forecastDaily.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-3xl border border-border/60 bg-card/80 py-16 backdrop-blur">
+              <p className="text-sm text-muted-foreground">선택한 기간에 예측 데이터가 없습니다.</p>
+            </div>
+          ) : (
+            <ForecastChart data={filteredData.forecastDaily} />
+          )}
+        </section>
       ) : (
         <>
           {/* KPI 카드 — 필터링된 데이터(current/previous)와 전체 이력(sparkline) 기반 */}
-          <KpiCards data={filteredData} fullData={data} tab={tab} />
+          <section>
+            <h2 className="mb-4 text-lg font-semibold text-foreground">핵심 지표</h2>
+            <KpiCards data={filteredData} fullData={data} tab={tab} />
+          </section>
 
           {/* 차트 4종 — 필터링된 데이터 기반 */}
           <ChartsSection data={filteredData} tab={tab} />
 
           {/* 데이터 테이블 — 필터링된 데이터 기반 */}
-          <DataTable data={filteredData} tab={tab} />
+          <section>
+            <h2 className="mb-4 text-lg font-semibold text-foreground">상세 데이터</h2>
+            <DataTable data={filteredData} tab={tab} />
+          </section>
         </>
       )}
     </div>

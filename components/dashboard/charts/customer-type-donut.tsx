@@ -55,6 +55,7 @@ export function CustomerTypeDonut({ data }: CustomerTypeDonutProps) {
         <CardTitle>고객 유형 분포</CardTitle>
       </CardHeader>
       <CardContent>
+        <div role="img" aria-label="고객 유형 분포 도넛 차트">
         <ResponsiveContainer width="100%" height={280} minWidth={0}>
           <PieChart>
             {/* 중앙 총건수 텍스트 — PieChart 직계 자식 SVG text (픽셀 좌표 금지) */}
@@ -97,6 +98,7 @@ export function CustomerTypeDonut({ data }: CustomerTypeDonutProps) {
             />
           </PieChart>
         </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );

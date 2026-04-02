@@ -2,6 +2,7 @@
 // CHART-03: 가동률 추이 라인 차트 + 80% 임계선 ReferenceLine
 "use client";
 
+import { useRef } from 'react';
 import {
   LineChart,
   Line,
@@ -10,12 +11,14 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Brush,
   ResponsiveContainer,
 } from 'recharts';
 import { useTheme } from 'next-themes';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { DailyRecord, WeeklyRecord } from '@/types/dashboard';
 import { getChartColors } from './chart-colors';
+import { ChartDownloadButton } from './chart-download-button';
 
 interface UtilizationTrendChartProps {
   records: DailyRecord[] | WeeklyRecord[];
@@ -23,6 +26,7 @@ interface UtilizationTrendChartProps {
 }
 
 export function UtilizationTrendChart({ records, tab }: UtilizationTrendChartProps) {
+  const chartRef = useRef<HTMLDivElement>(null);
   const { resolvedTheme } = useTheme();
   const colors = getChartColors(resolvedTheme === 'dark');
 
@@ -36,11 +40,13 @@ export function UtilizationTrendChart({ records, tab }: UtilizationTrendChartPro
   }));
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="group/chart">
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>가동률 추이</CardTitle>
+        <ChartDownloadButton chartRef={chartRef} filename="가동률추이" />
       </CardHeader>
       <CardContent>
+        <div ref={chartRef} role="img" aria-label="가동률 추이 차트">
         <ResponsiveContainer width="100%" height={280} minWidth={0}>
             <LineChart
               data={chartData}
@@ -62,6 +68,7 @@ export function UtilizationTrendChart({ records, tab }: UtilizationTrendChartPro
                   `${Number(value).toFixed(1)}%`,
                   '가동률',
                 ]}
+                labelFormatter={(label) => `${label}`}
                 contentStyle={{
                   backgroundColor: colors.tooltip.bg,
                   border: `1px solid ${colors.tooltip.border}`,
@@ -81,6 +88,9 @@ export function UtilizationTrendChart({ records, tab }: UtilizationTrendChartPro
                   fontSize: 11,
                 }}
               />
+              {chartData.length > 14 && (
+                <Brush dataKey="label" height={20} stroke="var(--chart-1)" travellerWidth={8} />
+              )}
               <Line
                 type="monotone"
                 dataKey="utilizationRate"
@@ -92,6 +102,7 @@ export function UtilizationTrendChart({ records, tab }: UtilizationTrendChartPro
               />
             </LineChart>
         </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );
