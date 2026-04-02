@@ -16,7 +16,7 @@ export async function GET() {
     );
   }
 
-  return Response.json(readWorkspaceState(ownerKey));
+  return Response.json(await readWorkspaceState(ownerKey));
 }
 
 export async function PUT(req: Request) {
@@ -38,7 +38,7 @@ export async function PUT(req: Request) {
       memos: normalizeMemos(body.memos),
     };
 
-    replaceWorkspaceState(ownerKey, nextState);
+    await replaceWorkspaceState(ownerKey, nextState);
 
     return Response.json(nextState);
   } catch (error) {
