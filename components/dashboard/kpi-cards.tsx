@@ -30,7 +30,7 @@ export function KpiCards({ data, fullData, tab }: KpiCardsProps) {
     const DAILY_N = 7; // 최근 7일
 
     if (!current) {
-      return <p className="text-muted-foreground">일별 데이터가 없습니다.</p>;
+      return <div><p className="text-muted-foreground">일별 데이터가 없습니다.</p><p className="mt-1 text-xs text-muted-foreground/70">기간을 변경하거나 데이터 소스를 확인하세요.</p></div>;
     }
 
     // 카드 정의 배열 (비즈니스 중요도 순)
@@ -113,7 +113,7 @@ export function KpiCards({ data, fullData, tab }: KpiCardsProps) {
   const WEEKLY_N = 8; // 최근 8주
 
   if (!current) {
-    return <p className="text-muted-foreground">주차별 데이터가 없습니다.</p>;
+    return <div><p className="text-muted-foreground">주차별 데이터가 없습니다.</p><p className="mt-1 text-xs text-muted-foreground/70">기간을 변경하거나 데이터 소스를 확인하세요.</p></div>;
   }
 
   // 매출만 weeklyTarget 대비 달성률 표시, 나머지는 달성률 없음

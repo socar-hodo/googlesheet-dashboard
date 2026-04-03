@@ -362,9 +362,8 @@ function ScopedWorkHistoryPortal({
         memoHook.setMemos(nextMemos);
       } catch (error) {
         if (cancelled) return;
-        setWorkspaceStateError(
-          error instanceof Error ? error.message : '워크스페이스 상태를 불러오지 못했습니다.',
-        );
+        // W-1 fix: 초기 로딩 실패는 에러 배너를 표시하지 않음 (사용자 조작 후 저장 실패 시에만 표시)
+        console.warn('[workspace] 초기 로딩 실패:', error instanceof Error ? error.message : error);
       } finally {
         if (!cancelled) {
           setWorkspaceStateReady(true);
@@ -496,7 +495,7 @@ function ScopedWorkHistoryPortal({
         const serializedState = serializeWorkspaceState(state);
         if (lastSyncedWorkspaceState.current !== serializedState) {
           try {
-            navigator.sendBeacon('/api/workspace-state', JSON.stringify(state));
+            navigator.sendBeacon('/api/workspace/state', JSON.stringify(state));
           } catch {
             // Best-effort, ignore errors
           }
@@ -777,8 +776,8 @@ function ScopedWorkHistoryPortal({
                   <div className="space-y-5">
                     <div className="space-y-3">
                       <p className="text-sm font-semibold text-foreground">헤더 커스텀</p>
-                      <Input value={workspaceDraft.title} onChange={(event) => handleWorkspaceSettingChange('title', event.target.value)} placeholder="포털 제목" className="h-11 rounded-2xl" />
-                      <Textarea value={workspaceDraft.subtitle} onChange={(event) => handleWorkspaceSettingChange('subtitle', event.target.value)} placeholder="포털 설명" className="min-h-28 rounded-2xl" />
+                      <Input value={workspaceDraft.title} onChange={(event) => handleWorkspaceSettingChange('title', event.target.value)} placeholder="포털 제목" aria-label="포털 제목" className="h-11 rounded-2xl" />
+                      <Textarea value={workspaceDraft.subtitle} onChange={(event) => handleWorkspaceSettingChange('subtitle', event.target.value)} placeholder="포털 설명" aria-label="포털 설명" className="min-h-28 rounded-2xl" />
                       <Select value={workspaceDraft.tone} onValueChange={(value) => handleWorkspaceSettingChange('tone', value as WorkspaceTone)}>
                         <SelectTrigger className="h-11 w-full rounded-2xl">
                           <SelectValue placeholder="톤 선택" />
@@ -1129,6 +1128,7 @@ function ScopedWorkHistoryPortal({
                             }
                           }}
                           placeholder={`${formatSelectedDateLabel(selectedDate)}에 할 일을 추가하세요`}
+                          aria-label="할 일 추가"
                           className="h-11 rounded-2xl"
                         />
                         <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_9rem_auto]">
@@ -1378,12 +1378,12 @@ function ScopedWorkHistoryPortal({
       <section id="workspace-memos" className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
         <Card className="border-border/60 bg-card/98 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.25)]">
           <CardHeader className="pb-3"><div className="flex items-center gap-2"><Bookmark className="h-4 w-4 text-primary" /><CardTitle className="text-base">업무 메모 보관함</CardTitle></div></CardHeader>
-          <CardContent className="space-y-3"><Input value={memoHook.memoTitle} onChange={(event) => memoHook.setMemoTitle(event.target.value)} placeholder="메모 제목을 입력하세요" className="h-11 rounded-2xl" /><Input value={memoHook.memoTags} onChange={(event) => memoHook.setMemoTags(event.target.value)} placeholder="태그를 쉼표로 구분해 입력하세요" className="h-11 rounded-2xl" /><Textarea value={memoHook.memoContent} onChange={(event) => memoHook.setMemoContent(event.target.value)} placeholder="업무 팁, 실수 방지 포인트, 운영 메모를 남겨두세요" className="min-h-44 rounded-2xl" /><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs text-muted-foreground">자주 찾는 팁과 체크포인트를 쌓아 두면 포털 검색으로 다시 찾기 쉬워집니다.</p><Button type="button" className="h-11 rounded-2xl px-4" onClick={memoHook.handleAddMemo}><Plus className="mr-2 h-4 w-4" />메모 저장</Button></div></CardContent>
+          <CardContent className="space-y-3"><Input value={memoHook.memoTitle} onChange={(event) => memoHook.setMemoTitle(event.target.value)} placeholder="메모 제목을 입력하세요" aria-label="메모 제목" className="h-11 rounded-2xl" /><Input value={memoHook.memoTags} onChange={(event) => memoHook.setMemoTags(event.target.value)} placeholder="태그를 쉼표로 구분해 입력하세요" aria-label="메모 태그" className="h-11 rounded-2xl" /><Textarea value={memoHook.memoContent} onChange={(event) => memoHook.setMemoContent(event.target.value)} placeholder="업무 팁, 실수 방지 포인트, 운영 메모를 남겨두세요" aria-label="메모 내용" className="min-h-44 rounded-2xl" /><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs text-muted-foreground">자주 찾는 팁과 체크포인트를 쌓아 두면 포털 검색으로 다시 찾기 쉬워집니다.</p><Button type="button" className="h-11 rounded-2xl px-4" onClick={memoHook.handleAddMemo}><Plus className="mr-2 h-4 w-4" />메모 저장</Button></div></CardContent>
         </Card>
         <Card className="border-border/60 bg-card/98 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.25)]">
           <CardHeader className="pb-3"><div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div className="flex items-center gap-2"><Search className="h-4 w-4 text-primary" /><CardTitle className="text-base">메모 검색</CardTitle></div><div className="grid grid-cols-3 gap-2"><SummaryCard label="전체" value={memoSummary.total + '건'} /><SummaryCard label="고정" value={memoSummary.pinned + '건'} /><SummaryCard label="검색결과" value={memoSummary.visible + '건'} /></div></div></CardHeader>
           <CardContent className="space-y-3">
-            <Input value={memoHook.memoQuery} onChange={(event) => memoHook.setMemoQuery(event.target.value)} placeholder="메모 제목, 내용, 태그로 검색" className="h-11 rounded-2xl" />
+            <Input value={memoHook.memoQuery} onChange={(event) => memoHook.setMemoQuery(event.target.value)} placeholder="메모 제목, 내용, 태그로 검색" aria-label="메모 검색" className="h-11 rounded-2xl" />
             {/* Item #6: Empty state CTA for memos */}
             {visibleMemos.length === 0 && (
               <div className="flex flex-col items-center gap-3 rounded-2xl bg-background/65 px-4 py-8 text-sm text-muted-foreground">

@@ -35,6 +35,7 @@ export function Sidebar() {
         size="icon"
         className="fixed left-3 top-3 z-50 border border-border/70 bg-card/80 shadow-[0_12px_30px_-20px_rgba(20,26,36,0.45)] backdrop-blur md:hidden"
         onClick={() => setMobileOpen(true)}
+        aria-label="메뉴 열기"
       >
         <Menu className="h-5 w-5" />
       </Button>
@@ -75,6 +76,7 @@ export function Sidebar() {
                     size="icon"
                     className="h-9 w-9 rounded-xl md:hidden"
                     onClick={() => setMobileOpen(false)}
+                    aria-label="메뉴 닫기"
                   >
                     <X className="h-5 w-5" />
                   </Button>
@@ -105,6 +107,7 @@ export function Sidebar() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
+                aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all",
                   active
@@ -125,6 +128,7 @@ export function Sidebar() {
             size="icon"
             onClick={() => setCollapsed(!collapsed)}
             className="w-full rounded-2xl"
+            aria-label={collapsed ? "사이드바 펼치기" : "사이드바 접기"}
           >
             {collapsed ? (
               <ChevronRight className="h-4 w-4" />

@@ -44,6 +44,7 @@ export function CustomerTypeDonut({ data }: CustomerTypeDonutProps) {
         </CardHeader>
         <CardContent className="flex items-center justify-center h-[280px]">
           <p className="text-sm text-muted-foreground">데이터 없음</p>
+          <p className="mt-1 text-xs text-muted-foreground/70">기간을 변경하거나 데이터 소스를 확인하세요.</p>
         </CardContent>
       </Card>
     );

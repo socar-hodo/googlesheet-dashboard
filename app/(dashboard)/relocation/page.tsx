@@ -11,7 +11,7 @@ export default function RelocationPage() {
             Relocation
           </p>
           <h2 className="text-3xl font-semibold tracking-[-0.05em] text-foreground">
-            재배치 추천
+            재배치 조회 및 추천 결과
           </h2>
           <p className="text-sm leading-6 text-muted-foreground">
             가동률, 매출, 사전예약 흐름을 바탕으로 이동 우선순위와 추천 차량 후보를 비교합니다.

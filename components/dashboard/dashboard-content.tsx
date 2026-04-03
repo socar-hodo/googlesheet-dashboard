@@ -177,6 +177,7 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
           {filteredData.forecastDaily.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-3xl border border-border/60 bg-card/80 py-16 backdrop-blur">
               <p className="text-sm text-muted-foreground">선택한 기간에 예측 데이터가 없습니다.</p>
+              <p className="mt-1 text-xs text-muted-foreground/70">기간을 변경하거나 데이터 소스를 확인하세요.</p>
             </div>
           ) : (
             <ForecastChart data={filteredData.forecastDaily} />

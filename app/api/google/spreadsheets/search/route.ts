@@ -13,10 +13,13 @@ export async function GET(req: Request) {
   const cacheKey = session?.user?.email ?? session?.user?.id ?? 'anonymous';
 
   if (!accessToken) {
+    const isGoogleConfigured = !!(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
     return Response.json(
       {
-        error: 'Google 계정 연결이 없어 통합 검색을 사용할 수 없습니다. Google로 다시 로그인해 주세요.',
-        requiresGoogleReconnect: true,
+        error: isGoogleConfigured
+          ? 'Google 계정 연결이 없어 통합 검색을 사용할 수 없습니다. Google로 다시 로그인해 주세요.'
+          : 'Google OAuth가 설정되지 않아 통합 검색을 사용할 수 없습니다.',
+        requiresGoogleReconnect: isGoogleConfigured,
       },
       { status: 401 },
     );
