@@ -27,11 +27,11 @@ function getBigQueryClient(): BigQuery {
       creds.client_secret,
       creds.refresh_token,
     );
-    return new BigQuery({ projectId: "socar-data", authClient: auth });
+    return new BigQuery({ projectId: "hodo-op-sim", authClient: auth });
   }
 
   // 로컬 ADC 폴백 (gcloud auth application-default login)
-  return new BigQuery({ projectId: "socar-data" });
+  return new BigQuery({ projectId: "hodo-op-sim" });
 }
 
 /**
