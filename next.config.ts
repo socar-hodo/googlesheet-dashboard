@@ -10,6 +10,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Vercel 서버리스: sql/ 디렉토리를 output file tracing에 포함
+  outputFileTracingIncludes: {
+    "/api/allocation/run": ["./sql/**/*.sql"],
+    "/api/relocation/run": ["./sql/**/*.sql"],
+    "/api/relocation/candidates": ["./sql/**/*.sql"],
+  },
 };
 
 export default nextConfig;
