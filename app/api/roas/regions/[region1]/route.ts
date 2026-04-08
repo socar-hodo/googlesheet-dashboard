@@ -1,11 +1,15 @@
-import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { runQuery } from "@/lib/bigquery";
-import { loadRoasSql, replaceSqlParams, BQ_ERROR_MSG } from "@/lib/roas";
+import { loadRoasSql, replaceSqlParams } from "@/lib/roas";
+import { BQ_ERROR_MSG } from "@/lib/api-utils";
 
+// Dynamic-segment routes receive { params } as the second argument from Next.js routing.
+// withAuth wraps a (req, ctx) signature that cannot carry Next.js route params, so we
+// apply the same auth + error pattern manually here.
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ region1: string }> }
+  { params }: { params: Promise<{ region1: string }> },
 ) {
   const session = await auth();
   if (!session) {

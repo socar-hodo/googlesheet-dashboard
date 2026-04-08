@@ -1,6 +1,6 @@
-import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
 import type { SlackReportParams } from "@/types/zone";
+import { withAuth } from "@/lib/api-utils";
 
 const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL || "";
 
@@ -18,47 +18,34 @@ const MODE_LABELS: Record<string, string> = {
  *
  * Slack Block Kit 메시지를 웹훅으로 발송.
  */
-export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session) {
-    return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
-  }
+export const POST = withAuth(async (req: NextRequest) => {
+  const body: SlackReportParams = await req.json();
+  const { mode, data } = body;
 
-  try {
-    const body: SlackReportParams = await req.json();
-    const { mode, data } = body;
-
-    if (!SLACK_WEBHOOK_URL) {
-      return NextResponse.json(
-        { error: "Slack 웹훅이 설정되지 않았습니다." },
-        { status: 400 },
-      );
-    }
-
-    const blocks = buildSlackBlocks(mode, data);
-    const resp = await fetch(SLACK_WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ blocks }),
-    });
-
-    if (!resp.ok) {
-      const text = await resp.text();
-      return NextResponse.json(
-        { error: `Slack 발송 실패: ${text}` },
-        { status: 502 },
-      );
-    }
-
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    console.error("[zone/report]", err);
+  if (!SLACK_WEBHOOK_URL) {
     return NextResponse.json(
-      { error: "Slack 발송에 실패했습니다." },
-      { status: 500 },
+      { error: "Slack 웹훅이 설정되지 않았습니다." },
+      { status: 400 },
     );
   }
-}
+
+  const blocks = buildSlackBlocks(mode, data);
+  const resp = await fetch(SLACK_WEBHOOK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ blocks }),
+  });
+
+  if (!resp.ok) {
+    const text = await resp.text();
+    return NextResponse.json(
+      { error: `Slack 발송 실패: ${text}` },
+      { status: 502 },
+    );
+  }
+
+  return NextResponse.json({ ok: true });
+});
 
 /** 모드별 Slack Block Kit 메시지 생성. */
 function buildSlackBlocks(
