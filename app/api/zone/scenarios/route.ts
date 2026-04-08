@@ -1,21 +1,16 @@
 import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
-import { Redis } from "@upstash/redis";
+import { getRedis as _getSharedRedis } from "@/lib/redis";
 import type { ScenarioSaveParams, ZoneScenario } from "@/types/zone";
 
-// ── Redis client (lazy singleton) ─────────────────────────────
-let _redis: Redis | null = null;
-
-function getRedis(): Redis | null {
-  if (_redis) return _redis;
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) {
+// ── Redis client (shared singleton from lib/redis) ────────────
+function getRedis() {
+  try {
+    return _getSharedRedis();
+  } catch {
     console.warn("[zone/scenarios] UPSTASH_REDIS not configured");
     return null;
   }
-  _redis = new Redis({ url, token });
-  return _redis;
 }
 
 // ── Key helpers ───────────────────────────────────────────────

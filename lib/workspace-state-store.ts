@@ -1,27 +1,19 @@
 import 'server-only';
 
-import { Redis } from '@upstash/redis';
+import { getRedis as _getSharedRedis } from '@/lib/redis';
 import type { WorkspaceResource } from '@/types/workspace-resource';
 import type { MemoItem, TodoItem, WorkspaceState } from '@/types/workspace-state';
 import type { WorkHistoryRecord } from '@/types/work-history';
 
-// ── Redis client (lazy singleton) ───────────────────────────────────
+// ── Redis client (shared singleton from lib/redis) ───────────────────
 
-let _redis: Redis | null = null;
-
-function getRedis(): Redis | null {
-  if (_redis) return _redis;
-
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-
-  if (!url || !token) {
+function getRedis() {
+  try {
+    return _getSharedRedis();
+  } catch {
     console.warn('[workspace-state] UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN not set — server persistence disabled');
     return null;
   }
-
-  _redis = new Redis({ url, token });
-  return _redis;
 }
 
 // ── Key helpers ─────────────────────────────────────────────────────

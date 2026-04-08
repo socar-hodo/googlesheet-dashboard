@@ -2,7 +2,7 @@ import "server-only";
 
 import { readFileSync } from "fs";
 import { resolve } from "path";
-import { Redis } from "@upstash/redis";
+import { getRedis } from "@/lib/redis";
 
 // ── 상수 ──────────────────────────────────────────────────────
 
@@ -531,15 +531,12 @@ export function computeVerdict(
 
 // ── 시나리오 저장소 (Upstash Redis) ────────────────────────────
 
-let _redis: Redis | null = null;
-
-function getRedis(): Redis | null {
-  if (_redis) return _redis;
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) return null;
-  _redis = new Redis({ url, token });
-  return _redis;
+function _getRedisOrNull() {
+  try {
+    return getRedis();
+  } catch {
+    return null;
+  }
 }
 
 const SCENARIO_PREFIX = "roas:scenario:";
@@ -552,7 +549,7 @@ export async function saveScenario(data: {
   inputs: Record<string, unknown>;
   results: Record<string, unknown>;
 }): Promise<{ id: string; created_at: string }> {
-  const redis = getRedis();
+  const redis = _getRedisOrNull();
   if (!redis) throw new Error("Redis not configured");
 
   const id = crypto.randomUUID();
@@ -574,7 +571,7 @@ export async function saveScenario(data: {
 
 /** 시나리오 목록 조회 */
 export async function listScenarios(): Promise<RoasScenario[]> {
-  const redis = getRedis();
+  const redis = _getRedisOrNull();
   if (!redis) return [];
 
   const ids = await redis.lrange(SCENARIO_INDEX_KEY, 0, 99);
@@ -591,7 +588,7 @@ export async function listScenarios(): Promise<RoasScenario[]> {
 export async function getScenario(
   id: string
 ): Promise<RoasScenario | null> {
-  const redis = getRedis();
+  const redis = _getRedisOrNull();
   if (!redis) return null;
   return redis.get<RoasScenario>(`${SCENARIO_PREFIX}${id}`);
 }
