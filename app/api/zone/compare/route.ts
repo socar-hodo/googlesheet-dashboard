@@ -5,7 +5,7 @@ import {
   getZoneClusterType,
   getClusterBenchmark,
 } from "@/lib/zone";
-import type { CompareParams } from "@/types/zone";
+import type { CompareParams, ClusterBenchmark } from "@/types/zone";
 
 const BQ_ERROR_MSG = "데이터 조회에 실패했습니다. 잠시 후 다시 시도해주세요.";
 
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     for (const p of perfs) {
       const z = zoneMap.get(p.zone_id);
       let clusterType: string | null = null;
-      let bench: Record<string, unknown> | null = null;
+      let bench: ClusterBenchmark | null = null;
       try {
         clusterType = await getZoneClusterType(p.zone_id);
         if (clusterType) {

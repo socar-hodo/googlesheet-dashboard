@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 6. 카니발리제이션 체크
-    const cannibal = checkCannibalization(lat, lng, allZones);
+    const cannibal = checkCannibalization(lat, lng, allZones as unknown as import("@/lib/zone-geo").ZoneCoord[]);
 
     return NextResponse.json({
       estimated_revenue_per_car: Math.round(estRev),
