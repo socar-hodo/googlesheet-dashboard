@@ -208,11 +208,12 @@ export function CampaignDetail({ policyId }: CampaignDetailProps) {
                   }}
                 />
                 <Tooltip
-                  formatter={(value: number, name: string) =>
-                    name === "매출"
-                      ? [`${formatMoney(value)}`, name]
-                      : [`${formatNumber(value)}건`, name]
-                  }
+                  formatter={(value: number | undefined, name: string | undefined) => {
+                    if (value == null) return ["-", name];
+                    return name === "매출"
+                      ? [formatMoney(value), name]
+                      : [`${formatNumber(value)}건`, name];
+                  }}
                 />
                 <Legend />
                 <Line

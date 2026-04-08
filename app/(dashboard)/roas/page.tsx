@@ -1,3 +1,5 @@
+import { RoasSimulator } from "@/components/roas/roas-simulator";
+
 export const metadata = { title: "ROAS 시뮬레이터" };
 
 export default function RoasPage() {
@@ -17,9 +19,7 @@ export default function RoasPage() {
         </div>
       </section>
 
-      <section className="rounded-[1.75rem] border border-border/60 bg-card/90 p-12 text-center shadow-[0_24px_60px_-42px_rgba(20,26,36,0.18)]">
-        <p className="text-sm text-muted-foreground">시뮬레이터 컴포넌트가 여기에 들어갑니다 (P2/P3에서 구현)</p>
-      </section>
+      <RoasSimulator />
     </div>
   );
 }

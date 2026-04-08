@@ -78,11 +78,12 @@ function RoasBarChart({ perCoupon }: { perCoupon: CouponResult[] }) {
               }}
             />
             <Tooltip
-              formatter={(value: number, name: string) =>
-                name === "ROAS (%)"
+              formatter={(value: number | undefined, name: string | undefined) => {
+                if (value == null) return ["-", name];
+                return name === "ROAS (%)"
                   ? [`${value.toFixed(1)}%`, name]
-                  : [`${formatNumber(value)}원`, name]
-              }
+                  : [`${formatNumber(Math.round(value))}원`, name];
+              }}
             />
             <Legend />
             <Bar yAxisId="left" dataKey="roas" name="ROAS (%)" fill="#00B4D8" />
@@ -249,11 +250,10 @@ function WaterfallChart({ result }: { result: SimulationResult }) {
               }
             />
             <Tooltip
-              formatter={(value: number, name: string) =>
-                name === "금액"
-                  ? [`${formatNumber(Math.round(value))}원`, name]
-                  : null
-              }
+              formatter={(value: number | undefined, name: string | undefined) => {
+                if (value == null) return ["-", name];
+                return [`${formatNumber(Math.round(value))}원`, name];
+              }}
             />
             {/* invisible base (transparent) */}
             <Bar dataKey="invisible" stackId="a" fill="transparent" />
@@ -316,11 +316,12 @@ function ScenarioOverlayChart({
               }
             />
             <Tooltip
-              formatter={(value: number, name: string) =>
-                name === "ROAS (%)" || name === "증분 ROAS (%)"
+              formatter={(value: number | undefined, name: string | undefined) => {
+                if (value == null) return ["-", name];
+                return name === "ROAS (%)" || name === "증분 ROAS (%)"
                   ? [`${value.toFixed(0)}%`, name]
-                  : [`${formatNumber(Math.round(value))}원`, name]
-              }
+                  : [`${formatNumber(Math.round(value))}원`, name];
+              }}
             />
             <Legend />
             <Bar yAxisId="left" dataKey="roas" name="ROAS (%)" fill="#00B4D8" />
