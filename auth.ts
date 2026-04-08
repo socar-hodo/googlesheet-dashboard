@@ -72,7 +72,7 @@ function getProviders(): Provider[] {
     );
   }
 
-  if (providers.length === 0) {
+  if (providers.length === 0 || process.env.NODE_ENV !== "production") {
     providers.push(
       Credentials({
         id: "credentials",

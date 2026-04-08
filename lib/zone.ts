@@ -98,7 +98,7 @@ export async function getZones(
   }
 
   const raw = loadSql("zones.sql");
-  const sql = raw.replace("{where_clause}", whereClause);
+  const sql = raw.replaceAll("{where_clause}", whereClause);
 
   const rows = await runQuery(sql);
   if (!rows) return [];
@@ -196,7 +196,7 @@ export async function getRegionZoneStats(
   }
 
   const raw = loadSql("region-zone-stats.sql");
-  const sql = raw.replace("{where_clause}", whereClause);
+  const sql = raw.replaceAll("{where_clause}", whereClause);
 
   const rows = await runQuery(sql);
   if (!rows) return [];
