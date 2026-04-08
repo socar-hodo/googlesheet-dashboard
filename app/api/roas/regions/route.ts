@@ -1,23 +1,25 @@
-import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import { runQuery } from "@/lib/bigquery";
-import { loadRoasSql, BQ_ERROR_MSG } from "@/lib/roas";
+import { loadRoasSql } from "@/lib/roas";
+import { withAuth } from "@/lib/api-utils";
 
-export async function GET() {
-  const session = await auth();
-  if (!session) {
-    return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
+// ── regions 캐시 (1시간 TTL) ──────────────────────────────────
+let _regionsCache: string[] | null = null;
+let _regionsCacheTs = 0;
+const CACHE_TTL = 3600_000; // 1 hour
+
+export const GET = withAuth(async () => {
+  if (_regionsCache && Date.now() - _regionsCacheTs < CACHE_TTL) {
+    return NextResponse.json(_regionsCache);
   }
 
-  try {
-    const sql = loadRoasSql("regions.sql");
-    const rows = await runQuery(sql);
-    if (!rows) {
-      return NextResponse.json({ error: "BigQuery not configured" }, { status: 500 });
-    }
-    return NextResponse.json(rows.map((r) => String(r.region1 ?? "")));
-  } catch (err) {
-    console.error("[roas/regions]", err);
-    return NextResponse.json({ error: BQ_ERROR_MSG }, { status: 500 });
+  const sql = loadRoasSql("regions.sql");
+  const rows = await runQuery(sql);
+  if (!rows) {
+    return NextResponse.json({ error: "BigQuery not configured" }, { status: 500 });
   }
-}
+  const regions = rows.map((r) => String(r.region1 ?? ""));
+  _regionsCache = regions;
+  _regionsCacheTs = Date.now();
+  return NextResponse.json(regions);
+});
