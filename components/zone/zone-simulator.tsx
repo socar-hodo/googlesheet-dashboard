@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import { ZoneModeTabs } from "./zone-mode-tabs";
@@ -36,9 +37,13 @@ const ZoneMap = dynamic(() => import("./zone-map"), { ssr: false });
  */
 export function ZoneSimulator() {
   const mapRef = useRef<ZoneMapHandle | null>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   // ── 공통 상태 ─────────────────────────────────────────────
-  const [mode, setMode] = useState<ZoneMode>("open");
+  const [mode, setModeState] = useState<ZoneMode>(
+    (searchParams.get("mode") as ZoneMode) || "open",
+  );
   const [allZones, setAllZones] = useState<ZoneInfo[]>([]);
   const [zonesLoaded, setZonesLoaded] = useState(false);
 
@@ -80,7 +85,8 @@ export function ZoneSimulator() {
   // ── 모드 전환 ─────────────────────────────────────────────
   const handleModeChange = useCallback(
     async (newMode: ZoneMode) => {
-      setMode(newMode);
+      setModeState(newMode);
+      router.replace(`/zone?mode=${newMode}`, { scroll: false });
       mapRef.current?.clearOverlays();
 
       // 모드별 초기화
