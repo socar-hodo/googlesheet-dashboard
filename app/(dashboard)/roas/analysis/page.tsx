@@ -1,4 +1,4 @@
-export const metadata = { title: "캠페인 분석 | 호도 대시보드" };
+export const metadata = { title: "캠페인 분석" };
 
 export default function RoasAnalysisPage() {
   return (

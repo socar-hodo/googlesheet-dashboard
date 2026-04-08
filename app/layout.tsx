@@ -18,8 +18,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Workspace Portal",
-  description: "문서 검색, 업무 기록, 메모, To-do를 한 화면에서 정리하는 개인 워크스페이스 포털",
+  title: {
+    default: "호도 대시보드",
+    template: "%s | 호도 대시보드",
+  },
+  description: "쏘카 지역사업팀 통합 업무 도구",
 };
 
 export default function RootLayout({

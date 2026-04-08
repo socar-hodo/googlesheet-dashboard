@@ -1,4 +1,4 @@
-export const metadata = { title: "ROAS 시뮬레이터 | 호도 대시보드" };
+export const metadata = { title: "ROAS 시뮬레이터" };
 
 export default function RoasPage() {
   return (
