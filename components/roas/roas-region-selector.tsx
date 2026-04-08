@@ -32,9 +32,14 @@ export function RoasRegionSelector({
   // -- region1 목록 로드 (마운트 시 1회) --
   useEffect(() => {
     fetch("/api/roas/regions")
-      .then((r) => r.json())
-      .then((data: string[]) => setRegions(data))
-      .catch(() => {});
+      .then((r) => {
+        if (!r.ok) throw new Error(`regions fetch failed: ${r.status}`);
+        return r.json();
+      })
+      .then((data: string[]) => {
+        if (Array.isArray(data)) setRegions(data);
+      })
+      .catch((err) => console.error("regions fetch error:", err));
   }, []);
 
   // -- region1 변경 → region2 로드 --
@@ -46,12 +51,17 @@ export function RoasRegionSelector({
       return;
     }
     fetch(`/api/roas/regions/${encodeURIComponent(region1)}`)
-      .then((r) => r.json())
-      .then((data: string[]) => {
-        setSubRegions(data);
-        setSelectedRegion2(data); // 기본: 전체 선택
+      .then((r) => {
+        if (!r.ok) throw new Error(`sub-regions fetch failed: ${r.status}`);
+        return r.json();
       })
-      .catch(() => {});
+      .then((data: string[]) => {
+        if (Array.isArray(data)) {
+          setSubRegions(data);
+          setSelectedRegion2(data); // 기본: 전체 선택
+        }
+      })
+      .catch((err) => console.error("sub-regions fetch error:", err));
   }, [region1]);
 
   // -- region 변경 알림 --
@@ -69,11 +79,15 @@ export function RoasRegionSelector({
         region2: selectedRegion2.join(","),
       });
       const resp = await fetch(`/api/roas/zones?${params}`);
+      if (!resp.ok) throw new Error(`zones fetch failed: ${resp.status}`);
       const data: Zone[] = await resp.json();
-      setZones(data);
-      // 기본: 전체 존 선택
-      onZoneChange(data.map((z) => z.id));
-    } catch {
+      if (Array.isArray(data)) {
+        setZones(data);
+        // 기본: 전체 존 선택
+        onZoneChange(data.map((z) => z.id));
+      }
+    } catch (err) {
+      console.error("zones fetch error:", err);
       // error handled via toast in parent
     } finally {
       setLoading(false);

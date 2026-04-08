@@ -343,7 +343,9 @@ export function RoasSimulator() {
       toast.success("시나리오가 저장되었습니다.");
       setScenarioName("");
       // 시나리오 목록 새로고침
-      const list = await fetch("/api/roas/scenarios").then((r) => r.json());
+      const listResp = await fetch("/api/roas/scenarios");
+      if (!listResp.ok) throw new Error(`scenarios list fetch failed: ${listResp.status}`);
+      const list = await listResp.json();
       setSavedScenarios(Array.isArray(list) ? list : []);
     } catch {
       toast.error("시나리오 저장에 실패했습니다.");

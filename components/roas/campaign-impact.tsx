@@ -499,9 +499,12 @@ export function CampaignImpact({ policyId }: CampaignImpactProps) {
       .finally(() => setLoading(false));
 
     fetch("/api/roas/scenarios")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`scenarios fetch failed: ${r.status}`);
+        return r.json();
+      })
       .then((data) => setScenarios(Array.isArray(data) ? data : []))
-      .catch(() => {});
+      .catch((err) => console.error("scenarios fetch error:", err));
   }, [policyId]);
 
   if (loading) {

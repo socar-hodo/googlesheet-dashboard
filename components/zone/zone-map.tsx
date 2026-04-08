@@ -147,24 +147,39 @@ const ZoneMap = forwardRef<ZoneMapHandle, ZoneMapProps>(function ZoneMap(
 
   /* ── Init map on mount ─────────────────────────────────────── */
   useEffect(() => {
-    if (!containerRef.current || !window.kakao?.maps) return;
+    if (!containerRef.current) return;
 
-    kakao.maps.load(() => {
-      const map = new kakao.maps.Map(containerRef.current!, {
-        center: new kakao.maps.LatLng(initialCenter.lat, initialCenter.lng),
-        level: initialLevel,
-      });
-      mapRef.current = map;
+    let cancelled = false;
 
-      kakao.maps.event.addListener(map, "click", (...args: unknown[]) => {
-        const evt = args[0] as { latLng: kakao.maps.LatLng };
-        const lat = evt.latLng.getLat();
-        const lng = evt.latLng.getLng();
-        onMapClickRef.current?.(lat, lng, null);
+    function tryInit() {
+      if (cancelled) return;
+      if (!window.kakao?.maps) {
+        // SDK not yet loaded — retry in 100ms
+        setTimeout(tryInit, 100);
+        return;
+      }
+
+      kakao.maps.load(() => {
+        if (cancelled || !containerRef.current) return;
+        const map = new kakao.maps.Map(containerRef.current, {
+          center: new kakao.maps.LatLng(initialCenter.lat, initialCenter.lng),
+          level: initialLevel,
+        });
+        mapRef.current = map;
+
+        kakao.maps.event.addListener(map, "click", (...args: unknown[]) => {
+          const evt = args[0] as { latLng: kakao.maps.LatLng };
+          const lat = evt.latLng.getLat();
+          const lng = evt.latLng.getLng();
+          onMapClickRef.current?.(lat, lng, null);
+        });
       });
-    });
+    }
+
+    tryInit();
 
     return () => {
+      cancelled = true;
       // 카카오맵은 destroy API가 없으므로 ref만 정리
       mapRef.current = null;
     };

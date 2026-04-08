@@ -71,12 +71,14 @@ export function ZoneSimulator() {
     if (zonesLoaded) return allZones;
     try {
       const res = await fetch("/api/zone/zones");
+      if (!res.ok) throw new Error(`zones fetch failed: ${res.status}`);
       const data = await res.json();
       const zones = Array.isArray(data) ? data : [];
       setAllZones(zones);
       setZonesLoaded(true);
       return zones;
-    } catch {
+    } catch (err) {
+      console.error("zone/zones fetch error:", err);
       toast.error("존 목록을 불러올 수 없습니다.");
       return [];
     }
