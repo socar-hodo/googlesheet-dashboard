@@ -3,7 +3,6 @@ import "server-only";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import { Redis } from "@upstash/redis";
-import { runQuery } from "@/lib/bigquery";
 
 // ── 상수 ──────────────────────────────────────────────────────
 
@@ -599,5 +598,3 @@ export async function getScenario(
   return redis.get<RoasScenario>(`${SCENARIO_PREFIX}${id}`);
 }
 
-// suppress unused import warning — runQuery is imported for future direct use
-void runQuery;

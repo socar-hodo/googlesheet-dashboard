@@ -4,7 +4,6 @@ import {
   loadRoasSql,
   replaceSqlParams,
   toIntInClause,
-  buildCrosstab,
   safeFloat,
   safeInt,
   isValidDate,
@@ -95,6 +94,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: BQ_ERROR_MSG }, { status: 500 });
   }
 }
-
-// buildCrosstab imported for re-export consistency — used in campaign/detail route
-void buildCrosstab;
