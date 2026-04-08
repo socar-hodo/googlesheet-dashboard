@@ -135,7 +135,7 @@ export function ComparePanel({
               <CardTitle className="text-sm">매출/일</CardTitle>
             </CardHeader>
             <CardContent>
-              <HorizontalBarGroup zones={result.zones} dataKey="revenue_per_car" formatFn={won} />
+              <HorizontalBarGroup zones={result.zones as unknown as ZoneRow[]} dataKey="revenue_per_car" formatFn={won} />
             </CardContent>
           </Card>
 
@@ -145,7 +145,7 @@ export function ComparePanel({
               <CardTitle className="text-sm">가동률</CardTitle>
             </CardHeader>
             <CardContent>
-              <HorizontalBarGroup zones={result.zones} dataKey="utilization" formatFn={pct} maxVal={1} />
+              <HorizontalBarGroup zones={result.zones as unknown as ZoneRow[]} dataKey="utilization" formatFn={pct} maxVal={1} />
             </CardContent>
           </Card>
 
@@ -156,7 +156,7 @@ export function ComparePanel({
             </CardHeader>
             <CardContent>
               <HorizontalBarGroup
-                zones={result.zones}
+                zones={result.zones as unknown as ZoneRow[]}
                 dataKey="total_nuse"
                 formatFn={(n) => fmt(n) + "건"}
               />
@@ -205,8 +205,10 @@ export function ComparePanel({
 }
 
 /* ── 수평 바 그룹 ────────────────────────────────────────────── */
+type ZoneRow = { zone_id: number; name: string; [key: string]: unknown };
+
 interface HorizontalBarGroupProps {
-  zones: Array<{ zone_id: number; name: string; [key: string]: unknown }>;
+  zones: ZoneRow[];
   dataKey: string;
   formatFn: (val: number) => string;
   maxVal?: number;

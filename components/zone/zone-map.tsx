@@ -156,7 +156,8 @@ const ZoneMap = forwardRef<ZoneMapHandle, ZoneMapProps>(function ZoneMap(
       });
       mapRef.current = map;
 
-      kakao.maps.event.addListener(map, "click", (evt: { latLng: kakao.maps.LatLng }) => {
+      kakao.maps.event.addListener(map, "click", (...args: unknown[]) => {
+        const evt = args[0] as { latLng: kakao.maps.LatLng };
         const lat = evt.latLng.getLat();
         const lng = evt.latLng.getLng();
         onMapClickRef.current?.(lat, lng, null);
