@@ -85,3 +85,109 @@ export interface SlackReportParams {
   mode: string;
   data: Record<string, unknown>;
 }
+
+// ── Frontend-only types ──────────────────────────────────────
+
+/** 4개 시뮬레이터 모드 */
+export type ZoneMode = "open" | "close" | "compare" | "optimize";
+
+/** 카카오맵 래퍼 imperative API */
+export interface ZoneMapHandle {
+  addMarker(lat: number, lng: number, opts?: MarkerOptions): void;
+  clearOverlays(): void;
+  setCenter(lat: number, lng: number, level?: number): void;
+  addCircle(lat: number, lng: number, radiusM: number, opts?: CircleOptions): void;
+  addOverlay(lat: number, lng: number, html: string): void;
+  getMap(): kakao.maps.Map | null;
+}
+
+export interface MarkerOptions {
+  color?: "red" | "blue" | "green" | "yellow" | "gray";
+  zoneId?: number;
+  title?: string;
+}
+
+export interface CircleOptions {
+  strokeColor?: string;
+  fillColor?: string;
+  fillOpacity?: number;
+}
+
+/** 개설 시뮬레이션 응답 */
+export interface OpenSimResult {
+  estimated_revenue_per_car: number;
+  estimated_utilization: number;
+  cluster_type: string | null;
+  cluster_benchmark: { avg_revenue_per_car: number; avg_utilization: number; zone_count: number };
+  nearby_avg_revenue: number;
+  nearby_avg_utilization: number;
+  nearby_zones: Array<ZoneInfo & { distance_m: number; revenue_per_car: number; utilization: number }>;
+  cannibalization: Array<{ zone_id: number; zone_name: string; distance_m: number; level: "danger" | "warning" }>;
+  alpha: number;
+}
+
+/** 폐쇄 시뮬레이션 응답 */
+export interface CloseSimResult {
+  target_zone: {
+    zone_id: number;
+    name: string;
+    region1: string;
+    region2: string;
+    revenue_per_car: number;
+    utilization: number;
+    car_count: number;
+  };
+  demand_transfer: {
+    transfers: Array<{
+      zone_id: number;
+      zone_name: string;
+      absorption_pct: number;
+      lat?: number;
+      lng?: number;
+      current_utilization?: number;
+      new_utilization?: number;
+    }>;
+    total_absorption_pct: number;
+    churn_pct: number;
+    cost_saved_monthly: number;
+    churn_loss_monthly: number;
+    net_effect_monthly: number;
+  };
+}
+
+/** 비교 응답 */
+export interface CompareResult {
+  zones: Array<ZonePerformance & {
+    name: string;
+    region1: string;
+    region2: string;
+    lat: number;
+    lng: number;
+    cluster_type: string | null;
+    cluster_benchmark: Record<string, unknown> | null;
+  }>;
+}
+
+/** 최적화 응답 */
+export interface OptimizeResult {
+  summary: {
+    total_zones: number;
+    total_cars: number;
+    avg_utilization: number;
+    avg_cars_per_zone: number;
+  };
+  suggestions: {
+    close: RegionZoneStat[];
+    open: Array<{ area?: string; reason?: string; lat?: number; lng?: number }>;
+    rebalance: Array<{
+      from_zone: { zone_id: number; name: string; utilization: number };
+      to_zone: { zone_id: number; name: string; utilization: number };
+      cars: number;
+    }>;
+  };
+  projected: {
+    new_avg_utilization: number;
+    monthly_savings: number;
+  };
+  zones: RegionZoneStat[];
+}

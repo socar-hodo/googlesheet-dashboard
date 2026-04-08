@@ -15,6 +15,11 @@ const nextConfig: NextConfig = {
     "/api/allocation/run": ["./sql/**/*.sql"],
     "/api/relocation/run": ["./sql/**/*.sql"],
     "/api/relocation/candidates": ["./sql/**/*.sql"],
+    "/api/zone/zones": ["./sql/**/*.sql"],
+    "/api/zone/simulate/open": ["./sql/**/*.sql"],
+    "/api/zone/simulate/close": ["./sql/**/*.sql"],
+    "/api/zone/compare": ["./sql/**/*.sql"],
+    "/api/zone/optimize": ["./sql/**/*.sql"],
   },
 };
 
