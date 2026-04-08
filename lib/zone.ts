@@ -12,11 +12,15 @@ import type {
   RegionZoneStat,
 } from "@/types/zone";
 
-// ── SQL 파일 경로 ──────────────────────────────────────────────
+// ── SQL 파일 경로 및 캐시 (모듈 레벨) ────────────────────────
 const SQL_DIR = resolve(process.cwd(), "sql/zone");
+const _sqlCache = new Map<string, string>();
 
 function loadSql(filename: string): string {
-  return readFileSync(resolve(SQL_DIR, filename), "utf-8");
+  if (_sqlCache.has(filename)) return _sqlCache.get(filename)!;
+  const content = readFileSync(resolve(SQL_DIR, filename), "utf-8");
+  _sqlCache.set(filename, content);
+  return content;
 }
 
 // ── SQL injection 방지 ─────────────────────────────────────────

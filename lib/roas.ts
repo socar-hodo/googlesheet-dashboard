@@ -150,10 +150,20 @@ export function safeFloat(v: unknown): number {
   return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0;
 }
 
-/** sql/roas/ 디렉토리에서 SQL 파일을 읽어 반환 */
+// ── SQL 파일 캐시 (모듈 레벨) ──────────────────────────────────
+
+const _roasSqlCache = new Map<string, string>();
+
+function _readRoasSqlFile(filename: string): string {
+  if (_roasSqlCache.has(filename)) return _roasSqlCache.get(filename)!;
+  const content = readFileSync(resolve(process.cwd(), "sql/roas", filename), "utf-8");
+  _roasSqlCache.set(filename, content);
+  return content;
+}
+
+/** sql/roas/ 디렉토리에서 SQL 파일을 읽어 반환 (모듈 레벨 캐시 사용) */
 export function loadRoasSql(filename: string): string {
-  const sqlPath = resolve(process.cwd(), "sql/roas", filename);
-  return readFileSync(sqlPath, "utf-8");
+  return _readRoasSqlFile(filename);
 }
 
 /**
