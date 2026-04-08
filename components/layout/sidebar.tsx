@@ -9,8 +9,10 @@ import {
   ChevronLeft,
   ChevronRight,
   LayoutDashboard,
+  MapPin,
   Menu,
   SearchCheck,
+  TrendingUp,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +22,8 @@ const navItems = [
   { icon: LayoutDashboard, label: "대시보드", href: "/dashboard" },
   { icon: Car, label: "신차 배분", href: "/allocation" },
   { icon: ArrowLeftRight, label: "재배치 추천", href: "/relocation" },
+  { icon: TrendingUp, label: "ROAS 시뮬레이터", href: "/roas" },
+  { icon: MapPin, label: "존 시뮬레이터", href: "/zone" },
   { icon: SearchCheck, label: "워크스페이스", href: "/work-history" },
 ];
 
@@ -84,13 +88,13 @@ export function Sidebar() {
 
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                    Workspace
+                    HODO
                   </p>
                   <p className="mt-1 text-lg font-semibold tracking-[-0.03em] text-foreground">
-                    Search-first hub
+                    호도 대시보드
                   </p>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    자주 찾는 문서와 실행 화면을 조용한 탐색 흐름으로 정리합니다.
+                    지역사업팀 통합 업무 도구
                   </p>
                 </div>
               </div>
