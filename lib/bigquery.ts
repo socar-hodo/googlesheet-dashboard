@@ -7,6 +7,7 @@
 //   base64 -w 0 ~/.config/gcloud/application_default_credentials.json
 //   → 출력값을 GOOGLE_APPLICATION_CREDENTIALS_B64 환경변수에 설정
 import { BigQuery } from "@google-cloud/bigquery";
+import type { Query } from "@google-cloud/bigquery";
 import { UserRefreshClient } from "google-auth-library";
 
 /** BigQuery 환경변수가 설정되었는지 확인 */
@@ -51,5 +52,66 @@ export async function runQuery(
 
   const client = getBigQueryClient();
   const [rows] = await client.query({ query: sql });
+  return rows as Record<string, unknown>[];
+}
+
+// ── Parameterized query support ───────────────────────────────────────────────
+
+export interface QueryParam {
+  name: string;
+  type: "STRING" | "INT64" | "FLOAT64" | "BOOL" | "DATE";
+  value: string | number | boolean;
+}
+
+export interface ArrayQueryParam {
+  name: string;
+  type: "STRING" | "INT64";
+  values: (string | number)[];
+}
+
+/**
+ * BigQuery 파라미터 바인딩 쿼리 실행.
+ * SQL에서 @paramName 구문 사용 가능 — SQL injection 근본 방지.
+ *
+ * @example
+ * const rows = await runParameterizedQuery(
+ *   "SELECT * FROM t WHERE region1 = @region AND id IN UNNEST(@ids)",
+ *   [
+ *     { name: "region", type: "STRING", value: "경상남도" },
+ *     { name: "ids", type: "INT64", values: [1, 2, 3] },
+ *   ]
+ * );
+ */
+export async function runParameterizedQuery(
+  sql: string,
+  params?: (QueryParam | ArrayQueryParam)[],
+): Promise<Record<string, unknown>[] | null> {
+  if (!isBigQueryConfigured()) return null;
+
+  const client = getBigQueryClient();
+
+  const queryParams: Record<string, unknown> = {};
+  const paramTypes: Record<string, unknown> = {};
+
+  if (params) {
+    for (const p of params) {
+      if ("values" in p) {
+        // Array parameter — BigQuery uses UNNEST(@param) in SQL
+        queryParams[p.name] = p.values;
+        paramTypes[p.name] = `ARRAY<${p.type}>`;
+      } else {
+        queryParams[p.name] = p.value;
+        paramTypes[p.name] = p.type;
+      }
+    }
+  }
+
+  const options: Query = { query: sql };
+  if (params && params.length > 0) {
+    options.params = queryParams;
+    options.types = paramTypes as Record<string, string>;
+  }
+
+  const [rows] = await client.query(options);
   return rows as Record<string, unknown>[];
 }
