@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { getZones, getZonePerformance } from "@/lib/zone";
 import { haversine, estimateDemandTransfer } from "@/lib/zone-geo";
@@ -18,6 +19,11 @@ const BQ_ERROR_MSG = "데이터 조회에 실패했습니다. 잠시 후 다시 
  * 5. 수요 이전 추정
  */
 export async function POST(req: NextRequest) {
+  const session = await auth();
+  if (!session) {
+    return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
+  }
+
   try {
     const body: CloseSimParams = await req.json();
     const { zone_id } = body;

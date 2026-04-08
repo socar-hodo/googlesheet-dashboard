@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
 import type { SlackReportParams } from "@/types/zone";
 
@@ -18,6 +19,11 @@ const MODE_LABELS: Record<string, string> = {
  * Slack Block Kit 메시지를 웹훅으로 발송.
  */
 export async function POST(req: NextRequest) {
+  const session = await auth();
+  if (!session) {
+    return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
+  }
+
   try {
     const body: SlackReportParams = await req.json();
     const { mode, data } = body;

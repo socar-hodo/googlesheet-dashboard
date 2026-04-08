@@ -1,7 +1,13 @@
+import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { saveScenario, listScenarios } from "@/lib/roas";
 
 export async function GET() {
+  const session = await auth();
+  if (!session) {
+    return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
+  }
+
   try {
     const scenarios = await listScenarios();
     return NextResponse.json(
@@ -24,6 +30,11 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const session = await auth();
+  if (!session) {
+    return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
+  }
+
   const body = await req.json();
   const name = body.name;
   const inputs = body.inputs;

@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
 import {
   getZones,
@@ -24,6 +25,11 @@ const BQ_ERROR_MSG = "데이터 조회에 실패했습니다. 잠시 후 다시 
  * 6. 카니발리제이션 체크
  */
 export async function POST(req: NextRequest) {
+  const session = await auth();
+  if (!session) {
+    return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
+  }
+
   try {
     const body: OpenSimParams = await req.json();
     const { lat, lng, radius_m = 1000, alpha = 0.5 } = body;
@@ -104,7 +110,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 6. 카니발리제이션 체크
-    const cannibal = checkCannibalization(lat, lng, allZones as unknown as import("@/lib/zone-geo").ZoneCoord[]);
+    const cannibal = checkCannibalization(lat, lng, allZones);
 
     return NextResponse.json({
       estimated_revenue_per_car: Math.round(estRev),

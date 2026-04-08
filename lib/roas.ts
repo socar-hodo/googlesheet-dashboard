@@ -178,7 +178,7 @@ export function toIntInClause(ids: number[]): string {
 
 /** 문자열 배열을 SQL IN절용 문자열로 변환: ('a', 'b') */
 export function toStrInClause(strs: string[]): string {
-  return strs.map((s) => `'${s.replace(/'/g, "\\'")}'`).join(", ");
+  return strs.map((s) => `'${s.replace(/'/g, "''")}'`).join(", ");
 }
 
 /** 날짜 문자열 검증 (YYYY-MM-DD) */
@@ -580,11 +580,9 @@ export async function listScenarios(): Promise<RoasScenario[]> {
   const ids = await redis.lrange(SCENARIO_INDEX_KEY, 0, 99);
   if (!ids || ids.length === 0) return [];
 
-  const scenarios: RoasScenario[] = [];
-  for (const id of ids) {
-    const s = await redis.get<RoasScenario>(`${SCENARIO_PREFIX}${id}`);
-    if (s) scenarios.push(s);
-  }
+  const keys = ids.map((id) => `${SCENARIO_PREFIX}${id}`);
+  const results = await Promise.all(keys.map((k) => redis.get<RoasScenario>(k)));
+  const scenarios = results.filter((s): s is RoasScenario => s !== null);
 
   return scenarios;
 }

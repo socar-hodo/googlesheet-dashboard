@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 import type { ScenarioSaveParams, ZoneScenario } from "@/types/zone";
@@ -36,6 +37,11 @@ const TTL_SECONDS = 90 * 24 * 60 * 60;
  * Body: { mode, parameters, results }
  */
 export async function POST(req: NextRequest) {
+  const session = await auth();
+  if (!session) {
+    return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
+  }
+
   try {
     const body: ScenarioSaveParams = await req.json();
     const { mode, parameters, results } = body;
@@ -55,7 +61,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const id = crypto.randomUUID();
     const createdAt = new Date().toISOString();
     const scenario: ZoneScenario = { id, mode, parameters, results, created_at: createdAt };
 
@@ -80,6 +86,11 @@ export async function POST(req: NextRequest) {
  * GET /api/zone/scenarios — 시나리오 목록
  */
 export async function GET() {
+  const session = await auth();
+  if (!session) {
+    return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
+  }
+
   try {
     const redis = getRedis();
     if (!redis) {
@@ -90,25 +101,16 @@ export async function GET() {
     const ids: string[] = await redis.lrange(indexKey(), 0, 49);
     if (ids.length === 0) return NextResponse.json([]);
 
-    // 각 시나리오 조회
-    const scenarios: Array<{
-      id: string;
-      mode: string;
-      created_at: string;
-      parameters: Record<string, unknown>;
-    }> = [];
-
-    for (const id of ids) {
-      const s = await redis.get<ZoneScenario>(scenarioKey(id));
-      if (s) {
-        scenarios.push({
-          id: s.id,
-          mode: s.mode,
-          created_at: s.created_at,
-          parameters: s.parameters,
-        });
-      }
-    }
+    // 각 시나리오 일괄 조회
+    const fetched = await Promise.all(ids.map((id) => redis.get<ZoneScenario>(scenarioKey(id))));
+    const scenarios = fetched
+      .filter((s): s is ZoneScenario => s !== null)
+      .map((s) => ({
+        id: s.id,
+        mode: s.mode,
+        created_at: s.created_at,
+        parameters: s.parameters,
+      }));
 
     return NextResponse.json(scenarios);
   } catch (err) {

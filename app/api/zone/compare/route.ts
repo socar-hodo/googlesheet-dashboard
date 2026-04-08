@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
 import {
   getZones,
@@ -17,6 +18,11 @@ const BQ_ERROR_MSG = "데이터 조회에 실패했습니다. 잠시 후 다시 
  * 존 비교: 각 존의 실적 + 클러스터 벤치마크를 조회하여 side-by-side 비교.
  */
 export async function POST(req: NextRequest) {
+  const session = await auth();
+  if (!session) {
+    return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
+  }
+
   try {
     const body: CompareParams = await req.json();
     const { zone_ids } = body;

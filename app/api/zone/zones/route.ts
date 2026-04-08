@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { getRegions, getSubRegions, getZones } from "@/lib/zone";
 
@@ -10,6 +11,11 @@ import { getRegions, getSubRegions, getZones } from "@/lib/zone";
  *   (없으면)                 → 전체 존 목록 (region1, region2 필터 가능)
  */
 export async function GET(req: NextRequest) {
+  const session = await auth();
+  if (!session) {
+    return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
+  }
+
   const { searchParams } = new URL(req.url);
   const list = searchParams.get("list");
   const region1 = searchParams.get("region1") || undefined;

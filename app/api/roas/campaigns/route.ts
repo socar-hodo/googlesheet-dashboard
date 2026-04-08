@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { runQuery } from "@/lib/bigquery";
 import {
@@ -10,6 +11,11 @@ import {
 } from "@/lib/roas";
 
 export async function GET(req: NextRequest) {
+  const session = await auth();
+  if (!session) {
+    return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
+  }
+
   const sp = req.nextUrl.searchParams;
   const startDate = sp.get("start_date") ?? "";
   const endDate = sp.get("end_date") ?? "";

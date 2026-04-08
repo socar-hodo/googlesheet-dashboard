@@ -5,12 +5,14 @@ export default auth((req) => {
   const { nextUrl } = req;
   const isLoggedIn = !!req.auth;
 
-  // 보호된 경로: /dashboard, /allocation, /work-history
+  // 보호된 경로: /dashboard, /allocation, /work-history, /roas, /zone
   const isProtectedRoute =
     nextUrl.pathname.startsWith("/dashboard") ||
     nextUrl.pathname.startsWith("/allocation") ||
     nextUrl.pathname.startsWith("/relocation") ||
-    nextUrl.pathname.startsWith("/work-history");
+    nextUrl.pathname.startsWith("/work-history") ||
+    nextUrl.pathname.startsWith("/roas") ||
+    nextUrl.pathname.startsWith("/zone");
   // 인증 경로: /login 페이지
   const isAuthRoute = nextUrl.pathname.startsWith("/login");
 

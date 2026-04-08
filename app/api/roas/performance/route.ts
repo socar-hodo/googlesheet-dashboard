@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { runQuery } from "@/lib/bigquery";
 import {
@@ -14,6 +15,11 @@ import {
 import type { PerformanceResult } from "@/lib/roas";
 
 export async function POST(req: NextRequest) {
+  const session = await auth();
+  if (!session) {
+    return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
+  }
+
   const body = await req.json();
   const zoneIds: number[] = Array.isArray(body.zone_ids) ? body.zone_ids.map(Number) : [];
   const startDate: string = body.start_date ?? "";

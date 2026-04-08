@@ -7,6 +7,7 @@ export interface ZoneInfo {
   region1: string;
   region2: string;
   car_count: number;
+  [key: string]: unknown;
 }
 
 /** 존 실적 (90일 평균) */
