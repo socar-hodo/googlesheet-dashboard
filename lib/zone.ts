@@ -131,7 +131,7 @@ export async function getZonePerformance(
   if (zoneIds.length === 0) return [];
 
   const raw = loadSql("zone-performance.sql");
-  const sql = raw.replace("{zone_ids}", zoneIds.join(", "));
+  const sql = raw.replaceAll("{zone_ids}", zoneIds.join(", "));
 
   const rows = await runQuery(sql);
   if (!rows) return [];
@@ -154,7 +154,7 @@ export async function getClusterBenchmark(
 ): Promise<ClusterBenchmark> {
   assertSafe(clusterType, "cluster_type");
   const raw = loadSql("cluster-benchmark.sql");
-  const sql = raw.replace("{cluster_type}", `'${clusterType}'`);
+  const sql = raw.replaceAll("{cluster_type}", `'${clusterType}'`);
 
   const rows = await runQuery(sql);
   if (!rows || rows.length === 0) {
@@ -174,7 +174,7 @@ export async function getZoneClusterType(
   zoneId: number,
 ): Promise<string | null> {
   const raw = loadSql("zone-cluster.sql");
-  const sql = raw.replace("{zone_id}", String(zoneId));
+  const sql = raw.replaceAll("{zone_id}", String(zoneId));
 
   const rows = await runQuery(sql);
   if (!rows || rows.length === 0) return null;
