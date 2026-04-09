@@ -145,20 +145,13 @@ const ZoneMap = forwardRef<ZoneMapHandle, ZoneMapProps>(function ZoneMap(
   const onZoneClickRef = useRef(onZoneClick);
   onZoneClickRef.current = onZoneClick;
 
-  /* ── Init map on mount ─────────────────────────────────────── */
+  /* ── Load SDK + Init map ────────────────────────────────────── */
   useEffect(() => {
     if (!containerRef.current) return;
-
     let cancelled = false;
 
-    function tryInit() {
-      if (cancelled) return;
-      if (!window.kakao?.maps) {
-        // SDK not yet loaded — retry in 100ms
-        setTimeout(tryInit, 100);
-        return;
-      }
-
+    function initMap() {
+      if (cancelled || !containerRef.current) return;
       kakao.maps.load(() => {
         if (cancelled || !containerRef.current) return;
         const map = new kakao.maps.Map(containerRef.current, {
@@ -166,23 +159,40 @@ const ZoneMap = forwardRef<ZoneMapHandle, ZoneMapProps>(function ZoneMap(
           level: initialLevel,
         });
         mapRef.current = map;
-
         kakao.maps.event.addListener(map, "click", (...args: unknown[]) => {
           const evt = args[0] as { latLng: kakao.maps.LatLng };
-          const lat = evt.latLng.getLat();
-          const lng = evt.latLng.getLng();
-          onMapClickRef.current?.(lat, lng, null);
+          onMapClickRef.current?.(evt.latLng.getLat(), evt.latLng.getLng(), null);
         });
       });
     }
 
-    tryInit();
+    // 이미 로드됨
+    if (window.kakao?.maps) { initMap(); return () => { cancelled = true; mapRef.current = null; }; }
 
-    return () => {
-      cancelled = true;
-      // 카카오맵은 destroy API가 없으므로 ref만 정리
-      mapRef.current = null;
-    };
+    // SDK 스크립트 삽입 (page.tsx의 Script 태그와 무관하게 확실히 로드)
+    const key = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
+    if (!key) {
+      console.error("[ZoneMap] NEXT_PUBLIC_KAKAO_JS_KEY가 설정되지 않았습니다.");
+      return;
+    }
+    const existing = document.querySelector('script[src*="dapi.kakao.com"]');
+    if (existing) {
+      // 스크립트 태그는 있지만 아직 로딩 중 — 폴링
+      const poll = setInterval(() => {
+        if (cancelled) { clearInterval(poll); return; }
+        if (window.kakao?.maps) { clearInterval(poll); initMap(); }
+      }, 100);
+      return () => { cancelled = true; clearInterval(poll); mapRef.current = null; };
+    }
+
+    const script = document.createElement("script");
+    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${key}&libraries=services&autoload=false`;
+    script.async = true;
+    script.onload = () => { if (!cancelled) initMap(); };
+    script.onerror = () => console.error("[ZoneMap] 카카오맵 SDK 로드 실패");
+    document.head.appendChild(script);
+
+    return () => { cancelled = true; mapRef.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
