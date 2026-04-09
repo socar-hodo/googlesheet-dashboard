@@ -78,7 +78,7 @@ export function CampaignList({ onSelectCampaign, selectedPolicyId }: CampaignLis
       const resp = await fetch(`/api/roas/campaigns?${params}`);
       if (!resp.ok) throw new Error("조회 실패");
       const data: CampaignListItem[] = await resp.json();
-      setCampaigns(data);
+      setCampaigns(Array.isArray(data) ? data : []);
       if (data.length === 0) {
         toast.info("해당 기간에 캠페인이 없습니다.");
       }
@@ -204,7 +204,7 @@ export function CampaignList({ onSelectCampaign, selectedPolicyId }: CampaignLis
                     key={c.policy_id}
                     onClick={() => onSelectCampaign(c.policy_id)}
                     className={`border-b border-border/20 cursor-pointer transition-colors hover:bg-muted/30 ${
-                      selectedPolicyId === c.policy_id ? "bg-blue-50/60" : ""
+                      selectedPolicyId === c.policy_id ? "bg-blue-50/60 dark:bg-blue-950/30" : ""
                     }`}
                   >
                     <td className="py-2 px-3 font-mono">{c.policy_id}</td>
@@ -218,7 +218,7 @@ export function CampaignList({ onSelectCampaign, selectedPolicyId }: CampaignLis
                     <td className="py-2 px-3 text-center text-muted-foreground">{c.end_date}</td>
                     <td className="py-2 px-3 text-right">{formatNumber(c.issued)}</td>
                     <td className="py-2 px-3 text-right">{formatNumber(c.used)}</td>
-                    <td className="py-2 px-3 text-right">{(c.usage_rate * 100).toFixed(1)}%</td>
+                    <td className="py-2 px-3 text-right">{c.usage_rate.toFixed(1)}%</td>
                     <td className="py-2 px-3 text-right">{formatMoney(c.revenue)}</td>
                     <td className="py-2 px-3 text-right">{formatMoney(c.discount)}</td>
                     <td
@@ -230,7 +230,7 @@ export function CampaignList({ onSelectCampaign, selectedPolicyId }: CampaignLis
                     </td>
                     <td className="py-2 px-3 text-center">
                       {c.is_ongoing ? (
-                        <Badge className="text-[10px] bg-green-100 text-green-700">진행중</Badge>
+                        <Badge className="text-[10px] bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-300">진행중</Badge>
                       ) : (
                         <span className="text-[10px] text-muted-foreground">종료</span>
                       )}

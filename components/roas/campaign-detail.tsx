@@ -35,7 +35,7 @@ function SummaryKpi({ summary }: { summary: CampaignSummary }) {
   const kpis = [
     { label: "발급수", value: formatNumber(summary.issued) + "매" },
     { label: "사용수", value: formatNumber(summary.used) + "매" },
-    { label: "사용률", value: (summary.usage_rate * 100).toFixed(1) + "%" },
+    { label: "사용률", value: summary.usage_rate.toFixed(1) + "%" },
     { label: "매출", value: formatMoney(summary.revenue) },
     { label: "할인액", value: formatMoney(summary.discount) },
     { label: "순매출", value: formatMoney(summary.net_revenue) },

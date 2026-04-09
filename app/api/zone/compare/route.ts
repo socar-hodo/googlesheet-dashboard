@@ -36,30 +36,34 @@ export const POST = withAuth(async (req: NextRequest) => {
   const allZones = await getZones();
   const zoneMap = new Map(allZones.map((z) => [z.id, z]));
 
-  const results = [];
-  for (const p of perfs) {
-    const z = zoneMap.get(p.zone_id);
-    let clusterType: string | null = null;
-    let bench: ClusterBenchmark | null = null;
-    try {
-      clusterType = await getZoneClusterType(p.zone_id);
-      if (clusterType) {
-        bench = await getClusterBenchmark(clusterType);
+  const clusterResults = await Promise.all(
+    perfs.map(async (p) => {
+      try {
+        const ct = await getZoneClusterType(p.zone_id);
+        const bench = ct ? await getClusterBenchmark(ct) : null;
+        return { zone_id: p.zone_id, cluster_type: ct, benchmark: bench };
+      } catch {
+        return { zone_id: p.zone_id, cluster_type: null, benchmark: null };
       }
-    } catch {
-      console.warn(`클러스터 조회 실패: zone_id=${p.zone_id}`);
-    }
-    results.push({
+    })
+  );
+
+  const clusterMap = new Map(clusterResults.map((r) => [r.zone_id, r]));
+
+  const results = perfs.map((p) => {
+    const z = zoneMap.get(p.zone_id);
+    const cr = clusterMap.get(p.zone_id);
+    return {
       ...p,
       name: z?.name ?? "",
       region1: z?.region1 ?? "",
       region2: z?.region2 ?? "",
       lat: z?.lat ?? 0,
       lng: z?.lng ?? 0,
-      cluster_type: clusterType,
-      cluster_benchmark: bench,
-    });
-  }
+      cluster_type: cr?.cluster_type ?? null,
+      cluster_benchmark: cr?.benchmark ?? null,
+    };
+  });
 
   return NextResponse.json({ zones: results });
 });

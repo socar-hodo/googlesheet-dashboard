@@ -162,7 +162,7 @@ function SensitivityHeatmap({
                 <th
                   key={ds}
                   className={`border border-border/30 px-2 py-1 text-center font-medium ${
-                    ds === 1.0 ? "bg-blue-50 text-blue-700" : "bg-muted/30"
+                    ds === 1.0 ? "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300" : "bg-muted/30"
                   }`}
                 >
                   {Math.round(ds * 100)}%
@@ -175,7 +175,7 @@ function SensitivityHeatmap({
               <tr key={rs}>
                 <td
                   className={`border border-border/30 px-2 py-1 font-medium ${
-                    rs === 1.0 ? "bg-blue-50 text-blue-700" : "bg-muted/30"
+                    rs === 1.0 ? "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300" : "bg-muted/30"
                   }`}
                 >
                   {Math.round(rs * 100)}%

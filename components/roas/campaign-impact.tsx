@@ -308,10 +308,10 @@ function DIDDailyChart({ analysisC }: { analysisC: AnalysisC }) {
 function VerdictBanner({ verdict }: { verdict: Verdict }) {
   const colorClass =
     verdict.score >= 80
-      ? "bg-green-50 border-green-200"
+      ? "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900"
       : verdict.score >= 50
-        ? "bg-yellow-50 border-yellow-200"
-        : "bg-red-50 border-red-200";
+        ? "bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200 dark:border-yellow-900"
+        : "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900";
 
   const scoreColor =
     verdict.score >= 80

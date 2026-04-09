@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { runQuery } from "@/lib/bigquery";
+import { withAuth } from "@/lib/api-utils";
 
 const SAFE_ZONE = /^[가-힣a-zA-Z0-9\s]+$/;
 const VALID_PAST_DAYS = [7, 14, 30];
 
-export async function POST(req: Request) {
+export const POST = withAuth(async (req: NextRequest) => {
   const body = await req.json().catch(() => ({}));
   const zones: string[] = Array.isArray(body.zones) ? body.zones : [];
   const limit: number = typeof body.limit === "number" && body.limit > 0 ? Math.ceil(body.limit) : 999;
@@ -77,4 +78,4 @@ export async function POST(req: Request) {
     const message = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ errors: [message] }, { status: 500 });
   }
-}
+});

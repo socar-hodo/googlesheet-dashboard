@@ -53,7 +53,10 @@ export function OptimizePanel({
   // ── 시/도 목록 로드 ──────────────────────────────────────
   useEffect(() => {
     fetch("/api/zone/zones?list=regions")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        return r.json();
+      })
       .then((data) => { if (Array.isArray(data)) setRegions(data); })
       .catch(() => setRegions([]));
   }, []);
@@ -65,7 +68,10 @@ export function OptimizePanel({
       return;
     }
     fetch(`/api/zone/zones?list=subregions&region1=${encodeURIComponent(region1)}`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        return r.json();
+      })
       .then((data) => { if (Array.isArray(data)) setSubRegions(data); })
       .catch(() => setSubRegions([]));
   }, [region1]);

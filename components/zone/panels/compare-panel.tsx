@@ -78,7 +78,10 @@ export function ComparePanel({
   useEffect(() => {
     setRegionsLoading(true);
     fetch("/api/zone/zones?list=regions")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        return r.json();
+      })
       .then((data) => setRegions(Array.isArray(data) ? data : []))
       .catch(() => setRegions([]))
       .finally(() => setRegionsLoading(false));
@@ -92,7 +95,10 @@ export function ComparePanel({
     }
     setSubRegionsLoading(true);
     fetch(`/api/zone/zones?list=subregions&region1=${encodeURIComponent(selectedRegion1)}`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        return r.json();
+      })
       .then((data) => setSubRegions(Array.isArray(data) ? data : []))
       .catch(() => setSubRegions([]))
       .finally(() => setSubRegionsLoading(false));

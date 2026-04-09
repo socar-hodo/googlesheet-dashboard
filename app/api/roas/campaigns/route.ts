@@ -29,32 +29,31 @@ export const GET = withAuth(async (req: NextRequest) => {
   }
 
   if (rows.length === 0) {
-    return NextResponse.json({ campaigns: [] });
+    return NextResponse.json([]);
   }
+
+  const now = new Date().toISOString().slice(0, 10);
 
   const campaigns = rows.map((row) => {
     const startOn = row.usable_start_on;
     const endOn = row.usable_end_on;
+    const endDate = endOn ? String(endOn).slice(0, 10) : "";
 
     return {
       policy_id: safeInt(row.policy_id),
       name: String(row.name ?? ""),
       division: String(row.division ?? ""),
-      discount_price: safeInt(row.discount_price),
-      discount_percent: safeFloat(row.discount_percent),
-      usable_start_on: startOn ? String(startOn).slice(0, 10) : "",
-      usable_end_on: endOn ? String(endOn).slice(0, 10) : "",
-      issued_count: safeInt(row.issued_count),
-      used_count: safeInt(row.used_count),
+      start_date: startOn ? String(startOn).slice(0, 10) : "",
+      end_date: endDate,
+      issued: safeInt(row.issued_count),
+      used: safeInt(row.used_count),
       usage_rate: safeFloat(row.usage_rate),
-      total_revenue: safeFloat(row.total_revenue),
-      total_discount: safeFloat(row.total_discount),
-      net_revenue: safeFloat(row.net_revenue),
+      revenue: safeFloat(row.total_revenue),
+      discount: safeFloat(row.total_discount),
       roas: safeFloat(row.roas),
-      first_issued: String(row.first_issued ?? ""),
-      last_used: String(row.last_used ?? ""),
+      is_ongoing: endDate ? endDate >= now : false,
     };
   });
 
-  return NextResponse.json({ campaigns });
+  return NextResponse.json(campaigns);
 });

@@ -381,12 +381,12 @@ export function RoasSimulator() {
   // 손익분기 색상
   const breakEvenColor =
     simResult?.breakEvenRate == null
-      ? "bg-gray-100 text-gray-600"
+      ? "bg-gray-100 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400"
       : simResult.breakEvenRate <= 30
-        ? "bg-green-100 text-green-700"
+        ? "bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-300"
         : simResult.breakEvenRate <= 70
-          ? "bg-yellow-100 text-yellow-700"
-          : "bg-red-100 text-red-700";
+          ? "bg-yellow-100 dark:bg-yellow-950/30 text-yellow-700 dark:text-yellow-300"
+          : "bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-300";
 
   return (
     <div className="grid gap-6 xl:grid-cols-[22rem_minmax(0,1fr)]">
