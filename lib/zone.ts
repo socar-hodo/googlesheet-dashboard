@@ -54,7 +54,7 @@ export async function getRegions(): Promise<string[]> {
   `;
   const rows = await runQuery(sql);
   if (!rows) return [];
-  return rows.map((r) => String(r.region1));
+  return rows.map((r) => String(r.region1)).filter((s) => s && s !== "-");
 }
 
 /** region2 목록 조회. */
@@ -66,11 +66,12 @@ export async function getSubRegions(region1: string): Promise<string[]> {
     WHERE date = DATE_SUB(CURRENT_DATE('Asia/Seoul'), INTERVAL 1 DAY)
       AND region1 = '${region1}'
       AND region2 IS NOT NULL
+      AND region2 != ''
     ORDER BY region2
   `;
   const rows = await runQuery(sql);
   if (!rows) return [];
-  return rows.map((r) => String(r.region2));
+  return rows.map((r) => String(r.region2)).filter((s) => s && s !== "-");
 }
 
 // ── 존 목록 (위경도 포함) ────────────────────────────────────
