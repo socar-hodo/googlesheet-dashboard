@@ -1,8 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { CompareResult, ZoneInfo, ZoneMapHandle } from "@/types/zone";
 
 /* ── Zone colors (최대 5개) ──────────────────────────────────── */
@@ -22,7 +29,14 @@ function won(n: number | null | undefined): string {
 /* ── Props ───────────────────────────────────────────────────── */
 interface ComparePanelProps {
   selectedZoneIds: number[];
-  allZones: ZoneInfo[];
+  /** 지역 필터링된 존 목록 (마커 표시용) */
+  regionZones: ZoneInfo[];
+  /** 현재 선택된 region1 */
+  selectedRegion1: string;
+  /** 현재 선택된 region2 */
+  selectedRegion2: string;
+  /** 지역 선택 콜백 */
+  onRegionSelect: (region1: string, region2: string) => void;
   result: CompareResult | null;
   loading: boolean;
   onRemoveZone: (zoneId: number) => void;
@@ -34,6 +48,7 @@ interface ComparePanelProps {
  * 비교 모드 사이드 패널.
  *
  * 구성:
+ * 0. 지역 선택 드롭다운 (region1 / region2)
  * 1. 선택된 존 칩 (클릭으로 제거)
  * 2. 매출/일 수평 바
  * 3. 가동률 수평 바
@@ -43,13 +58,46 @@ interface ComparePanelProps {
  */
 export function ComparePanel({
   selectedZoneIds,
-  allZones,
+  regionZones,
+  selectedRegion1,
+  selectedRegion2,
+  onRegionSelect,
   result,
   loading,
   onRemoveZone,
   onSlack,
   mapRef,
 }: ComparePanelProps) {
+  // ── 지역 목록 상태 ──────────────────────────────────────
+  const [regions, setRegions] = useState<string[]>([]);
+  const [subRegions, setSubRegions] = useState<string[]>([]);
+  const [regionsLoading, setRegionsLoading] = useState(false);
+  const [subRegionsLoading, setSubRegionsLoading] = useState(false);
+
+  // region1 목록 초기 로드
+  useEffect(() => {
+    setRegionsLoading(true);
+    fetch("/api/zone/zones?list=regions")
+      .then((r) => r.json())
+      .then((data) => setRegions(Array.isArray(data) ? data : []))
+      .catch(() => setRegions([]))
+      .finally(() => setRegionsLoading(false));
+  }, []);
+
+  // region2 목록: region1 선택 시 로드
+  useEffect(() => {
+    if (!selectedRegion1) {
+      setSubRegions([]);
+      return;
+    }
+    setSubRegionsLoading(true);
+    fetch(`/api/zone/zones?list=subregions&region1=${encodeURIComponent(selectedRegion1)}`)
+      .then((r) => r.json())
+      .then((data) => setSubRegions(Array.isArray(data) ? data : []))
+      .catch(() => setSubRegions([]))
+      .finally(() => setSubRegionsLoading(false));
+  }, [selectedRegion1]);
+
   // ── 맵 오버레이 렌더링 ──────────────────────────────────
   useEffect(() => {
     const map = mapRef.current;
@@ -57,7 +105,7 @@ export function ComparePanel({
     map.clearOverlays();
 
     // 미선택 존 (blue)
-    for (const z of allZones) {
+    for (const z of regionZones) {
       if (z.lat == null || z.lng == null) continue;
       if (selectedZoneIds.includes(z.id)) continue;
       map.addMarker(z.lat, z.lng, { color: "blue", zoneId: z.id });
@@ -67,16 +115,24 @@ export function ComparePanel({
     if (result?.zones) {
       result.zones.forEach((z) => {
         if (z.lat != null && z.lng != null) {
-          // NOTE: Kakao SDK 커스텀 색상은 제한적이므로 기본 blue 사용 후 오버레이로 구분
           map.addMarker(z.lat, z.lng, { color: "blue", zoneId: z.zone_id });
         }
       });
     }
-  }, [selectedZoneIds, allZones, result, mapRef]);
+  }, [selectedZoneIds, regionZones, result, mapRef]);
+
+  // ── 지역 선택 핸들러 ──────────────────────────────────
+  const handleRegion1Change = (value: string) => {
+    onRegionSelect(value, "");
+  };
+
+  const handleRegion2Change = (value: string) => {
+    onRegionSelect(selectedRegion1, value === "__all__" ? "" : value);
+  };
 
   // ── 선택된 존 칩 ────────────────────────────────────────
   const chips = selectedZoneIds.map((id, i) => {
-    const z = allZones.find((z) => z.id === id);
+    const z = regionZones.find((z) => z.id === id);
     const name = z ? z.name : `존 ${id}`;
     const color = ZONE_COLORS[i % ZONE_COLORS.length];
     return (
@@ -97,21 +153,83 @@ export function ComparePanel({
 
   return (
     <div className="space-y-4">
-      {/* 헤더 */}
-      <div>
-        <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">존 간 비교</p>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {chips.length > 0 ? chips : (
-            <span className="text-xs text-muted-foreground">선택된 존이 없습니다</span>
+      {/* 지역 선택 드롭다운 */}
+      <Card className="border-border/60 bg-card/95">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">지역 선택</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Select
+            value={selectedRegion1 || ""}
+            onValueChange={handleRegion1Change}
+            disabled={regionsLoading}
+          >
+            <SelectTrigger className="h-8 text-sm">
+              <SelectValue placeholder={regionsLoading ? "로딩 중..." : "시/도 선택"} />
+            </SelectTrigger>
+            <SelectContent>
+              {regions.map((r) => (
+                <SelectItem key={r} value={r}>
+                  {r}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {selectedRegion1 && (
+            <Select
+              value={selectedRegion2 || "__all__"}
+              onValueChange={handleRegion2Change}
+              disabled={subRegionsLoading}
+            >
+              <SelectTrigger className="h-8 text-sm">
+                <SelectValue placeholder={subRegionsLoading ? "로딩 중..." : "시/군/구 선택"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">전체</SelectItem>
+                {subRegions.map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {r}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
+
+          {selectedRegion1 && (
+            <p className="text-[11px] text-muted-foreground">
+              {regionZones.length > 0
+                ? `${regionZones.length}개 존 표시 중. 비교할 존을 클릭하세요 (2~5개).`
+                : "존을 불러오는 중..."}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* 지역 미선택 안내 */}
+      {!selectedRegion1 && (
+        <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
+          시/도를 먼저 선택하세요
         </div>
-        <p className="mt-1.5 text-[11px] text-muted-foreground">
-          지도에서 비교할 존을 클릭하세요 (2~5개)
-        </p>
-      </div>
+      )}
+
+      {/* 선택된 존 칩 */}
+      {selectedRegion1 && (
+        <div>
+          <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">존 간 비교</p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {chips.length > 0 ? chips : (
+              <span className="text-xs text-muted-foreground">선택된 존이 없습니다</span>
+            )}
+          </div>
+          <p className="mt-1.5 text-[11px] text-muted-foreground">
+            지도에서 비교할 존을 클릭하세요 (2~5개)
+          </p>
+        </div>
+      )}
 
       {/* 2개 미만 */}
-      {selectedZoneIds.length < 2 && !loading && (
+      {selectedRegion1 && selectedZoneIds.length < 2 && !loading && (
         <div className="text-sm text-muted-foreground">
           존을 2개 이상 선택하면 비교 분석이 시작됩니다.
         </div>

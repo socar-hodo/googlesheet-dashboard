@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getZones, getZonePerformance } from "@/lib/zone";
+import { getZoneById, getZonesNearby, getZonePerformance } from "@/lib/zone";
 import { haversine, estimateDemandTransfer } from "@/lib/zone-geo";
 import type { CloseSimParams } from "@/types/zone";
 import { withAuth } from "@/lib/api-utils";
@@ -37,9 +37,8 @@ export const POST = withAuth(async (req: NextRequest) => {
   }
   const target = { ...targetPerfs[0] } as Record<string, unknown>;
 
-  // 2. 대상 존 위경도
-  const allZones = await getZones();
-  const targetZone = allZones.find((z) => z.id === zone_id);
+  // 2. 대상 존 위경도 (단일 존 조회 — 전체 로드 불필요)
+  const targetZone = await getZoneById(zone_id);
   if (!targetZone) {
     return NextResponse.json(
       { error: "존을 찾을 수 없습니다." },
@@ -50,15 +49,14 @@ export const POST = withAuth(async (req: NextRequest) => {
   target.lng = targetZone.lng;
   target.name = targetZone.name;
 
-  // 3. 반경 1km 내 인근 존
-  const nearby: Array<Record<string, unknown>> = [];
-  for (const z of allZones) {
-    if (z.id === zone_id) continue;
-    const dist = haversine(targetZone.lat, targetZone.lng, z.lat, z.lng);
-    if (dist <= 1000) {
-      nearby.push({ ...z, distance_m: Math.round(dist) });
-    }
-  }
+  // 3. 반경 1km 내 인근 존 (BQ bounding-box 필터)
+  const nearbyZones = await getZonesNearby(targetZone.lat, targetZone.lng, 1);
+  const nearby: Array<Record<string, unknown>> = nearbyZones
+    .filter((z) => z.id !== zone_id)
+    .map((z) => ({
+      ...z,
+      distance_m: Math.round(haversine(targetZone.lat, targetZone.lng, z.lat, z.lng)),
+    }));
 
   // 4. 인근 존 실적 (가까운 순 정렬, 상위 10개)
   nearby.sort((a, b) => Number(a.distance_m) - Number(b.distance_m));

@@ -75,6 +75,57 @@ export async function getSubRegions(region1: string): Promise<string[]> {
 
 // ── 존 목록 (위경도 포함) ────────────────────────────────────
 
+/** 단일 존 조회 (zone_id 기준). */
+export async function getZoneById(zoneId: number): Promise<ZoneInfo | null> {
+  const raw = loadSql("zones.sql");
+  const sql = raw.replaceAll("{where_clause}", `AND z.id = ${zoneId}`);
+  const rows = await runQuery(sql);
+  if (!rows || rows.length === 0) return null;
+  const r = rows[0];
+  return {
+    id: num(r.zone_id),
+    name: String(r.zone_name ?? ""),
+    lat: num(r.lat),
+    lng: num(r.lng),
+    region1: String(r.region1 ?? ""),
+    region2: String(r.region2 ?? ""),
+    car_count: num(r.car_count),
+  };
+}
+
+/**
+ * 위경도 기준 반경 내 존 조회 (BQ bounding-box 필터).
+ * 전체 22K 존 로드 없이 인근 존만 조회한다.
+ */
+export async function getZonesNearby(
+  lat: number,
+  lng: number,
+  radiusKm: number = 1,
+): Promise<ZoneInfo[]> {
+  // 1도 ≈ 111km 근사치로 bounding-box 계산
+  const latDelta = radiusKm / 111;
+  const lngDelta = radiusKm / (111 * Math.cos((lat * Math.PI) / 180));
+
+  const whereClause = `
+    AND z.lat BETWEEN ${lat - latDelta} AND ${lat + latDelta}
+    AND z.lng BETWEEN ${lng - lngDelta} AND ${lng + lngDelta}
+  `;
+  const raw = loadSql("zones.sql");
+  const sql = raw.replaceAll("{where_clause}", whereClause);
+  const rows = await runQuery(sql);
+  if (!rows) return [];
+
+  return rows.map((r) => ({
+    id: num(r.zone_id),
+    name: String(r.zone_name ?? ""),
+    lat: num(r.lat),
+    lng: num(r.lng),
+    region1: String(r.region1 ?? ""),
+    region2: String(r.region2 ?? ""),
+    car_count: num(r.car_count),
+  }));
+}
+
 /** 존 목록 조회. 필터 없으면 캐시 사용 (1시간 TTL). */
 export async function getZones(
   region1?: string,

@@ -44,8 +44,11 @@ export function ZoneSimulator() {
   const [mode, setModeState] = useState<ZoneMode>(
     (searchParams.get("mode") as ZoneMode) || "open",
   );
-  const [allZones, setAllZones] = useState<ZoneInfo[]>([]);
-  const [zonesLoaded, setZonesLoaded] = useState(false);
+
+  // ── 지역 필터 상태 (close/compare 모드 공통) ──────────────
+  const [selectedRegion1, setSelectedRegion1] = useState<string>("");
+  const [selectedRegion2, setSelectedRegion2] = useState<string>("");
+  const [regionZones, setRegionZones] = useState<ZoneInfo[]>([]);
 
   // ── 개설 모드 상태 ────────────────────────────────────────
   const [openCandidate, setOpenCandidate] = useState<{ lat: number; lng: number; addr: string } | null>(null);
@@ -66,27 +69,42 @@ export function ZoneSimulator() {
   const [optResult, setOptResult] = useState<OptimizeResult | null>(null);
   const [optLoading, setOptLoading] = useState(false);
 
-  // ── 존 목록 로드 (close/compare 모드에서 필요) ────────────
-  const loadZones = useCallback(async () => {
-    if (zonesLoaded) return allZones;
-    try {
-      const res = await fetch("/api/zone/zones");
-      if (!res.ok) throw new Error(`zones fetch failed: ${res.status}`);
-      const data = await res.json();
-      const zones = Array.isArray(data) ? data : [];
-      setAllZones(zones);
-      setZonesLoaded(true);
-      return zones;
-    } catch (err) {
-      console.error("zone/zones fetch error:", err);
-      toast.error("존 목록을 불러올 수 없습니다.");
-      return [];
-    }
-  }, [zonesLoaded, allZones]);
+  // ── 지역 선택 시 존 로드 (close/compare 패널 공용 콜백) ────
+  const handleRegionSelect = useCallback(
+    async (region1: string, region2: string) => {
+      setSelectedRegion1(region1);
+      setSelectedRegion2(region2);
+      mapRef.current?.clearOverlays();
+
+      if (!region1) {
+        setRegionZones([]);
+        return;
+      }
+      try {
+        const params = new URLSearchParams({ region1 });
+        if (region2) params.set("region2", region2);
+        const res = await fetch(`/api/zone/zones?${params.toString()}`);
+        if (!res.ok) throw new Error(`zones fetch failed: ${res.status}`);
+        const data = await res.json();
+        const zones: ZoneInfo[] = Array.isArray(data) ? data : [];
+        setRegionZones(zones);
+        zones.forEach((z) => {
+          if (z.lat != null && z.lng != null) {
+            mapRef.current?.addMarker(z.lat, z.lng, { color: "blue", zoneId: z.id });
+          }
+        });
+      } catch (err) {
+        console.error("zone/zones fetch error:", err);
+        toast.error("존 목록을 불러올 수 없습니다.");
+        setRegionZones([]);
+      }
+    },
+    [],
+  );
 
   // ── 모드 전환 ─────────────────────────────────────────────
   const handleModeChange = useCallback(
-    async (newMode: ZoneMode) => {
+    (newMode: ZoneMode) => {
       setModeState(newMode);
       router.replace(`/zone?mode=${newMode}`, { scroll: false });
       mapRef.current?.clearOverlays();
@@ -98,27 +116,16 @@ export function ZoneSimulator() {
       } else if (newMode === "close") {
         setCloseZoneId(null);
         setCloseResult(null);
-        const zones = await loadZones();
-        // 전체 존 마커 표시
-        zones.forEach((z: ZoneInfo) => {
-          if (z.lat != null && z.lng != null) {
-            mapRef.current?.addMarker(z.lat, z.lng, { color: "blue", zoneId: z.id });
-          }
-        });
+        // 지역 선택은 패널에서 수행 — 전체 존 자동 로드 제거
       } else if (newMode === "compare") {
         setCompareIds([]);
         setCompareResult(null);
-        const zones = await loadZones();
-        zones.forEach((z: ZoneInfo) => {
-          if (z.lat != null && z.lng != null) {
-            mapRef.current?.addMarker(z.lat, z.lng, { color: "blue", zoneId: z.id });
-          }
-        });
+        // 지역 선택은 패널에서 수행 — 전체 존 자동 로드 제거
       } else if (newMode === "optimize") {
         setOptResult(null);
       }
     },
-    [loadZones],
+    [],
   );
 
   // ── 개설 시뮬레이션 실행 ──────────────────────────────────
@@ -364,7 +371,10 @@ export function ZoneSimulator() {
           {mode === "close" && (
             <ClosePanel
               selectedZoneId={closeZoneId}
-              allZones={allZones}
+              regionZones={regionZones}
+              selectedRegion1={selectedRegion1}
+              selectedRegion2={selectedRegion2}
+              onRegionSelect={handleRegionSelect}
               result={closeResult}
               loading={closeLoading}
               onSave={() => {
@@ -384,7 +394,10 @@ export function ZoneSimulator() {
           {mode === "compare" && (
             <ComparePanel
               selectedZoneIds={compareIds}
-              allZones={allZones}
+              regionZones={regionZones}
+              selectedRegion1={selectedRegion1}
+              selectedRegion2={selectedRegion2}
+              onRegionSelect={handleRegionSelect}
               result={compareResult}
               loading={compareLoading}
               onRemoveZone={handleRemoveCompareZone}

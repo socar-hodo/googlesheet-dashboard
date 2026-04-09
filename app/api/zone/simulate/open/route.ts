@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  getZones,
+  getZonesNearby,
   getZonePerformance,
   getZoneClusterType,
   getClusterBenchmark,
@@ -33,16 +33,13 @@ export const POST = withAuth(async (req: NextRequest) => {
     );
   }
 
-  // 1. 반경 내 존 조회
-  const allZones = await getZones();
-  const nearby: Array<Record<string, unknown>> = [];
-
-  for (const z of allZones) {
-    const dist = haversine(lat, lng, z.lat, z.lng);
-    if (dist <= radius_m) {
-      nearby.push({ ...z, distance_m: Math.round(dist) });
-    }
-  }
+  // 1. 반경 내 존 조회 (BQ bounding-box — 전체 존 로드 불필요)
+  const radiusKm = (radius_m ?? 1000) / 1000;
+  const nearbyZones = await getZonesNearby(lat, lng, radiusKm);
+  const nearby: Array<Record<string, unknown>> = nearbyZones.map((z) => ({
+    ...z,
+    distance_m: Math.round(haversine(lat, lng, z.lat, z.lng)),
+  }));
 
   // 2. 유사 존 실적 조회
   if (nearby.length > 0) {
@@ -101,8 +98,8 @@ export const POST = withAuth(async (req: NextRequest) => {
     estUtil = alpha * avgUtil + (1 - alpha) * clusterBench.avg_utilization;
   }
 
-  // 6. 카니발리제이션 체크
-  const cannibal = checkCannibalization(lat, lng, allZones);
+  // 6. 카니발리제이션 체크 (nearbyZones 재사용 — 1km 반경이 카니발리제이션 판정 범위)
+  const cannibal = checkCannibalization(lat, lng, nearbyZones);
 
   return NextResponse.json({
     estimated_revenue_per_car: Math.round(estRev),
