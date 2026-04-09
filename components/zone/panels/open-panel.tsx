@@ -72,8 +72,8 @@ export function OpenPanel({
     map.addMarker(candidate.lat, candidate.lng, { color: "red" });
     // 반경 원
     map.addCircle(candidate.lat, candidate.lng, 1000, {
-      strokeColor: "#FF4444",
-      fillColor: "#FF4444",
+      strokeColor: "#EF4444",
+      fillColor: "#EF4444",
       fillOpacity: 0.08,
     });
 
@@ -95,9 +95,9 @@ export function OpenPanel({
     for (const c of result.cannibalization) {
       const z = nearbyMap.get(c.zone_id);
       if (!z || z.lat == null || z.lng == null) continue;
-      const bgColor = c.level === "danger" ? "#FEF2F2" : "#FFF3CD";
-      const borderColor = c.level === "danger" ? "#E53E3E" : "#F59E0B";
-      const textColor = c.level === "danger" ? "#991B1B" : "#7B341E";
+      const bgColor = c.level === "danger" ? "#FEF2F2" : "#FFFBEB";
+      const borderColor = c.level === "danger" ? "#EF4444" : "#F59E0B";
+      const textColor = c.level === "danger" ? "#991B1B" : "#92400E";
       const html =
         `<div style="background:${bgColor};border:1px solid ${borderColor};` +
         `padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600;color:${textColor};">` +

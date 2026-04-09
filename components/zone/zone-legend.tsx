@@ -3,30 +3,30 @@
 import type { ZoneMode } from "@/types/zone";
 
 /** 모드별 범례 아이템 */
-const LEGEND_ITEMS: Record<ZoneMode, Array<{ color: string; label: string }>> = {
+const LEGEND_ITEMS: Record<ZoneMode, Array<{ dotClass: string; label: string }>> = {
   open: [
-    { color: "#EF4444", label: "후보 지점" },
-    { color: "#3B82F6", label: "운영 존" },
-    { color: "#999999", label: "비운영 존" },
-    { color: "#F59E0B", label: "주의 (잠식 위험)" },
+    { dotClass: "bg-red-500", label: "후보 지점" },
+    { dotClass: "bg-blue-500", label: "운영 존" },
+    { dotClass: "bg-gray-400", label: "비운영 존" },
+    { dotClass: "bg-amber-400", label: "주의 (잠식 위험)" },
   ],
   close: [
-    { color: "#EF4444", label: "폐쇄 대상" },
-    { color: "#3B82F6", label: "인근 존" },
-    { color: "#22C55E", label: "수요 흡수" },
+    { dotClass: "bg-red-500", label: "폐쇄 대상" },
+    { dotClass: "bg-blue-500", label: "인근 존" },
+    { dotClass: "bg-green-500", label: "수요 흡수" },
   ],
   compare: [
-    { color: "#3B82F6", label: "비교 존 1" },
-    { color: "#10B981", label: "비교 존 2" },
-    { color: "#F59E0B", label: "비교 존 3" },
-    { color: "#EF4444", label: "비교 존 4" },
-    { color: "#8B5CF6", label: "비교 존 5" },
+    { dotClass: "bg-blue-500", label: "비교 존 1" },
+    { dotClass: "bg-emerald-500", label: "비교 존 2" },
+    { dotClass: "bg-amber-400", label: "비교 존 3" },
+    { dotClass: "bg-red-500", label: "비교 존 4" },
+    { dotClass: "bg-violet-500", label: "비교 존 5" },
   ],
   optimize: [
-    { color: "#3B82F6", label: "운영 존" },
-    { color: "#EF4444", label: "폐쇄 권고" },
-    { color: "#F59E0B", label: "재배치 대상" },
-    { color: "#22C55E", label: "개설 후보" },
+    { dotClass: "bg-blue-500", label: "운영 존" },
+    { dotClass: "bg-red-500", label: "폐쇄 권고" },
+    { dotClass: "bg-amber-400", label: "재배치 대상" },
+    { dotClass: "bg-green-500", label: "개설 후보" },
   ],
 };
 
@@ -46,10 +46,7 @@ export function ZoneLegend({ mode }: ZoneLegendProps) {
       <div className="pointer-events-auto flex flex-wrap gap-x-3 gap-y-1 rounded-xl border border-border/60 bg-card/95 px-3 py-2 text-[11px] shadow-sm backdrop-blur-sm">
         {items.map((item) => (
           <span key={item.label} className="flex items-center gap-1.5">
-            <span
-              className="inline-block h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: item.color }}
-            />
+            <span className={`inline-block h-2.5 w-2.5 rounded-full ${item.dotClass}`} />
             <span className="text-muted-foreground">{item.label}</span>
           </span>
         ))}

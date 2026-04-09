@@ -36,6 +36,16 @@ const titleMap: Record<string, { eyebrow: string; title: string; description: st
     title: "개인 워크스페이스",
     description: "문서 검색, 메모, To-do를 하나의 허브로 정리합니다.",
   },
+  "/roas": {
+    eyebrow: "ROAS",
+    title: "ROAS 시뮬레이터",
+    description: "쿠폰 캠페인의 ROI를 시뮬레이션하고 효과를 분석합니다.",
+  },
+  "/zone": {
+    eyebrow: "Zone",
+    title: "존 시뮬레이터",
+    description: "존 개설·폐쇄·비교·최적화를 데이터 기반으로 시뮬레이션합니다.",
+  },
 };
 
 export function Header() {

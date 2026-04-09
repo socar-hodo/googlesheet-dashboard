@@ -221,7 +221,7 @@ export function CampaignDetail({ policyId }: CampaignDetailProps) {
                   type="monotone"
                   dataKey="revenue"
                   name="매출"
-                  stroke="#00B4D8"
+                  stroke="var(--chart-1)"
                   dot={false}
                 />
                 <Line
@@ -229,7 +229,7 @@ export function CampaignDetail({ policyId }: CampaignDetailProps) {
                   type="monotone"
                   dataKey="used_count"
                   name="이용건수"
-                  stroke="#43A047"
+                  stroke="var(--chart-2)"
                   dot={false}
                 />
               </LineChart>

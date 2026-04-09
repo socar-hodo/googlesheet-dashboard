@@ -252,12 +252,12 @@ function DIDDailyChart({ analysisC }: { analysisC: AnalysisC }) {
               <ReferenceLine
                 x={analysisC.camp_start}
                 yAxisId="left"
-                stroke="#FF7043"
+                stroke="var(--chart-5)"
                 strokeDasharray="6 4"
                 label={{
                   value: "캠페인 시작",
                   position: "top",
-                  fill: "#FF7043",
+                  fill: "hsl(var(--muted-foreground))",
                   fontSize: 11,
                 }}
               />
@@ -267,7 +267,7 @@ function DIDDailyChart({ analysisC }: { analysisC: AnalysisC }) {
               type="monotone"
               dataKey="target_nuse"
               name="타겟 이용건수"
-              stroke="#00B4D8"
+              stroke="var(--chart-1)"
               dot={false}
             />
             <Line
@@ -275,7 +275,7 @@ function DIDDailyChart({ analysisC }: { analysisC: AnalysisC }) {
               type="monotone"
               dataKey="control_nuse"
               name="대조군 이용건수"
-              stroke="#90CAF9"
+              stroke="var(--chart-4)"
               strokeDasharray="5 5"
               dot={false}
             />
@@ -284,7 +284,7 @@ function DIDDailyChart({ analysisC }: { analysisC: AnalysisC }) {
               type="monotone"
               dataKey="target_revenue"
               name="타겟 매출"
-              stroke="#43A047"
+              stroke="var(--chart-2)"
               dot={false}
             />
             <Line
@@ -292,7 +292,7 @@ function DIDDailyChart({ analysisC }: { analysisC: AnalysisC }) {
               type="monotone"
               dataKey="control_revenue"
               name="대조군 매출"
-              stroke="#A5D6A7"
+              stroke="var(--chart-3)"
               strokeDasharray="5 5"
               dot={false}
             />

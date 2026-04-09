@@ -86,9 +86,9 @@ function RoasBarChart({ perCoupon }: { perCoupon: CouponResult[] }) {
               }}
             />
             <Legend />
-            <Bar yAxisId="left" dataKey="roas" name="ROAS (%)" fill="#00B4D8" />
-            <Bar yAxisId="right" dataKey="revenue" name="매출" fill="#0077A8" />
-            <Bar yAxisId="right" dataKey="cost" name="쿠폰비용" fill="#90E0EF" />
+            <Bar yAxisId="left" dataKey="roas" name="ROAS (%)" fill="var(--chart-1)" />
+            <Bar yAxisId="right" dataKey="revenue" name="매출" fill="var(--chart-2)" />
+            <Bar yAxisId="right" dataKey="cost" name="쿠폰비용" fill="var(--chart-4)" />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
@@ -122,11 +122,11 @@ function computeScaledRoas(
 }
 
 function roasCellColor(roas: number | null): string {
-  if (roas === null) return "#f5f5f5";
-  if (roas >= 300) return "#4CAF50";
-  if (roas >= 100) return "#C8E6C9";
-  if (roas >= 50) return "#FFF9C4";
-  return "#FFCDD2";
+  if (roas === null) return "transparent";
+  if (roas >= 300) return "rgb(34 197 94 / 0.35)";
+  if (roas >= 100) return "rgb(34 197 94 / 0.15)";
+  if (roas >= 50) return "rgb(234 179 8 / 0.15)";
+  return "rgb(239 68 68 / 0.15)";
 }
 
 function SensitivityHeatmap({
@@ -215,14 +215,14 @@ function WaterfallChart({ result }: { result: SimulationResult }) {
 
   // Recharts waterfall: [invisible_base, visible_value] stacked pattern
   const raw = [
-    { name: "기저매출", base: 0, value: baseRevenue, fill: "#1976D2" },
-    { name: "증분매출", base: baseRevenue, value: incrementalRev, fill: "#43A047" },
-    { name: "쿠폰비용", base: Math.max(0, netRevenue), value: result.totalCost, fill: "#e53935" },
+    { name: "기저매출", base: 0, value: baseRevenue, fill: "var(--chart-1)" },
+    { name: "증분매출", base: baseRevenue, value: incrementalRev, fill: "var(--chart-2)" },
+    { name: "쿠폰비용", base: Math.max(0, netRevenue), value: result.totalCost, fill: "var(--chart-5)" },
     {
       name: "순매출",
       base: 0,
       value: Math.max(0, netRevenue),
-      fill: "#00B4D8",
+      fill: "var(--chart-3)",
     },
   ];
 
@@ -324,10 +324,10 @@ function ScenarioOverlayChart({
               }}
             />
             <Legend />
-            <Bar yAxisId="left" dataKey="roas" name="ROAS (%)" fill="#00B4D8" />
-            <Bar yAxisId="left" dataKey="incrementalRoas" name="증분 ROAS (%)" fill="#90E0EF" />
-            <Bar yAxisId="right" dataKey="revenue" name="매출" fill="#0077A8" />
-            <Bar yAxisId="right" dataKey="cost" name="총비용" fill="#FFCDD2" />
+            <Bar yAxisId="left" dataKey="roas" name="ROAS (%)" fill="var(--chart-1)" />
+            <Bar yAxisId="left" dataKey="incrementalRoas" name="증분 ROAS (%)" fill="var(--chart-4)" />
+            <Bar yAxisId="right" dataKey="revenue" name="매출" fill="var(--chart-2)" />
+            <Bar yAxisId="right" dataKey="cost" name="총비용" fill="var(--chart-5)" />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
@@ -413,7 +413,7 @@ export function DIDLineChart({
               type="monotone"
               dataKey="target_nuse"
               name="타겟 이용건수"
-              stroke="#00B4D8"
+              stroke="var(--chart-1)"
               dot={false}
             />
             <Line
@@ -421,7 +421,7 @@ export function DIDLineChart({
               type="monotone"
               dataKey="control_nuse"
               name="대조군 이용건수"
-              stroke="#90CAF9"
+              stroke="var(--chart-4)"
               strokeDasharray="5 5"
               dot={false}
             />
@@ -430,7 +430,7 @@ export function DIDLineChart({
               type="monotone"
               dataKey="target_revenue"
               name="타겟 매출"
-              stroke="#43A047"
+              stroke="var(--chart-2)"
               dot={false}
             />
             <Line
@@ -438,7 +438,7 @@ export function DIDLineChart({
               type="monotone"
               dataKey="control_revenue"
               name="대조군 매출"
-              stroke="#A5D6A7"
+              stroke="var(--chart-3)"
               strokeDasharray="5 5"
               dot={false}
             />

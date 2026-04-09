@@ -321,9 +321,9 @@ export function ZoneSimulator() {
   );
 
   return (
-    <div className="flex gap-4" style={{ height: "calc(100dvh - 12rem)" }}>
+    <div className="flex flex-col md:flex-row gap-4" style={{ height: "calc(100dvh - 12rem)" }}>
       {/* ── 좌측: 지도 (70%) ──────────────────────────────── */}
-      <div className="relative flex-[7] overflow-hidden rounded-[1.75rem] border border-border/60 bg-card/90 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.18)]">
+      <div className="relative flex-[7] min-h-[50vh] md:min-h-0 overflow-hidden rounded-[1.75rem] border border-border/60 bg-card/90 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.18)]">
         {/* 검색바 (맵 위 상단) */}
         <div className="absolute left-3 right-3 top-3 z-10">
           <ZoneSearch onSearch={handleSearch} />
@@ -342,7 +342,7 @@ export function ZoneSimulator() {
       </div>
 
       {/* ── 우측: 사이드 패널 (30%) ──────────────────────── */}
-      <div className="flex flex-[3] flex-col gap-4 overflow-hidden">
+      <div className="flex flex-[3] flex-col gap-4 md:overflow-hidden">
         {/* 모드 탭 */}
         <ZoneModeTabs activeMode={mode} onChange={handleModeChange} />
 
