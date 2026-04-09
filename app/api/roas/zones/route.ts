@@ -6,7 +6,9 @@ import { withAuth } from "@/lib/api-utils";
 export const GET = withAuth(async (req: NextRequest) => {
   const sp = req.nextUrl.searchParams;
   const region1 = sp.get("region1");
-  const region2 = sp.getAll("region2");
+  // 프론트엔드에서 "A,B,C" 형태로 보내므로 split 처리
+  const region2Raw = sp.get("region2") || "";
+  const region2 = region2Raw.split(",").map(s => s.trim()).filter(Boolean);
 
   if (!region1 || region2.length === 0) {
     return NextResponse.json(
