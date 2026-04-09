@@ -525,10 +525,10 @@ export function RoasSimulator() {
                     {perfData.duration_groups.map((dg) => (
                       <th
                         key={dg}
-                        className={`border border-border/40 px-2 py-1 text-center font-medium cursor-pointer transition-colors ${
+                        className={`border border-border/40 px-3 py-2 text-center font-medium cursor-pointer transition-colors select-none ${
                           selectedDurations[dg]
-                            ? "bg-blue-50 text-blue-700"
-                            : "bg-muted/30 text-muted-foreground"
+                            ? "bg-blue-600 text-white"
+                            : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
                         }`}
                         onClick={() =>
                           setSelectedDurations((prev) => ({
@@ -546,10 +546,10 @@ export function RoasSimulator() {
                   {perfData.age_groups.map((ag) => (
                     <tr key={ag}>
                       <td
-                        className={`border border-border/40 px-2 py-1 font-medium cursor-pointer transition-colors ${
+                        className={`border border-border/40 px-3 py-2 font-medium cursor-pointer transition-colors select-none ${
                           selectedAges[ag]
-                            ? "bg-blue-50 text-blue-700"
-                            : "bg-muted/30 text-muted-foreground"
+                            ? "bg-blue-600 text-white"
+                            : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
                         }`}
                         onClick={() =>
                           setSelectedAges((prev) => ({
@@ -566,8 +566,8 @@ export function RoasSimulator() {
                         return (
                           <td
                             key={dg}
-                            className={`border border-border/40 px-2 py-1 text-center ${
-                              highlighted ? "bg-blue-50/60" : ""
+                            className={`border border-border/40 px-3 py-2 text-center transition-colors ${
+                              highlighted ? "bg-blue-50 dark:bg-blue-950/30" : "opacity-40"
                             }`}
                           >
                             {cell ? (
@@ -603,17 +603,17 @@ export function RoasSimulator() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="overflow-x-auto">
-              <table className="w-full text-xs">
+              <table className="w-full text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-border/40">
-                    <th className="py-1.5 text-left font-medium text-muted-foreground pr-2">쿠폰명</th>
-                    <th className="py-1.5 text-right font-medium text-muted-foreground px-2">발급수</th>
-                    <th className="py-1.5 text-right font-medium text-muted-foreground px-2">전환율(%)</th>
-                    <th className="py-1.5 text-right font-medium text-muted-foreground px-2">할인(원)</th>
-                    <th className="py-1.5 text-right font-medium text-muted-foreground px-2">건당매출(원)</th>
-                    <th className="py-1.5 text-right font-medium text-muted-foreground px-2">자연전환(%)</th>
-                    <th className="py-1.5 text-right font-medium text-muted-foreground pl-2">ROAS</th>
-                    <th className="py-1.5 pl-2"></th>
+                  <tr className="border-b border-border/60">
+                    <th className="py-2 text-left font-medium text-muted-foreground pr-1 w-24">쿠폰명</th>
+                    <th className="py-2 text-right font-medium text-muted-foreground px-1 w-20">발급수</th>
+                    <th className="py-2 text-right font-medium text-muted-foreground px-1 w-20">전환율(%)</th>
+                    <th className="py-2 text-right font-medium text-muted-foreground px-1 w-24">할인(원)</th>
+                    <th className="py-2 text-right font-medium text-muted-foreground px-1 w-28">건당매출(원)</th>
+                    <th className="py-2 text-right font-medium text-muted-foreground px-1 w-20">자연전환(%)</th>
+                    <th className="py-2 text-center font-medium text-muted-foreground px-1 w-16">ROAS</th>
+                    <th className="py-2 w-8"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -623,25 +623,25 @@ export function RoasSimulator() {
                     const cost = conv * c.discount;
                     const rowRoas = cost > 0 ? (rev / cost) * 100 : null;
                     return (
-                      <tr key={c.id} className="border-b border-border/20">
-                        <td className="py-1.5 pr-2">
+                      <tr key={c.id} className="border-b border-border/30 hover:bg-muted/20">
+                        <td className="py-2 pr-1">
                           <Input
                             value={c.name}
                             onChange={(e) => updateCoupon(c.id, "name", e.target.value)}
-                            className="h-7 w-24 text-xs"
+                            className="h-8 w-full text-xs"
                           />
                         </td>
-                        <td className="py-1.5 px-2">
+                        <td className="py-2 px-1">
                           <Input
                             type="number"
                             min={0}
                             value={c.qty || ""}
                             onChange={(e) => updateCoupon(c.id, "qty", Number(e.target.value) || 0)}
-                            placeholder="0"
-                            className="h-7 w-20 text-xs text-right"
+                            placeholder="1,000"
+                            className="h-8 w-full text-xs text-right"
                           />
                         </td>
-                        <td className="py-1.5 px-2">
+                        <td className="py-2 px-1">
                           <Input
                             type="number"
                             min={0}
@@ -649,31 +649,32 @@ export function RoasSimulator() {
                             step={0.1}
                             value={c.conv_rate || ""}
                             onChange={(e) => updateCoupon(c.id, "conv_rate", Number(e.target.value) || 0)}
-                            placeholder="0"
-                            className="h-7 w-20 text-xs text-right"
+                            placeholder="10"
+                            className="h-8 w-full text-xs text-right"
                           />
                         </td>
-                        <td className="py-1.5 px-2">
+                        <td className="py-2 px-1">
                           <Input
                             type="number"
                             min={0}
                             value={c.discount || ""}
                             onChange={(e) => updateCoupon(c.id, "discount", Number(e.target.value) || 0)}
-                            placeholder="0"
-                            className="h-7 w-24 text-xs text-right"
+                            placeholder="5,000"
+                            className="h-8 w-full text-xs text-right"
                           />
                         </td>
-                        <td className="py-1.5 px-2">
+                        <td className="py-2 px-1">
                           <Input
                             type="number"
                             min={0}
-                            value={c.rev_per_use || ""}
+                            value={Math.round(c.rev_per_use) || ""}
                             onChange={(e) => updateCoupon(c.id, "rev_per_use", Number(e.target.value) || 0)}
-                            placeholder="0"
-                            className="h-7 w-28 text-xs text-right"
+                            placeholder="자동"
+                            className="h-8 w-full text-xs text-right bg-muted/30"
+                            readOnly={!!perfData}
                           />
                         </td>
-                        <td className="py-1.5 px-2">
+                        <td className="py-2 px-1">
                           <Input
                             type="number"
                             min={0}
@@ -682,16 +683,16 @@ export function RoasSimulator() {
                             value={c.organic_rate || ""}
                             onChange={(e) => updateCoupon(c.id, "organic_rate", Number(e.target.value) || 0)}
                             placeholder="0"
-                            className="h-7 w-20 text-xs text-right"
+                            className="h-8 w-full text-xs text-right"
                           />
                         </td>
-                        <td className="py-1.5 pl-2 text-right">
+                        <td className="py-2 px-1 text-center">
                           {rowRoas !== null ? (
-                            <span className={rowRoas >= 100 ? "text-green-600 font-semibold" : "text-red-500"}>
+                            <Badge variant={rowRoas >= 100 ? "default" : "destructive"} className="text-[10px] px-1.5">
                               {rowRoas.toFixed(0)}%
-                            </span>
+                            </Badge>
                           ) : (
-                            <span className="text-muted-foreground">-</span>
+                            <span className="text-muted-foreground text-[10px]">-</span>
                           )}
                         </td>
                         <td className="py-1.5 pl-2">
