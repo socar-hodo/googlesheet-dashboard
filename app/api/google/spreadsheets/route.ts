@@ -1,4 +1,5 @@
-import { auth } from '@/auth';
+import { NextRequest, NextResponse } from 'next/server';
+import { withAuth } from '@/lib/api-utils';
 import { buildGoogleApiMessage, classifyGoogleApiError } from '@/lib/google-api-error';
 import type { GoogleSpreadsheetFile } from '@/types/google-drive';
 
@@ -8,13 +9,12 @@ function escapeDriveQuery(value: string): string {
   return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
-export async function GET(req: Request) {
-  const session = await auth();
+export const GET = withAuth(async (req: NextRequest, { session }) => {
   const accessToken = session?.accessToken;
 
   if (!accessToken) {
     const isGoogleConfigured = !!(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
-    return Response.json(
+    return NextResponse.json(
       {
         error: isGoogleConfigured
           ? 'Google 계정 연결이 없어 시트 목록을 불러올 수 없습니다. Google로 다시 로그인해 주세요.'
@@ -25,8 +25,7 @@ export async function GET(req: Request) {
     );
   }
 
-  const { searchParams } = new URL(req.url);
-  const query = searchParams.get('query')?.trim() ?? '';
+  const query = req.nextUrl.searchParams.get('query')?.trim() ?? '';
 
   const qParts = [
     "mimeType='application/vnd.google-apps.spreadsheet'",
@@ -62,7 +61,7 @@ export async function GET(req: Request) {
 
     console.error('[google-spreadsheets:list]', response.status, issue, detail);
 
-    return Response.json(
+    return NextResponse.json(
       {
         error: buildGoogleApiMessage(issue, 'list'),
         detail,
@@ -74,7 +73,7 @@ export async function GET(req: Request) {
 
   const data = (await response.json()) as { files?: GoogleSpreadsheetFile[] };
 
-  return Response.json({
+  return NextResponse.json({
     files: data.files ?? [],
   });
-}
+});

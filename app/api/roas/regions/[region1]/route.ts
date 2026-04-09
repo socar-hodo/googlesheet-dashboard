@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { runQuery } from "@/lib/bigquery";
-import { loadRoasSql, replaceSqlParams } from "@/lib/roas";
+import { runParameterizedQuery } from "@/lib/bigquery";
 import { BQ_ERROR_MSG } from "@/lib/api-utils";
 
 // Dynamic-segment routes receive { params } as the second argument from Next.js routing.
@@ -19,11 +18,17 @@ export async function GET(
   const { region1 } = await params;
 
   try {
-    const raw = loadRoasSql("sub-regions.sql");
-    const sql = replaceSqlParams(raw, {
-      region1: `'${region1.replace(/'/g, "''")}'`,
-    });
-    const rows = await runQuery(sql);
+    const sql = `
+      SELECT DISTINCT region2
+      FROM \`socar-data.socar_biz_base.carzone_info_daily\`
+      WHERE date = DATE_SUB(CURRENT_DATE("Asia/Seoul"), INTERVAL 1 DAY)
+        AND region1 = @region1
+        AND region2 IS NOT NULL AND region2 != ''
+      ORDER BY region2
+    `;
+    const rows = await runParameterizedQuery(sql, [
+      { name: "region1", type: "STRING", value: region1 },
+    ]);
     if (!rows) {
       return NextResponse.json({ error: "BigQuery not configured" }, { status: 500 });
     }

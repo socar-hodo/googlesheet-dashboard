@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import NextAuth from "next-auth";
 import type { Provider } from "next-auth/providers";
 import Credentials from "next-auth/providers/credentials";
@@ -59,7 +60,10 @@ function getProviders(): Provider[] {
           const password = credentials?.password as string;
 
           if (!email || !password) return null;
-          if (password !== process.env.DASHBOARD_PASSWORD) return null;
+          const expected = process.env.DASHBOARD_PASSWORD ?? "";
+          const pwBuf = Buffer.from(password);
+          const expBuf = Buffer.from(expected);
+          if (pwBuf.length !== expBuf.length || !crypto.timingSafeEqual(pwBuf, expBuf)) return null;
 
           return {
             id: email,
@@ -72,10 +76,10 @@ function getProviders(): Provider[] {
     );
   }
 
-  if (providers.length === 0 || process.env.NODE_ENV !== "production") {
+  if (providers.length === 0 || process.env.ENABLE_DEV_LOGIN === "true") {
     providers.push(
       Credentials({
-        id: "credentials",
+        id: "dev-login",
         name: "개발 모드 로그인",
         credentials: {
           email: {
@@ -167,7 +171,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     signIn({ user }) {
       const allowed = getAllowedEmails();
-      if (allowed.length === 0) return true;
+      // In production, empty allowlist = deny all (require explicit configuration)
+      if (allowed.length === 0) {
+        return process.env.NODE_ENV !== "production";
+      }
       return allowed.includes(user.email ?? "");
     },
     async jwt({ token, account }) {

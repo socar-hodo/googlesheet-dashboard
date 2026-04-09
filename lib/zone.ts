@@ -4,7 +4,8 @@
  */
 import { readFileSync } from "fs";
 import { resolve } from "path";
-import { runQuery } from "@/lib/bigquery";
+import { runQuery, runParameterizedQuery } from "@/lib/bigquery";
+import type { QueryParam, ArrayQueryParam } from "@/lib/bigquery";
 import type {
   ZoneInfo,
   ZonePerformance,
@@ -21,15 +22,6 @@ function loadSql(filename: string): string {
   const content = readFileSync(resolve(SQL_DIR, filename), "utf-8");
   _sqlCache.set(filename, content);
   return content;
-}
-
-// ── SQL injection 방지 ─────────────────────────────────────────
-const SQL_UNSAFE = /['";\\]/;
-
-function assertSafe(value: string, label: string): void {
-  if (SQL_UNSAFE.test(value)) {
-    throw new Error(`${label}에 허용되지 않는 문자가 포함되어 있습니다.`);
-  }
 }
 
 // ── 존 캐시 (1시간 TTL, 모듈 레벨 Map) ───────────────────────
@@ -59,17 +51,18 @@ export async function getRegions(): Promise<string[]> {
 
 /** region2 목록 조회. */
 export async function getSubRegions(region1: string): Promise<string[]> {
-  assertSafe(region1, "region1");
   const sql = `
     SELECT DISTINCT region2
     FROM \`socar-data.socar_biz_base.carzone_info_daily\`
     WHERE date = DATE_SUB(CURRENT_DATE('Asia/Seoul'), INTERVAL 1 DAY)
-      AND region1 = '${region1}'
+      AND region1 = @region1
       AND region2 IS NOT NULL
       AND region2 != ''
     ORDER BY region2
   `;
-  const rows = await runQuery(sql);
+  const rows = await runParameterizedQuery(sql, [
+    { name: "region1", type: "STRING", value: region1 },
+  ]);
   if (!rows) return [];
   return rows.map((r) => String(r.region2)).filter((s) => s && s !== "-");
 }
@@ -79,8 +72,10 @@ export async function getSubRegions(region1: string): Promise<string[]> {
 /** 단일 존 조회 (zone_id 기준). */
 export async function getZoneById(zoneId: number): Promise<ZoneInfo | null> {
   const raw = loadSql("zones.sql");
-  const sql = raw.replaceAll("{where_clause}", `AND z.id = ${zoneId}`);
-  const rows = await runQuery(sql);
+  const sql = raw.replaceAll("{where_clause}", "AND z.id = @zone_id");
+  const rows = await runParameterizedQuery(sql, [
+    { name: "zone_id", type: "INT64", value: zoneId },
+  ]);
   if (!rows || rows.length === 0) return null;
   const r = rows[0];
   return {
@@ -107,13 +102,18 @@ export async function getZonesNearby(
   const latDelta = radiusKm / 111;
   const lngDelta = radiusKm / (111 * Math.cos((lat * Math.PI) / 180));
 
-  const whereClause = `
-    AND z.lat BETWEEN ${lat - latDelta} AND ${lat + latDelta}
-    AND z.lng BETWEEN ${lng - lngDelta} AND ${lng + lngDelta}
+  const whereExtra = `
+    AND z.lat BETWEEN @lat_min AND @lat_max
+    AND z.lng BETWEEN @lng_min AND @lng_max
   `;
   const raw = loadSql("zones.sql");
-  const sql = raw.replaceAll("{where_clause}", whereClause);
-  const rows = await runQuery(sql);
+  const sql = raw.replaceAll("{where_clause}", whereExtra);
+  const rows = await runParameterizedQuery(sql, [
+    { name: "lat_min", type: "FLOAT64", value: lat - latDelta },
+    { name: "lat_max", type: "FLOAT64", value: lat + latDelta },
+    { name: "lng_min", type: "FLOAT64", value: lng - lngDelta },
+    { name: "lng_max", type: "FLOAT64", value: lng + lngDelta },
+  ]);
   if (!rows) return [];
 
   return rows.map((r) => ({
@@ -139,20 +139,21 @@ export async function getZones(
     }
   }
 
-  let whereClause = "";
+  let whereExtra = "";
+  const params: (QueryParam | ArrayQueryParam)[] = [];
   if (region1) {
-    assertSafe(region1, "region1");
-    whereClause += `AND z.region1 = '${region1}'`;
+    whereExtra += " AND z.region1 = @region1";
+    params.push({ name: "region1", type: "STRING", value: region1 });
   }
   if (region2) {
-    assertSafe(region2, "region2");
-    whereClause += ` AND z.region2 = '${region2}'`;
+    whereExtra += " AND z.region2 = @region2";
+    params.push({ name: "region2", type: "STRING", value: region2 });
   }
 
   const raw = loadSql("zones.sql");
-  const sql = raw.replaceAll("{where_clause}", whereClause);
+  const sql = raw.replaceAll("{where_clause}", whereExtra);
 
-  const rows = await runQuery(sql);
+  const rows = await runParameterizedQuery(sql, params.length > 0 ? params : undefined);
   if (!rows) return [];
 
   const result: ZoneInfo[] = rows.map((r) => ({
@@ -204,11 +205,12 @@ export async function getZonePerformance(
 export async function getClusterBenchmark(
   clusterType: string,
 ): Promise<ClusterBenchmark> {
-  assertSafe(clusterType, "cluster_type");
   const raw = loadSql("cluster-benchmark.sql");
-  const sql = raw.replaceAll("{cluster_type}", `'${clusterType}'`);
+  const sql = raw.replaceAll("{cluster_type}", "@cluster_type");
 
-  const rows = await runQuery(sql);
+  const rows = await runParameterizedQuery(sql, [
+    { name: "cluster_type", type: "STRING", value: clusterType },
+  ]);
   if (!rows || rows.length === 0) {
     return { avg_revenue_per_car: 0, avg_utilization: 0, zone_count: 0 };
   }
@@ -240,17 +242,19 @@ export async function getRegionZoneStats(
   region1: string,
   region2?: string,
 ): Promise<RegionZoneStat[]> {
-  assertSafe(region1, "region1");
-  let whereClause = `AND z.region1 = '${region1}'`;
+  let whereExtra = "AND z.region1 = @region1";
+  const params: (QueryParam | ArrayQueryParam)[] = [
+    { name: "region1", type: "STRING", value: region1 },
+  ];
   if (region2) {
-    assertSafe(region2, "region2");
-    whereClause += ` AND z.region2 = '${region2}'`;
+    whereExtra += " AND z.region2 = @region2";
+    params.push({ name: "region2", type: "STRING", value: region2 });
   }
 
   const raw = loadSql("region-zone-stats.sql");
-  const sql = raw.replaceAll("{where_clause}", whereClause);
+  const sql = raw.replaceAll("{where_clause}", whereExtra);
 
-  const rows = await runQuery(sql);
+  const rows = await runParameterizedQuery(sql, params);
   if (!rows) return [];
 
   return rows.map((r) => ({

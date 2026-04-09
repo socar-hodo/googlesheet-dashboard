@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runQuery } from "@/lib/bigquery";
-import { loadRoasSql, replaceSqlParams, toStrInClause } from "@/lib/roas";
+import { runParameterizedQuery } from "@/lib/bigquery";
 import { withAuth } from "@/lib/api-utils";
 
 export const GET = withAuth(async (req: NextRequest) => {
@@ -17,12 +16,24 @@ export const GET = withAuth(async (req: NextRequest) => {
     );
   }
 
-  const raw = loadRoasSql("zones.sql");
-  const sql = replaceSqlParams(raw, {
-    region1: `'${region1.replace(/'/g, "''")}'`,
-    region2_list: toStrInClause(region2),
-  });
-  const rows = await runQuery(sql);
+  const sql = `
+    SELECT DISTINCT z.id, z.name, z.address
+    FROM \`socar-data.socar_biz_base.carzone_info_daily\` z
+    WHERE z.date = DATE_SUB(CURRENT_DATE("Asia/Seoul"), INTERVAL 1 DAY)
+      AND z.region1 = @region1
+      AND z.region2 IN UNNEST(@region2_list)
+      AND z.state = 1
+      AND EXISTS (
+        SELECT 1 FROM \`socar-data.socar_biz_base.car_info_daily\` c
+        WHERE c.date = z.date AND c.zone_id = z.id
+          AND c.sharing_type IN ('socar', 'zplus')
+      )
+    ORDER BY z.name
+  `;
+  const rows = await runParameterizedQuery(sql, [
+    { name: "region1", type: "STRING", value: region1 },
+    { name: "region2_list", type: "STRING", values: region2 },
+  ]);
   if (!rows) {
     return NextResponse.json({ error: "BigQuery not configured" }, { status: 500 });
   }

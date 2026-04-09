@@ -1,28 +1,34 @@
-import { auth } from '@/auth';
+import { NextRequest, NextResponse } from 'next/server';
+import { withAuth } from '@/lib/api-utils';
 import { buildWorkspaceOwnerKey } from '@/lib/workspace-owner';
 import { readWorkspaceState, replaceWorkspaceState } from '@/lib/workspace-state-store';
+import type { Session } from 'next-auth';
 import type { WorkCategory, WorkHistoryRecord, WorkStatus } from '@/types/work-history';
 import type { WorkspaceResource } from '@/types/workspace-resource';
 import type { MemoItem, TodoItem, TodoPriority, WorkspaceState } from '@/types/workspace-state';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
-  const ownerKey = await getOwnerKey();
+function getOwnerKeyFromSession(session: Session): string | null {
+  return session?.user ? buildWorkspaceOwnerKey(session.user.email, session.user.id) : null;
+}
+
+export const GET = withAuth(async (_req: NextRequest, { session }) => {
+  const ownerKey = getOwnerKeyFromSession(session);
   if (!ownerKey) {
-    return Response.json(
+    return NextResponse.json(
       { error: '로그인 세션이 없어 워크스페이스 상태를 불러올 수 없습니다.' },
       { status: 401 },
     );
   }
 
-  return Response.json(await readWorkspaceState(ownerKey));
-}
+  return NextResponse.json(await readWorkspaceState(ownerKey));
+});
 
-export async function PUT(req: Request) {
-  const ownerKey = await getOwnerKey();
+export const PUT = withAuth(async (req: NextRequest, { session }) => {
+  const ownerKey = getOwnerKeyFromSession(session);
   if (!ownerKey) {
-    return Response.json(
+    return NextResponse.json(
       { error: '로그인 세션이 없어 워크스페이스 상태를 저장할 수 없습니다.' },
       { status: 401 },
     );
@@ -40,9 +46,9 @@ export async function PUT(req: Request) {
 
     await replaceWorkspaceState(ownerKey, nextState);
 
-    return Response.json(nextState);
+    return NextResponse.json(nextState);
   } catch (error) {
-    return Response.json(
+    return NextResponse.json(
       {
         error: '워크스페이스 상태를 저장하지 못했습니다.',
         detail: error instanceof Error ? error.message : String(error),
@@ -50,12 +56,7 @@ export async function PUT(req: Request) {
       { status: 500 },
     );
   }
-}
-
-async function getOwnerKey() {
-  const session = await auth();
-  return session?.user ? buildWorkspaceOwnerKey(session.user.email, session.user.id) : null;
-}
+});
 
 function normalizeResources(input: unknown): WorkspaceResource[] {
   if (!Array.isArray(input)) return [];
