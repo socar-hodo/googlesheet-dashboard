@@ -49,3 +49,4 @@ next-env.d.ts
 
 # test temp files
 tmp-test/
+_workspace/
