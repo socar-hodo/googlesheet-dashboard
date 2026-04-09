@@ -134,8 +134,9 @@ export function ZoneSimulator() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "서버 오류");
       setOpenResult(data);
-    } catch (err) {
-      toast.error("개설 분석 중 오류가 발생했습니다.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "알 수 없는 오류";
+      toast.error(`개설 분석 실패: ${msg}`);
       console.error("simulate/open error", err);
     } finally {
       setOpenLoading(false);
