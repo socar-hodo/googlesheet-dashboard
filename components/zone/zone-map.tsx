@@ -186,10 +186,10 @@ const ZoneMap = forwardRef<ZoneMapHandle, ZoneMapProps>(function ZoneMap(
     }
 
     const script = document.createElement("script");
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${key}&libraries=services&autoload=false`;
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${key}&libraries=services&autoload=false`;
     script.async = true;
     script.onload = () => { if (!cancelled) initMap(); };
-    script.onerror = () => console.error("[ZoneMap] 카카오맵 SDK 로드 실패");
+    script.onerror = (e) => console.error("[ZoneMap] 카카오맵 SDK 로드 실패. appkey를 확인하세요.", e);
     document.head.appendChild(script);
 
     return () => { cancelled = true; mapRef.current = null; };
