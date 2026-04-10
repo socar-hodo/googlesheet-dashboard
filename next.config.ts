@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Vercel 서버리스 함수 리전: 도쿄 (서울 미지원 시 가장 가까운 리전)
+  serverExternalPackages: ["@google-cloud/bigquery", "google-auth-library"],
   // Google 프로필 이미지 로딩 허용
   images: {
     remotePatterns: [
