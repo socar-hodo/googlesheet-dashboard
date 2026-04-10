@@ -34,10 +34,7 @@ export function withAuth(handler: ApiHandler) {
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
       console.error(`[${req.method} ${req.nextUrl.pathname}]`, detail, err);
-      return NextResponse.json(
-        { error: BQ_ERROR_MSG, _debug: detail },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: BQ_ERROR_MSG }, { status: 500 });
     }
   };
 }
