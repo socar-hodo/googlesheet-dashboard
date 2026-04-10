@@ -96,9 +96,9 @@ export async function runParameterizedQuery(
   if (params) {
     for (const p of params) {
       if ("values" in p) {
-        // Array parameter — BigQuery uses UNNEST(@param) in SQL
+        // Array parameter — BQ SDK expects type as [elementType] for arrays
         queryParams[p.name] = p.values;
-        paramTypes[p.name] = `ARRAY<${p.type}>`;
+        paramTypes[p.name] = [p.type];
       } else {
         queryParams[p.name] = p.value;
         paramTypes[p.name] = p.type;
@@ -109,7 +109,7 @@ export async function runParameterizedQuery(
   const options: Query = { query: sql };
   if (params && params.length > 0) {
     options.params = queryParams;
-    options.types = paramTypes as Record<string, string>;
+    options.types = paramTypes as Record<string, string | string[]>;
   }
 
   const [rows] = await client.query(options);
