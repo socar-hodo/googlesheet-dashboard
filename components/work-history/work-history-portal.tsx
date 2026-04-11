@@ -693,7 +693,7 @@ function ScopedWorkHistoryPortal({
       />
 
       {/* Header + sidebar 2-column */}
-      <section className="grid gap-5 lg:grid-cols-[1fr_26rem] xl:grid-cols-[minmax(0,1fr)_30rem]">
+      <section className="grid gap-5 lg:grid-cols-[1fr_20rem] xl:grid-cols-[minmax(0,1fr)_22rem]">
         <Card
           className={cn(
             'self-stretch border border-border/60 shadow-[0_28px_70px_-50px_rgba(20,26,36,0.28)]',
@@ -831,6 +831,220 @@ function ScopedWorkHistoryPortal({
                 </DialogContent>
               </Dialog>
 
+              {/* Calendar + Todo 2-column sub-grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4 mt-4">
+                {/* Calendar */}
+                <div className="rounded-2xl border border-border/60 bg-background/75 px-5 py-4">
+                  <div className="flex items-center justify-between gap-2 pb-2">
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-semibold text-foreground">{formatMonthLabel(calendarMonth)}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-full"
+                        onClick={() => setCalendarMonth(shiftMonthKey(calendarMonth, -1))}
+                        aria-label="이전 달"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-8 rounded-full px-2.5 text-sm font-semibold"
+                        onClick={() => {
+                          const today = getTodayDateInputValue();
+                          setCalendarMonth(getMonthStartKey(today));
+                          setSelectedDate(today);
+                        }}
+                      >
+                        오늘
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-full"
+                        onClick={() => setCalendarMonth(shiftMonthKey(calendarMonth, 1))}
+                        aria-label="다음 달"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div
+                    ref={calendarGridRef}
+                    role="grid"
+                    aria-label="월간 일정"
+                    className="grid grid-cols-7 gap-1"
+                    onKeyDown={handleCalendarKeyDown}
+                  >
+                    <div role="row" className="contents">
+                      {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
+                        <div
+                          key={`hdr-${day}`}
+                          role="columnheader"
+                          className={cn(
+                            'py-1.5 text-center text-sm font-semibold',
+                            day === '일' && 'text-rose-500 dark:text-rose-300',
+                            day === '토' && 'text-sky-500 dark:text-sky-300',
+                            day !== '일' && day !== '토' && 'text-muted-foreground',
+                          )}
+                        >
+                          {day}
+                        </div>
+                      ))}
+                    </div>
+                    {calendarDays.map((week) => (
+                      <Fragment key={`hdr-week-${week.weekKey}`}>
+                        {week.days.map((day) => (
+                          <button
+                            key={`hdr-day-${day.dateKey}`}
+                            type="button"
+                            role="gridcell"
+                            tabIndex={day.dateKey === selectedDate ? 0 : -1}
+                            aria-selected={day.dateKey === selectedDate}
+                            aria-label={`${day.dayNumber}일${day.total > 0 ? `, ${day.total}건의 할 일` : ''}`}
+                            onClick={() => {
+                              setSelectedDate(day.dateKey);
+                              if (!day.inMonth) {
+                                setCalendarMonth(getMonthStartKey(day.dateKey));
+                              }
+                            }}
+                            className={cn(
+                              'relative flex flex-col items-center rounded-lg py-2.5 text-center transition',
+                              day.inMonth ? 'hover:bg-accent' : 'opacity-30',
+                              day.dateKey === selectedDate && 'bg-primary/10 ring-1 ring-primary/30',
+                              day.isToday && day.dateKey !== selectedDate && 'bg-primary/5',
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                'text-sm font-medium leading-none',
+                                day.isHoliday && 'text-rose-500 dark:text-rose-300',
+                                !day.isHoliday && day.dayOfWeek === 0 && 'text-rose-500 dark:text-rose-300',
+                                !day.isHoliday && day.dayOfWeek === 6 && 'text-sky-500 dark:text-sky-300',
+                                !day.isHoliday && day.dayOfWeek !== 0 && day.dayOfWeek !== 6 && (day.isToday ? 'font-bold text-primary' : 'text-foreground'),
+                              )}
+                            >
+                              {day.dayNumber}
+                            </span>
+                            {day.total > 0 && (
+                              <span
+                                className={cn(
+                                  'mt-0.5 h-1 w-1 rounded-full',
+                                  day.completed > 0 && day.active === 0 ? 'bg-muted-foreground/40' : 'bg-primary',
+                                )}
+                              />
+                            )}
+                          </button>
+                        ))}
+                      </Fragment>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Todo input + selected date todo list */}
+                <div className="rounded-2xl border border-border/60 bg-background/75 px-4 py-4">
+                  <div className="flex items-center justify-between gap-2 pb-2">
+                    <div className="flex items-center gap-1.5">
+                      <Plus className="h-3.5 w-3.5 text-primary" />
+                      <span className="text-xs font-semibold text-foreground">
+                        {formatSelectedDateLabel(selectedDate)} 할 일
+                      </span>
+                    </div>
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                      {selectedDateTodos.length}건
+                    </span>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex gap-1.5">
+                      <Input
+                        value={todoHook.selectedDateTodoInput}
+                        onChange={(event) => todoHook.setSelectedDateTodoInput(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault();
+                            todoHook.handleAddSelectedDateTodo();
+                          }
+                        }}
+                        placeholder="할 일을 입력하세요"
+                        aria-label="할 일 추가"
+                        className="h-8 rounded-xl text-xs"
+                      />
+                      <Button type="button" className="h-8 shrink-0 rounded-xl px-2.5" onClick={todoHook.handleAddSelectedDateTodo}>
+                        <Plus className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-[minmax(0,1fr)_6rem] gap-1.5">
+                      <Input
+                        value={todoHook.selectedDateTodoProject}
+                        onChange={(event) => todoHook.setSelectedDateTodoProject(event.target.value)}
+                        list="todo-project-suggestions-hdr"
+                        placeholder="분류"
+                        className="h-8 rounded-xl text-xs"
+                      />
+                      <Select
+                        value={todoHook.selectedDateTodoPriority}
+                        onValueChange={(value) => todoHook.setSelectedDateTodoPriority(value as TodoPriority)}
+                      >
+                        <SelectTrigger className="h-8 rounded-xl text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {todoPriorities.map((option) => (
+                            <SelectItem key={`hdr-priority-${option.value}`} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <datalist id="todo-project-suggestions-hdr">
+                      {projectOptions.map((project) => (
+                        <option key={`hdr-project-suggestion-${project}`} value={project} />
+                      ))}
+                    </datalist>
+                    {selectedDateTodos.length > 0 && (
+                      <div className="space-y-1 pt-0.5">
+                        {selectedDateTodos.map((todo) => {
+                          const isRecentlyToggled = todoHook.recentlyToggledId === todo.id;
+                          return (
+                            <button
+                              key={`hdr-todo-${todo.id}`}
+                              type="button"
+                              onClick={() => (todo.completed ? todoHook.handleRestoreTodoToDate(todo.id, selectedDate) : todoHook.handleToggleTodo(todo.id))}
+                              className={cn(
+                                'flex w-full items-center gap-2 rounded-xl border border-border/60 bg-background/65 px-2.5 py-1.5 text-left transition-all duration-200',
+                                isRecentlyToggled && 'bg-primary/8',
+                              )}
+                              aria-label={todo.completed ? `${todo.title} 다시 진행` : `${todo.title} 완료 처리`}
+                            >
+                              {todo.completed
+                                ? <CheckCircle2 className={cn('h-3 w-3 shrink-0 text-primary transition-transform duration-200', isRecentlyToggled && 'scale-125')} />
+                                : <Circle className={cn('h-3 w-3 shrink-0 text-primary transition-transform duration-200', isRecentlyToggled && 'scale-125')} />
+                              }
+                              <span className={cn('min-w-0 flex-1 truncate text-[11px] text-foreground', todo.completed && 'text-muted-foreground line-through')}>
+                                {todo.title}
+                              </span>
+                              <PriorityBadge priority={todo.priority} />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {selectedDateTodos.length === 0 && (
+                      <p className="pt-0.5 text-center text-[11px] text-muted-foreground/70">
+                        이 날짜에 할 일이 없습니다.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="flex flex-wrap items-center gap-3">
                 <Select value={status} onValueChange={(value) => setStatus(value as 'all' | WorkStatus)}>
                   <SelectTrigger className="h-11 w-40 rounded-[1.4rem]">
@@ -851,122 +1065,8 @@ function ScopedWorkHistoryPortal({
           </CardContent>
         </Card>
 
-        {/* Right sidebar — Calendar → Stats → Todo input */}
+        {/* Right sidebar — Stats → Todo focus */}
         <div className="order-first space-y-4 lg:order-none">
-          {/* Mini Calendar */}
-          <div className="rounded-2xl border border-border/60 bg-card/98 px-5 py-4 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.2)]">
-            <div className="flex items-center justify-between gap-2 pb-2">
-              <div className="flex items-center gap-2">
-                <CalendarDays className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold text-foreground">{formatMonthLabel(calendarMonth)}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 rounded-full"
-                  onClick={() => setCalendarMonth(shiftMonthKey(calendarMonth, -1))}
-                  aria-label="이전 달"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-8 rounded-full px-2.5 text-sm font-semibold"
-                  onClick={() => {
-                    const today = getTodayDateInputValue();
-                    setCalendarMonth(getMonthStartKey(today));
-                    setSelectedDate(today);
-                  }}
-                >
-                  오늘
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 rounded-full"
-                  onClick={() => setCalendarMonth(shiftMonthKey(calendarMonth, 1))}
-                  aria-label="다음 달"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            <div
-              ref={calendarGridRef}
-              role="grid"
-              aria-label="월간 일정"
-              className="grid grid-cols-7 gap-1"
-              onKeyDown={handleCalendarKeyDown}
-            >
-              <div role="row" className="contents">
-                {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
-                  <div
-                    key={`hdr-${day}`}
-                    role="columnheader"
-                    className={cn(
-                      'py-1.5 text-center text-sm font-semibold',
-                      day === '일' && 'text-rose-500 dark:text-rose-300',
-                      day === '토' && 'text-sky-500 dark:text-sky-300',
-                      day !== '일' && day !== '토' && 'text-muted-foreground',
-                    )}
-                  >
-                    {day}
-                  </div>
-                ))}
-              </div>
-              {calendarDays.map((week) => (
-                <Fragment key={`hdr-week-${week.weekKey}`}>
-                  {week.days.map((day) => (
-                    <button
-                      key={`hdr-day-${day.dateKey}`}
-                      type="button"
-                      role="gridcell"
-                      tabIndex={day.dateKey === selectedDate ? 0 : -1}
-                      aria-selected={day.dateKey === selectedDate}
-                      aria-label={`${day.dayNumber}일${day.total > 0 ? `, ${day.total}건의 할 일` : ''}`}
-                      onClick={() => {
-                        setSelectedDate(day.dateKey);
-                        if (!day.inMonth) {
-                          setCalendarMonth(getMonthStartKey(day.dateKey));
-                        }
-                      }}
-                      className={cn(
-                        'relative flex flex-col items-center rounded-lg py-2.5 text-center transition',
-                        day.inMonth ? 'hover:bg-accent' : 'opacity-30',
-                        day.dateKey === selectedDate && 'bg-primary/10 ring-1 ring-primary/30',
-                        day.isToday && day.dateKey !== selectedDate && 'bg-primary/5',
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          'text-sm font-medium leading-none',
-                          day.isHoliday && 'text-rose-500 dark:text-rose-300',
-                          !day.isHoliday && day.dayOfWeek === 0 && 'text-rose-500 dark:text-rose-300',
-                          !day.isHoliday && day.dayOfWeek === 6 && 'text-sky-500 dark:text-sky-300',
-                          !day.isHoliday && day.dayOfWeek !== 0 && day.dayOfWeek !== 6 && (day.isToday ? 'font-bold text-primary' : 'text-foreground'),
-                        )}
-                      >
-                        {day.dayNumber}
-                      </span>
-                      {day.total > 0 && (
-                        <span
-                          className={cn(
-                            'mt-0.5 h-1 w-1 rounded-full',
-                            day.completed > 0 && day.active === 0 ? 'bg-muted-foreground/40' : 'bg-primary',
-                          )}
-                        />
-                      )}
-                    </button>
-                  ))}
-                </Fragment>
-              ))}
-            </div>
-          </div>
-
           {/* Stats — compact 3-column row */}
           <div className="grid grid-cols-3 gap-2">
             <div className="rounded-2xl border border-border/60 bg-card/98 px-3 py-2.5">
@@ -980,103 +1080,6 @@ function ScopedWorkHistoryPortal({
             <div className="rounded-2xl border border-border/60 bg-card/98 px-3 py-2.5">
               <p className="text-[11px] font-medium text-muted-foreground">메모</p>
               <p className="mt-1 text-base font-semibold text-foreground">{memoSummary.total}건</p>
-            </div>
-          </div>
-
-          {/* To-do 빠른 입력 */}
-          <div className="rounded-2xl border border-border/60 bg-card/98 px-4 py-3 shadow-[0_24px_60px_-42px_rgba(20,26,36,0.2)]">
-            <div className="flex items-center justify-between gap-2 pb-2">
-              <div className="flex items-center gap-1.5">
-                <Plus className="h-3.5 w-3.5 text-primary" />
-                <span className="text-xs font-semibold text-foreground">
-                  {formatSelectedDateLabel(selectedDate)} 할 일
-                </span>
-              </div>
-              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                {selectedDateTodos.length}건
-              </span>
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex gap-1.5">
-                <Input
-                  value={todoHook.selectedDateTodoInput}
-                  onChange={(event) => todoHook.setSelectedDateTodoInput(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault();
-                      todoHook.handleAddSelectedDateTodo();
-                    }
-                  }}
-                  placeholder="할 일을 입력하세요"
-                  aria-label="할 일 추가"
-                  className="h-8 rounded-xl text-xs"
-                />
-                <Button type="button" className="h-8 shrink-0 rounded-xl px-2.5" onClick={todoHook.handleAddSelectedDateTodo}>
-                  <Plus className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-              <div className="grid grid-cols-[minmax(0,1fr)_6rem] gap-1.5">
-                <Input
-                  value={todoHook.selectedDateTodoProject}
-                  onChange={(event) => todoHook.setSelectedDateTodoProject(event.target.value)}
-                  list="todo-project-suggestions-hdr"
-                  placeholder="분류"
-                  className="h-8 rounded-xl text-xs"
-                />
-                <Select
-                  value={todoHook.selectedDateTodoPriority}
-                  onValueChange={(value) => todoHook.setSelectedDateTodoPriority(value as TodoPriority)}
-                >
-                  <SelectTrigger className="h-8 rounded-xl text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {todoPriorities.map((option) => (
-                      <SelectItem key={`hdr-priority-${option.value}`} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <datalist id="todo-project-suggestions-hdr">
-                {projectOptions.map((project) => (
-                  <option key={`hdr-project-suggestion-${project}`} value={project} />
-                ))}
-              </datalist>
-              {selectedDateTodos.length > 0 && (
-                <div className="space-y-1 pt-0.5">
-                  {selectedDateTodos.map((todo) => {
-                    const isRecentlyToggled = todoHook.recentlyToggledId === todo.id;
-                    return (
-                      <button
-                        key={`hdr-todo-${todo.id}`}
-                        type="button"
-                        onClick={() => (todo.completed ? todoHook.handleRestoreTodoToDate(todo.id, selectedDate) : todoHook.handleToggleTodo(todo.id))}
-                        className={cn(
-                          'flex w-full items-center gap-2 rounded-xl border border-border/60 bg-background/65 px-2.5 py-1.5 text-left transition-all duration-200',
-                          isRecentlyToggled && 'bg-primary/8',
-                        )}
-                        aria-label={todo.completed ? `${todo.title} 다시 진행` : `${todo.title} 완료 처리`}
-                      >
-                        {todo.completed
-                          ? <CheckCircle2 className={cn('h-3 w-3 shrink-0 text-primary transition-transform duration-200', isRecentlyToggled && 'scale-125')} />
-                          : <Circle className={cn('h-3 w-3 shrink-0 text-primary transition-transform duration-200', isRecentlyToggled && 'scale-125')} />
-                        }
-                        <span className={cn('min-w-0 flex-1 truncate text-[11px] text-foreground', todo.completed && 'text-muted-foreground line-through')}>
-                          {todo.title}
-                        </span>
-                        <PriorityBadge priority={todo.priority} />
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-              {selectedDateTodos.length === 0 && (
-                <p className="pt-0.5 text-center text-[11px] text-muted-foreground/70">
-                  이 날짜에 할 일이 없습니다.
-                </p>
-              )}
             </div>
           </div>
 
