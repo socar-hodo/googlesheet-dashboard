@@ -935,10 +935,14 @@ function ScopedWorkHistoryPortal({
                             {day.total > 0 && (
                               <span
                                 className={cn(
-                                  'mt-0.5 h-1 w-1 rounded-full',
-                                  day.completed > 0 && day.active === 0 ? 'bg-muted-foreground/40' : 'bg-primary',
+                                  'mt-0.5 text-[9px] font-semibold leading-none',
+                                  day.completed > 0 && day.active === 0
+                                    ? 'text-muted-foreground/50'
+                                    : 'text-primary',
                                 )}
-                              />
+                              >
+                                {day.active > 0 ? day.active : '\u2713'}
+                              </span>
                             )}
                           </button>
                         ))}
