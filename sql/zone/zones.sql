@@ -1,6 +1,6 @@
 -- 존 목록 조회 (위경도 포함)
 -- 파라미터:
---   {where_clause} : 동적 WHERE 조건 (lib/zone.ts에서 조립)
+--   where_clause : 동적 WHERE 조건 (lib/zone.ts에서 조립)
 --
 -- 반환: zone_id, zone_name, lat, lng, region1, region2, car_count
 SELECT
@@ -18,6 +18,7 @@ LEFT JOIN `socar-data.socar_biz_profit.profit_socar_car_daily` p
   AND p.car_sharing_type IN ('socar', 'zplus')
   AND p.car_state IN ('운영', '수리')
 WHERE z.date = DATE_SUB(CURRENT_DATE('Asia/Seoul'), INTERVAL 1 DAY)
+  AND z.state = 1
   AND z.lat IS NOT NULL AND z.lng IS NOT NULL
   {where_clause}
 GROUP BY z.id, z.name, z.lat, z.lng, z.region1, z.region2

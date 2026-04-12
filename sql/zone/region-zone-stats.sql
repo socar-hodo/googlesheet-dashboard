@@ -1,6 +1,6 @@
 -- 지역 내 전체 존 실적 + 위경도 (최적화 모드용)
 -- 파라미터:
---   {where_clause} : 동적 WHERE 조건 (lib/zone.ts에서 조립)
+--   where_clause : 동적 WHERE 조건 (lib/zone.ts에서 조립)
 --
 -- 반환: zone_id, zone_name, lat, lng, region1, region2, car_count,
 --        revenue_per_car, utilization, total_nuse
@@ -28,6 +28,7 @@ LEFT JOIN `socar-data.socar_biz_profit.profit_socar_car_daily` p
 LEFT JOIN `socar-data.socar_biz.operation_per_car_daily_v2` o
   ON p.date = o.date AND p.car_id = o.car_id
 WHERE z.date = DATE_SUB(CURRENT_DATE('Asia/Seoul'), INTERVAL 1 DAY)
+  AND z.state = 1
   AND z.lat IS NOT NULL AND z.lng IS NOT NULL
   {where_clause}
 GROUP BY z.id, z.name, z.lat, z.lng, z.region1, z.region2
