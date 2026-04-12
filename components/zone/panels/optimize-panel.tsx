@@ -171,10 +171,12 @@ export function OptimizePanel({
         <>
           {/* 분석 요약 */}
           <div className="grid grid-cols-2 gap-2">
-            <SummaryCard label="운영 존" value={`${result.summary.total_zones}개`} />
+            <SummaryCard label="운영 존" value={`${result.summary.active_zones ?? result.summary.total_zones}개`} highlight />
+            <SummaryCard label="비운영 존" value={`${result.summary.inactive_zones ?? 0}개`} />
             <SummaryCard label="배치 차량" value={`${result.summary.total_cars}대`} />
-            <SummaryCard label="평균 가동률" value={pct(result.summary.avg_utilization)} />
-            <SummaryCard label="존당 평균" value={`${result.summary.avg_cars_per_zone.toFixed(1)}대`} />
+            <SummaryCard label="평균 가동률" value={pct(result.summary.avg_utilization)} highlight />
+            <SummaryCard label="대당 매출" value={won(result.summary.avg_revenue_per_car)} />
+            <SummaryCard label="존당 차량" value={`${(result.summary.avg_cars_per_zone ?? 0).toFixed(1)}대`} />
           </div>
 
           {/* 최적화 제안 */}
@@ -187,28 +189,40 @@ export function OptimizePanel({
               </CardHeader>
               <CardContent className="space-y-2">
                 {/* 폐쇄 권고 */}
+                {result.suggestions.close.length > 0 && (
+                  <div className="mb-1 text-[11px] font-semibold text-red-600 dark:text-red-400">폐쇄 권고 ({result.suggestions.close.length}건)</div>
+                )}
                 {result.suggestions.close.map((s) => (
                   <div
                     key={s.zone_id}
                     className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs dark:border-red-900 dark:bg-red-950/40"
                   >
-                    <div className="font-semibold text-red-800 dark:text-red-200">
-                      {s.zone_name || `존 ${s.zone_id}`} — 폐쇄 권고
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-red-800 dark:text-red-200">
+                        {s.zone_name || `존 ${s.zone_id}`}
+                      </span>
+                      <span className="text-[10px] text-red-600 dark:text-red-300">
+                        차량 {s.car_count}대
+                      </span>
                     </div>
                     <div className="mt-1 text-red-700 dark:text-red-300">
-                      가동률 {pct(s.utilization)} / 차량 {s.car_count}대
+                      가동률 {pct(s.utilization)} {s.has_alternative ? "· 대체 존 있음" : ""}
                     </div>
+                    {s.reason && <div className="mt-0.5 text-[10px] text-red-600/80 dark:text-red-400/80">{s.reason}</div>}
                   </div>
                 ))}
 
-                {/* 개설 권고 */}
+                {/* 개설 후보 */}
+                {result.suggestions.open.length > 0 && (
+                  <div className="mb-1 mt-2 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">개설 후보 ({result.suggestions.open.length}건)</div>
+                )}
                 {result.suggestions.open.map((s, i) => (
                   <div
                     key={i}
                     className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs dark:border-emerald-900 dark:bg-emerald-950/40"
                   >
                     <div className="font-semibold text-emerald-800 dark:text-emerald-200">
-                      {s.area || "신규 후보지"} — 개설 권고
+                      {s.area || s.zone_name || "신규 후보지"}
                     </div>
                     {s.reason && (
                       <div className="mt-1 text-emerald-700 dark:text-emerald-300">{s.reason}</div>
@@ -217,6 +231,9 @@ export function OptimizePanel({
                 ))}
 
                 {/* 재배치 권고 */}
+                {result.suggestions.rebalance.length > 0 && (
+                  <div className="mb-1 mt-2 text-[11px] font-semibold text-amber-600 dark:text-amber-400">재배치 대상 ({result.suggestions.rebalance.length}건)</div>
+                )}
                 {result.suggestions.rebalance.map((s, i) => (
                   <div
                     key={i}
@@ -228,6 +245,9 @@ export function OptimizePanel({
                     <div className="mt-1 text-amber-700 dark:text-amber-300">
                       {pct(s.from_zone.utilization)} → {pct(s.to_zone.utilization)}
                     </div>
+                    {s.reason && (
+                      <div className="mt-0.5 text-[10px] text-amber-600/80 dark:text-amber-400/80">{s.reason}</div>
+                    )}
                   </div>
                 ))}
               </CardContent>
@@ -281,11 +301,11 @@ export function OptimizePanel({
 }
 
 /* ── 요약 카드 ───────────────────────────────────────────────── */
-function SummaryCard({ label, value }: { label: string; value: string }) {
+function SummaryCard({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className="rounded-xl border border-border/60 bg-muted/30 p-3 text-center">
+    <div className={`rounded-xl border p-3 text-center ${highlight ? "border-primary/20 bg-primary/5" : "border-border/60 bg-muted/30"}`}>
       <div className="text-[11px] text-muted-foreground">{label}</div>
-      <div className="mt-1 text-lg font-bold text-foreground">{value}</div>
+      <div className={`mt-1 text-lg font-bold ${highlight ? "text-primary" : "text-foreground"}`}>{value}</div>
     </div>
   );
 }

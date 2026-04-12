@@ -173,17 +173,21 @@ export interface CompareResult {
 export interface OptimizeResult {
   summary: {
     total_zones: number;
+    active_zones: number;
+    inactive_zones: number;
     total_cars: number;
     avg_utilization: number;
+    avg_revenue_per_car: number;
     avg_cars_per_zone: number;
   };
   suggestions: {
-    close: RegionZoneStat[];
-    open: Array<{ area?: string; reason?: string; lat?: number; lng?: number }>;
+    close: Array<RegionZoneStat & { reason?: string; has_alternative?: boolean; nearby_alternatives?: number }>;
+    open: Array<{ zone_id?: number; zone_name?: string; area?: string; reason?: string; lat?: number; lng?: number; nearest_active_m?: number }>;
     rebalance: Array<{
-      from_zone: { zone_id: number; name: string; utilization: number };
-      to_zone: { zone_id: number; name: string; utilization: number };
+      from_zone: { zone_id: number; name: string; utilization: number; car_count?: number };
+      to_zone: { zone_id: number; name: string; utilization: number; car_count?: number };
       cars: number;
+      reason?: string;
     }>;
   };
   projected: {
