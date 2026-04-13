@@ -31,10 +31,13 @@ declare global {
       setMap(map: Map | null): void;
     }
     class MarkerImage {
-      constructor(src: string, size: Size);
+      constructor(src: string, size: Size, opts?: { offset?: Point });
     }
     class Size {
       constructor(w: number, h: number);
+    }
+    class Point {
+      constructor(x: number, y: number);
     }
     class Circle {
       constructor(opts: {
@@ -89,16 +92,18 @@ declare global {
 }
 
 /* ── Marker image URLs ───────────────────────────────────────── */
+// 하이라이트(후보/대상/추천)는 카카오 기본 컬러 마커로 주존과 시각적 구분 유지
 const MARKER_URLS: Record<string, string> = {
   red: "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/red_b.png",
   green: "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/green_b.png",
   yellow: "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/yellow_b.png",
 };
 
-const GRAY_SVG =
-  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="35">' +
-  '<path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 23 12 23s12-14 12-23C24 5.4 18.6 0 12 0z" fill="#999"/>' +
-  '<circle cx="12" cy="12" r="5" fill="white"/></svg>';
+// SOCAR 브랜드 핀 — blue: 운영 존, white: 비운영/폐쇄 존
+const SOCAR_PIN_BLUE = "/img/Socar_Pin_Blue_RGB.png";
+const SOCAR_PIN_WHITE = "/img/Socar_Pin_White_RGB.png";
+const SOCAR_PIN_W = 28;
+const SOCAR_PIN_H = 36;
 
 /* ── Props ───────────────────────────────────────────────────── */
 interface ZoneMapProps {
@@ -206,20 +211,21 @@ const ZoneMap = forwardRef<ZoneMapHandle, ZoneMapProps>(function ZoneMap(
     if (opts?.title) markerOpts.title = opts.title;
 
     // 색상별 커스텀 이미지
-    if (opts?.color && opts.color !== "blue") {
-      if (opts.color === "gray") {
-        const img = new kakao.maps.MarkerImage(
-          "data:image/svg+xml," + encodeURIComponent(GRAY_SVG),
-          new kakao.maps.Size(24, 35),
-        );
-        markerOpts.image = img;
-      } else if (MARKER_URLS[opts.color]) {
-        const img = new kakao.maps.MarkerImage(
-          MARKER_URLS[opts.color],
-          new kakao.maps.Size(24, 35),
-        );
-        markerOpts.image = img;
-      }
+    const color = opts?.color ?? "blue";
+    if (color === "blue" || color === "gray") {
+      // SOCAR 브랜드 핀 — anchor는 하단 중앙(핀 꼭짓점)
+      const img = new kakao.maps.MarkerImage(
+        color === "blue" ? SOCAR_PIN_BLUE : SOCAR_PIN_WHITE,
+        new kakao.maps.Size(SOCAR_PIN_W, SOCAR_PIN_H),
+        { offset: new kakao.maps.Point(SOCAR_PIN_W / 2, SOCAR_PIN_H) },
+      );
+      markerOpts.image = img;
+    } else if (MARKER_URLS[color]) {
+      const img = new kakao.maps.MarkerImage(
+        MARKER_URLS[color],
+        new kakao.maps.Size(24, 35),
+      );
+      markerOpts.image = img;
     }
 
     const marker = new kakao.maps.Marker(markerOpts as ConstructorParameters<typeof kakao.maps.Marker>[0]);
