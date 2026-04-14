@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runQuery } from "@/lib/bigquery";
+import { runParameterizedQuery } from "@/lib/bigquery";
 import { loadFunnelSql, replaceSqlParams, safeInt, safeFloat } from "@/lib/funnel";
 import { withAuth } from "@/lib/api-utils";
 
@@ -27,11 +27,10 @@ export const GET = withAuth(async (req: NextRequest) => {
   }
 
   const raw = loadFunnelSql("weekly-by-region2.sql");
-  const sql = replaceSqlParams(raw, {
-    weeks: String(weeks),
-    region1: `'${region1.replace(/'/g, "''")}'`,
-  });
-  const rows = (await runQuery(sql)) as RawRow[] | null;
+  const sql = replaceSqlParams(raw, { weeks: String(weeks) });
+  const rows = (await runParameterizedQuery(sql, [
+    { name: "region1", type: "STRING", value: region1 },
+  ])) as RawRow[] | null;
 
   if (!rows) {
     return NextResponse.json(

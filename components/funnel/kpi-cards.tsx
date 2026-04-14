@@ -25,7 +25,7 @@ function WowBadge({ value, isPercent }: { value: number; isPercent?: boolean }) 
 const CARDS: {
   key: keyof FunnelSummary;
   label: string;
-  wowKey: keyof FunnelSummary;
+  wowKey: keyof FunnelSummary | null;
   format: (v: number) => string;
   isPercentWow?: boolean;
 }[] = [
@@ -51,7 +51,7 @@ const CARDS: {
   {
     key: "clicks_per_user",
     label: "인당 클릭",
-    wowKey: "clicks_per_user",
+    wowKey: null,
     format: (v) => v.toFixed(1),
   },
 ];
@@ -76,7 +76,7 @@ export function KpiCards({ summary }: KpiCardsProps) {
                 card.format(summary[card.key] as number)
               )}
             </p>
-            {card.key !== "clicks_per_user" && (
+            {card.wowKey && (
               <div className="mt-1 flex items-center gap-1">
                 <WowBadge
                   value={summary[card.wowKey] as number}

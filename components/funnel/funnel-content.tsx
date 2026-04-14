@@ -89,6 +89,7 @@ export function FunnelContent() {
           <div className="grid gap-4 md:grid-cols-3">
             <RegionRanking
               data={data.ranking}
+              canDrillDown={!drillRegion}
               onRegionClick={handleRegionClick}
             />
             <div className="md:col-span-2">

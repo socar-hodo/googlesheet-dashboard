@@ -5,10 +5,11 @@ import type { FunnelRankingRow } from "@/types/funnel";
 
 interface RegionRankingProps {
   data: FunnelRankingRow[];
+  canDrillDown?: boolean;
   onRegionClick?: (region: string) => void;
 }
 
-export function RegionRanking({ data, onRegionClick }: RegionRankingProps) {
+export function RegionRanking({ data, canDrillDown = true, onRegionClick }: RegionRankingProps) {
   const maxCvr = Math.max(...data.map((r) => r.cvr), 0.01);
   const top10 = data.slice(0, 10);
 
@@ -18,12 +19,14 @@ export function RegionRanking({ data, onRegionClick }: RegionRankingProps) {
         <CardTitle className="text-sm font-semibold">CVR 랭킹</CardTitle>
       </CardHeader>
       <CardContent className="space-y-1">
-        {top10.map((row, i) => (
-          <button
+        {top10.map((row, i) => {
+          const Tag = canDrillDown ? "button" : "div";
+          return (
+          <Tag
             key={row.region}
-            type="button"
-            className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors hover:bg-muted/50"
-            onClick={() => onRegionClick?.(row.region)}
+            type={canDrillDown ? "button" : undefined}
+            className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors ${canDrillDown ? "cursor-pointer hover:bg-muted/50" : ""}`}
+            onClick={canDrillDown ? () => onRegionClick?.(row.region) : undefined}
           >
             <span
               className={`w-5 text-center text-xs font-bold ${
@@ -52,8 +55,9 @@ export function RegionRanking({ data, onRegionClick }: RegionRankingProps) {
             <span className="w-12 text-right text-xs font-semibold text-blue-500">
               {(row.cvr * 100).toFixed(1)}%
             </span>
-          </button>
-        ))}
+          </Tag>
+          );
+        })}
       </CardContent>
     </Card>
   );

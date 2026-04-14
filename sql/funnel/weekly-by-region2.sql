@@ -1,5 +1,5 @@
 -- 특정 시/도 내 구/군별 주간 존클릭→예약 전환율
--- params: {weeks} (정수), {region1} (문자열, 쿼테이션 포함)
+-- params: {weeks} (정수), @region1 (BQ 파라미터, STRING)
 
 WITH zone_master AS (
   SELECT
@@ -8,7 +8,7 @@ WITH zone_master AS (
     region2
   FROM `socar-data.tianjin_replica.carzone_info`
   WHERE imaginary = 0
-    AND region1 = {region1}
+    AND region1 = @region1
 ),
 
 click_base AS (
