@@ -22,6 +22,9 @@ const nextConfig: NextConfig = {
     "/api/zone/simulate/close": ["./sql/**/*.sql"],
     "/api/zone/compare": ["./sql/**/*.sql"],
     "/api/zone/optimize": ["./sql/**/*.sql"],
+    "/api/funnel/regions": ["./sql/**/*.sql"],
+    "/api/funnel/weekly": ["./sql/**/*.sql"],
+    "/api/funnel/detail": ["./sql/**/*.sql"],
   },
 };
 
