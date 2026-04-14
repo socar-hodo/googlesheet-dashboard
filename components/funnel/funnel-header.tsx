@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,10 @@ export function FunnelHeader({
   onBack,
   loading,
 }: FunnelHeaderProps) {
+  const [showCustom, setShowCustom] = useState(false);
+  const [customWeeks, setCustomWeeks] = useState(20);
+  const isPreset = PRESETS.some((p) => p.value === weeks);
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex items-center gap-3">
@@ -43,24 +48,60 @@ export function FunnelHeader({
           {drillRegion ?? "전국"}
         </Badge>
         {loading && (
-          <span className="text-xs text-muted-foreground animate-pulse">
+          <span className="text-xs animate-pulse text-muted-foreground">
             로딩중...
           </span>
         )}
       </div>
 
-      <div className="flex gap-1.5">
+      <div className="flex items-center gap-1.5">
         {PRESETS.map((p) => (
           <Button
             key={p.value}
             variant={weeks === p.value ? "default" : "outline"}
             size="sm"
             className="h-8 px-3 text-xs"
-            onClick={() => onWeeksChange(p.value)}
+            onClick={() => {
+              setShowCustom(false);
+              onWeeksChange(p.value);
+            }}
           >
             {p.label}
           </Button>
         ))}
+        <Button
+          variant={!isPreset || showCustom ? "default" : "outline"}
+          size="sm"
+          className="h-8 px-3 text-xs"
+          onClick={() => setShowCustom(!showCustom)}
+        >
+          커스텀
+        </Button>
+
+        {showCustom && (
+          <div className="flex items-center gap-1.5 ml-1">
+            <select
+              className="h-8 rounded-md border bg-background px-2 text-xs"
+              value={customWeeks}
+              onChange={(e) => setCustomWeeks(Number(e.target.value))}
+            >
+              {Array.from({ length: 48 }, (_, i) => i + 4).map((w) => (
+                <option key={w} value={w}>
+                  {w}주
+                </option>
+              ))}
+            </select>
+            <Button
+              size="sm"
+              className="h-8 px-3 text-xs"
+              onClick={() => {
+                onWeeksChange(customWeeks);
+              }}
+            >
+              적용
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -12,8 +12,6 @@ WITH zone_master AS (
 click_base AS (
   SELECT
     DATE_TRUNC(DATE(g.event_timestamp, 'Asia/Seoul'), ISOWEEK) AS iso_week_start,
-    EXTRACT(ISOYEAR FROM DATE(g.event_timestamp, 'Asia/Seoul')) AS iso_year,
-    EXTRACT(ISOWEEK FROM DATE(g.event_timestamp, 'Asia/Seoul')) AS iso_week_num,
     TIMESTAMP(g.event_timestamp) AS click_ts,
     g.member_id,
     z.region1,

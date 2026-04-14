@@ -20,8 +20,12 @@ interface CvrTrendChartProps {
   data: FunnelTrendRow[];
 }
 
-function formatWeekLabel(yearWeek: string): string {
-  return yearWeek.split("-")[1] ?? yearWeek;
+// "2026-W15" → "W15", but show year prefix at year boundaries
+function formatWeekLabel(yearWeek: string, data: FunnelTrendRow[]): string {
+  const [year, week] = yearWeek.split("-");
+  const years = new Set(data.map((r) => r.year_week.split("-")[0]));
+  if (years.size > 1) return `${year?.slice(2)}-${week}`;
+  return week ?? yearWeek;
 }
 
 export function CvrTrendChart({ data }: CvrTrendChartProps) {
@@ -29,7 +33,7 @@ export function CvrTrendChart({ data }: CvrTrendChartProps) {
   const colors = getChartColors(resolvedTheme === "dark");
 
   const chartData = data.map((r) => ({
-    label: formatWeekLabel(r.year_week),
+    label: formatWeekLabel(r.year_week, data),
     click_member_cnt: r.click_member_cnt,
     converted_member_cnt: r.converted_member_cnt,
     cvr: Math.round(r.cvr * 1000) / 10,
