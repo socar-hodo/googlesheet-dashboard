@@ -66,11 +66,12 @@ export function CvrTrendChart({ data }: CvrTrendChartProps) {
               domain={[0, "auto"]}
             />
             <Tooltip
-              formatter={(value: number, name: string) => {
-                if (name === "cvr") return [`${value.toFixed(1)}%`, "CVR"];
+              formatter={(value, name) => {
+                const v = Number(value);
+                if (name === "cvr") return [`${v.toFixed(1)}%`, "CVR"];
                 if (name === "click_member_cnt")
-                  return [value.toLocaleString(), "클릭유저"];
-                return [value.toLocaleString(), "전환유저"];
+                  return [v.toLocaleString(), "클릭유저"];
+                return [v.toLocaleString(), "전환유저"];
               }}
               contentStyle={{
                 backgroundColor: colors.tooltip.bg,
