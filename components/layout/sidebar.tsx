@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   MapPin,
   Menu,
+  MousePointerClick,
   SearchCheck,
   TrendingUp,
   X,
@@ -24,6 +25,7 @@ const navItems = [
   { icon: ArrowLeftRight, label: "재배치 추천", href: "/relocation" },
   { icon: TrendingUp, label: "ROAS 시뮬레이터", href: "/roas" },
   { icon: MapPin, label: "존 시뮬레이터", href: "/zone" },
+  { icon: MousePointerClick, label: "전환율 퍼널", href: "/funnel" },
   { icon: SearchCheck, label: "워크스페이스", href: "/work-history" },
 ];
 
