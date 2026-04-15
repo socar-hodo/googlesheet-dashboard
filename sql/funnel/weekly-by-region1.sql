@@ -1,5 +1,5 @@
 -- 전국 시/도별 주간 존클릭→예약 전환율
--- params: {weeks} (정수, 조회 주차 수)
+-- params: {weeks} (정수, 조회 주차 수 — 반드시 Math.max(1, Math.min(52, N))로 검증된 값만 전달)
 
 WITH zone_master AS (
   SELECT
@@ -23,6 +23,8 @@ click_base AS (
              DATE_TRUNC(CURRENT_DATE('Asia/Seoul'), ISOWEEK),
              INTERVAL ({weeks} + 1) WEEK
            )
+    AND DATE(g.event_timestamp, 'Asia/Seoul')
+        < DATE_TRUNC(CURRENT_DATE('Asia/Seoul'), ISOWEEK)
     AND g.member_id IS NOT NULL
 ),
 
@@ -40,7 +42,11 @@ reservation_base AS (
              DATE_TRUNC(CURRENT_DATE('Asia/Seoul'), ISOWEEK),
              INTERVAL ({weeks} + 1) WEEK
            )
+    AND DATE(r.created_at, 'Asia/Seoul')
+        < DATE_TRUNC(CURRENT_DATE('Asia/Seoul'), ISOWEEK)
     AND r.member_id IS NOT NULL
+    AND r.state IN (3, 5)
+    AND r.member_imaginary IN (0, 9)
     AND r.channel NOT IN (
       'admin', 'system', 'alliance/naver_place', 'alliance/web_partners',
       'test_drive/owned', 'mobile/web', 'mobile/ios/web/korailtalk',

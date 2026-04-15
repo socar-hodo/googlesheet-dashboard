@@ -107,14 +107,14 @@ export function DetailTable({
             </tr>
           </thead>
           <tbody>
-            {sorted.map((row) => {
+            {sorted.map((row, idx) => {
               const clicksPerUser =
                 row.click_member_cnt > 0
                   ? (row.zone_click_cnt / row.click_member_cnt).toFixed(1)
                   : "0.0";
               return (
                 <tr
-                  key={row.region}
+                  key={`${row.region}-${idx}`}
                   className={`border-b transition-colors last:border-0 ${
                     canDrillDown
                       ? "cursor-pointer hover:bg-muted/50"

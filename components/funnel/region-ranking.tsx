@@ -26,7 +26,7 @@ export function RegionRanking({ data, canDrillDown = true, onRegionClick }: Regi
           const Tag = canDrillDown ? "button" : "div";
           return (
             <Tag
-              key={row.region}
+              key={`${row.region}-${i}`}
               type={canDrillDown ? "button" : undefined}
               className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors ${canDrillDown ? "cursor-pointer hover:bg-muted/50" : ""}`}
               onClick={canDrillDown ? () => onRegionClick?.(row.region) : undefined}

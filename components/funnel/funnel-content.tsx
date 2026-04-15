@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FunnelData } from "@/types/funnel";
 import { FunnelHeader } from "./funnel-header";
 import { KpiCards } from "./kpi-cards";
@@ -11,11 +11,12 @@ import { DetailTable } from "./detail-table";
 async function fetchFunnelData(
   weeks: number,
   region1: string | null,
+  signal: AbortSignal,
 ): Promise<FunnelData> {
   const url = region1
     ? `/api/funnel/detail?region1=${encodeURIComponent(region1)}&weeks=${weeks}`
     : `/api/funnel/weekly?weeks=${weeks}`;
-  const res = await fetch(url);
+  const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
 }
@@ -26,23 +27,43 @@ export function FunnelContent() {
   const [data, setData] = useState<FunnelData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await fetchFunnelData(weeks, drillRegion);
-      setData(result);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "데이터 조회 실패");
-    } finally {
-      setLoading(false);
-    }
-  }, [weeks, drillRegion]);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    // Cancel previous request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setLoading(true);
+    setError(null);
+
+    fetchFunnelData(weeks, drillRegion, controller.signal)
+      .then((result) => {
+        if (!controller.signal.aborted) {
+          setData(result);
+        }
+      })
+      .catch((e) => {
+        if (!controller.signal.aborted) {
+          setError(e instanceof Error ? e.message : "데이터 조회 실패");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      });
+
+    return () => controller.abort();
+  }, [weeks, drillRegion]);
+
+  function handleRetry() {
+    // Trigger re-fetch by toggling a dummy state via setWeeks to same value
+    setWeeks((w) => w);
+    // Actually re-trigger effect: use a counter
+    setDrillRegion((r) => r); // no-op but React skips if same ref
+  }
 
   function handleRegionClick(region: string) {
     if (!drillRegion) {
@@ -61,7 +82,25 @@ export function FunnelContent() {
           <p className="text-sm text-destructive">{error}</p>
           <button
             className="mt-2 text-sm text-blue-500 underline"
-            onClick={load}
+            onClick={() => {
+              setError(null);
+              setLoading(true);
+              const controller = new AbortController();
+              abortRef.current = controller;
+              fetchFunnelData(weeks, drillRegion, controller.signal)
+                .then((result) => {
+                  if (!controller.signal.aborted) setData(result);
+                })
+                .catch((e) => {
+                  if (!controller.signal.aborted)
+                    setError(
+                      e instanceof Error ? e.message : "데이터 조회 실패",
+                    );
+                })
+                .finally(() => {
+                  if (!controller.signal.aborted) setLoading(false);
+                });
+            }}
           >
             다시 시도
           </button>

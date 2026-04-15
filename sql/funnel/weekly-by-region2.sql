@@ -1,5 +1,5 @@
 -- 특정 시/도 내 구/군별 주간 존클릭→예약 전환율
--- params: {weeks} (정수), @region1 (BQ 파라미터, STRING)
+-- params: {weeks} (정수 — 반드시 검증된 값만 전달), @region1 (BQ 파라미터, STRING)
 
 WITH zone_master AS (
   SELECT
@@ -9,6 +9,7 @@ WITH zone_master AS (
   FROM `socar-data.tianjin_replica.carzone_info`
   WHERE imaginary = 0
     AND region1 = @region1
+    AND region2 IS NOT NULL
 ),
 
 click_base AS (
@@ -25,6 +26,8 @@ click_base AS (
              DATE_TRUNC(CURRENT_DATE('Asia/Seoul'), ISOWEEK),
              INTERVAL ({weeks} + 1) WEEK
            )
+    AND DATE(g.event_timestamp, 'Asia/Seoul')
+        < DATE_TRUNC(CURRENT_DATE('Asia/Seoul'), ISOWEEK)
     AND g.member_id IS NOT NULL
 ),
 
@@ -42,7 +45,11 @@ reservation_base AS (
              DATE_TRUNC(CURRENT_DATE('Asia/Seoul'), ISOWEEK),
              INTERVAL ({weeks} + 1) WEEK
            )
+    AND DATE(r.created_at, 'Asia/Seoul')
+        < DATE_TRUNC(CURRENT_DATE('Asia/Seoul'), ISOWEEK)
     AND r.member_id IS NOT NULL
+    AND r.state IN (3, 5)
+    AND r.member_imaginary IN (0, 9)
     AND r.channel NOT IN (
       'admin', 'system', 'alliance/naver_place', 'alliance/web_partners',
       'test_drive/owned', 'mobile/web', 'mobile/ios/web/korailtalk',

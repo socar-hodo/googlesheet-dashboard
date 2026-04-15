@@ -19,6 +19,10 @@ export function loadFunnelSql(filename: string): string {
   return _readFunnelSqlFile(filename);
 }
 
+/**
+ * SQL 내 {param} 플레이스홀더를 치환한다.
+ * ⚠️ 호출 측에서 반드시 값을 사전 검증해야 한다 (숫자는 clamp, 문자열은 BQ 파라미터 사용 권장).
+ */
 export function replaceSqlParams(
   sql: string,
   params: Record<string, string>,
@@ -42,6 +46,8 @@ export function safeFloat(v: unknown): number {
 
 // ── 응답 빌드 공통 로직 ──────────────────────────────────────────
 
+import type { FunnelData } from "@/types/funnel";
+
 interface RawFunnelRow {
   year_week: string;
   zone_click_cnt: number;
@@ -52,45 +58,21 @@ interface RawFunnelRow {
   [key: string]: unknown;
 }
 
-export interface FunnelResponse {
-  summary: {
-    total_click_members: number;
-    total_converted_members: number;
-    cvr: number;
-    clicks_per_user: number;
-    wow_click_members: number;
-    wow_converted_members: number;
-    wow_cvr: number;
+function emptyResponse(): FunnelData {
+  return {
+    summary: {
+      total_click_members: 0,
+      total_converted_members: 0,
+      cvr: 0,
+      clicks_per_user: 0,
+      wow_click_members: 0,
+      wow_converted_members: 0,
+      wow_cvr: 0,
+    },
+    trend: [],
+    ranking: [],
   };
-  trend: {
-    year_week: string;
-    click_member_cnt: number;
-    converted_member_cnt: number;
-    cvr: number;
-  }[];
-  ranking: {
-    region: string;
-    click_member_cnt: number;
-    converted_member_cnt: number;
-    zone_click_cnt: number;
-    cvr: number;
-    wow_cvr: number;
-  }[];
 }
-
-const EMPTY_RESPONSE: FunnelResponse = {
-  summary: {
-    total_click_members: 0,
-    total_converted_members: 0,
-    cvr: 0,
-    clicks_per_user: 0,
-    wow_click_members: 0,
-    wow_converted_members: 0,
-    wow_cvr: 0,
-  },
-  trend: [],
-  ranking: [],
-};
 
 /**
  * BQ raw rows를 FunnelResponse로 변환한다.
@@ -101,8 +83,8 @@ const EMPTY_RESPONSE: FunnelResponse = {
 export function buildFunnelResponse(
   rows: Record<string, unknown>[],
   regionField: string,
-): FunnelResponse {
-  if (rows.length === 0) return EMPTY_RESPONSE;
+): FunnelData {
+  if (rows.length === 0) return emptyResponse();
 
   const typed = rows as RawFunnelRow[];
   const allWeeks = [...new Set(typed.map((r) => r.year_week))].sort();
