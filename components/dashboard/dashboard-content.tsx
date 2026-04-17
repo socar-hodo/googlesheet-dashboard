@@ -5,6 +5,7 @@
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useState, useCallback, useMemo } from 'react';
 import type { TeamDashboardData } from '@/types/dashboard';
+import { aggregateKpi } from '@/lib/kpi-utils';
 import {
   type PeriodKey,
   type DateRange,
@@ -137,6 +138,73 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
     : '전국';
   const forecastChartTitle = regionLabel;
 
+  /** KPI 집계 — 현재 기간 SUM/AVG + 직전 동일 길이 기간 비교 */
+  const kpi = useMemo(() => {
+    if (tab === 'forecast') return null;
+    if (tab === 'daily') {
+      const range = getDateRange(period, undefined, customRange);
+      const currentRecords = filterDailyByPeriod(data.daily, range);
+      // 직전 같은 길이 기간 계산
+      const startDate = new Date(range.start + 'T00:00:00');
+      const endDate = new Date(range.end + 'T00:00:00');
+      const lengthDays = Math.round((endDate.getTime() - startDate.getTime()) / 86400000) + 1;
+      const prevEnd = new Date(startDate);
+      prevEnd.setDate(prevEnd.getDate() - 1);
+      const prevStart = new Date(prevEnd);
+      prevStart.setDate(prevStart.getDate() - (lengthDays - 1));
+      const prevRange = {
+        start: toLocalDateStr(prevStart),
+        end: toLocalDateStr(prevEnd),
+      };
+      const previousRecords = filterDailyByPeriod(data.daily, prevRange);
+
+      const sparklineN = 14;
+      const sparkSrc = [...data.daily].sort((a, b) => a.date.localeCompare(b.date)).slice(-sparklineN);
+
+      return {
+        current: aggregateKpi(currentRecords),
+        previous: previousRecords.length > 0 ? aggregateKpi(previousRecords) : null,
+        sparklines: {
+          revenue: sparkSrc.map((d) => d.revenue),
+          revenuePerCar: sparkSrc.map((d) => d.revenuePerCar),
+          gpm: sparkSrc.map((d) => (d.revenue > 0 ? (d.profit / d.revenue) * 100 : 0)),
+          usageCountPerCar: sparkSrc.map((d) => d.usageCountPerCar),
+          utilizationRate: sparkSrc.map((d) => d.utilizationRate),
+          usageHoursPerCar: sparkSrc.map((d) => d.usageHoursPerCar),
+        },
+        hasData: currentRecords.length > 0,
+      };
+    }
+    // weekly
+    const weeklyPeriod = (period === 'last-month' ? 'last-month' : 'this-month') as
+      | 'this-month'
+      | 'last-month';
+    const currentRecords = filterWeeklyByPeriod(data.weekly, weeklyPeriod);
+    // 직전 같은 개수 주차
+    const currentFirstIdx = currentRecords.length > 0
+      ? data.weekly.findIndex((w) => w.week === currentRecords[0].week && w.isoWeek === currentRecords[0].isoWeek)
+      : -1;
+    const previousRecords = currentFirstIdx > 0
+      ? data.weekly.slice(Math.max(0, currentFirstIdx - currentRecords.length), currentFirstIdx)
+      : [];
+
+    const sparkSrc = [...data.weekly].sort((a, b) => a.isoWeek - b.isoWeek).slice(-8);
+
+    return {
+      current: aggregateKpi(currentRecords),
+      previous: previousRecords.length > 0 ? aggregateKpi(previousRecords) : null,
+      sparklines: {
+        revenue: sparkSrc.map((w) => w.revenue),
+        revenuePerCar: sparkSrc.map((w) => w.revenuePerCar),
+        gpm: sparkSrc.map((w) => (w.revenue > 0 ? (w.profit / w.revenue) * 100 : 0)),
+        usageCountPerCar: sparkSrc.map((w) => w.usageCountPerCar),
+        utilizationRate: sparkSrc.map((w) => w.utilizationRate),
+        usageHoursPerCar: sparkSrc.map((w) => w.usageHoursPerCar),
+      },
+      hasData: currentRecords.length > 0,
+    };
+  }, [tab, data, period, customRange]);
+
   return (
     <div className="space-y-6">
       <DashboardHeader
@@ -187,7 +255,14 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
         <>
           <section>
             <h2 className="mb-4 text-lg font-semibold text-foreground">핵심 지표 · {regionLabel}</h2>
-            <KpiCards data={filteredData} fullData={data} tab={tab} />
+            {kpi && (
+              <KpiCards
+                current={kpi.current}
+                previous={kpi.previous}
+                sparklines={kpi.sparklines}
+                hasData={kpi.hasData}
+              />
+            )}
           </section>
 
           <ChartsSection data={filteredData} tab={tab} />

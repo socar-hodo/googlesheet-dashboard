@@ -1,8 +1,55 @@
 /**
  * KPI 계산/포맷팅 유틸리티
  *
- * 기간 비교 델타 계산, 색상 클래스 결정, 표시 문자열 포맷팅 함수 모음.
+ * 기간 집계, 기간 비교 델타 계산, 색상 클래스 결정, 표시 문자열 포맷팅 함수 모음.
  */
+
+/** KPI 집계값 — 기간 단위 합계/평균 */
+export interface KpiAggregate {
+  revenue: number;           // SUM
+  profit: number;            // SUM
+  gpm: number;               // SUM(profit)/SUM(revenue) * 100
+  revenuePerCar: number;     // AVG(revenuePerCar)
+  usageCountPerCar: number;  // AVG
+  usageHoursPerCar: number;  // AVG
+  utilizationRate: number;   // AVG
+}
+
+interface AggInput {
+  revenue: number;
+  profit: number;
+  revenuePerCar: number;
+  usageCountPerCar: number;
+  usageHoursPerCar: number;
+  utilizationRate: number;
+}
+
+/**
+ * 기간 내 레코드들을 집계:
+ * - 매출/손익은 SUM, GPM은 SUM(profit)/SUM(revenue)
+ * - 대당값과 가동률은 AVG (rate-like 특성)
+ */
+export function aggregateKpi(records: AggInput[]): KpiAggregate {
+  const len = records.length;
+  if (len === 0) {
+    return {
+      revenue: 0, profit: 0, gpm: 0,
+      revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0,
+      utilizationRate: 0,
+    };
+  }
+  const revenue = records.reduce((s, r) => s + r.revenue, 0);
+  const profit = records.reduce((s, r) => s + r.profit, 0);
+  return {
+    revenue,
+    profit,
+    gpm: revenue > 0 ? (profit / revenue) * 100 : 0,
+    revenuePerCar: records.reduce((s, r) => s + r.revenuePerCar, 0) / len,
+    usageCountPerCar: records.reduce((s, r) => s + r.usageCountPerCar, 0) / len,
+    usageHoursPerCar: records.reduce((s, r) => s + r.usageHoursPerCar, 0) / len,
+    utilizationRate: records.reduce((s, r) => s + r.utilizationRate, 0) / len,
+  };
+}
 
 /**
  * 현재값과 직전값의 델타를 계산한다.
