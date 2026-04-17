@@ -20,6 +20,7 @@ import {
   buildRevenueBreakdownWeekly,
   buildCostBreakdownDaily,
   buildCostBreakdownWeekly,
+  buildForecastRows,
 } from "./dashboard-bq";
 import {
   loadCustomerTypeSql,
@@ -41,6 +42,19 @@ function defaultRange(): { start: string; end: string } {
   };
 }
 
+// 예측 조회 기간: 지난 60일 ~ 45일 후 (미래 예약 포함)
+function forecastRange(): { start: string; end: string } {
+  const today = new Date();
+  const start = new Date(today);
+  start.setDate(start.getDate() - 60);
+  const end = new Date(today);
+  end.setDate(end.getDate() + 45);
+  return {
+    start: start.toISOString().slice(0, 10),
+    end: end.toISOString().slice(0, 10),
+  };
+}
+
 /**
  * 팀 대시보드 전체 데이터를 BigQuery에서 가져온다.
  *
@@ -55,6 +69,8 @@ export async function getTeamDashboardData(): Promise<TeamDashboardData> {
 
   const { start, end } = defaultRange();
   const params = { start_date: start, end_date: end };
+  const fcRange = forecastRange();
+  const fcParams = { start_date: fcRange.start, end_date: fcRange.end };
 
   try {
     const dailyMetricsSql = replaceSqlParams(
@@ -65,6 +81,10 @@ export async function getTeamDashboardData(): Promise<TeamDashboardData> {
       loadDashboardSql("weekly-metrics.sql"),
       params,
     );
+    const forecastSql = replaceSqlParams(
+      loadDashboardSql("forecast-daily.sql"),
+      fcParams,
+    );
     const customerDailySql = replaceSqlParams(
       loadCustomerTypeSql("daily.sql"),
       params,
@@ -74,13 +94,19 @@ export async function getTeamDashboardData(): Promise<TeamDashboardData> {
       params,
     );
 
-    const [dailyRows, weeklyRows, customerDailyRows, customerWeeklyRows] =
-      await Promise.all([
-        runParameterizedQuery(dailyMetricsSql),
-        runParameterizedQuery(weeklyMetricsSql),
-        runParameterizedQuery(customerDailySql),
-        runParameterizedQuery(customerWeeklySql),
-      ]);
+    const [
+      dailyRows,
+      weeklyRows,
+      forecastRows,
+      customerDailyRows,
+      customerWeeklyRows,
+    ] = await Promise.all([
+      runParameterizedQuery(dailyMetricsSql),
+      runParameterizedQuery(weeklyMetricsSql),
+      runParameterizedQuery(forecastSql),
+      runParameterizedQuery(customerDailySql),
+      runParameterizedQuery(customerWeeklySql),
+    ]);
 
     const daily = dailyRows ? buildDailyRecords(dailyRows) : [];
     const weekly = weeklyRows ? buildWeeklyRecords(weeklyRows) : [];
@@ -103,6 +129,11 @@ export async function getTeamDashboardData(): Promise<TeamDashboardData> {
       ? buildCustomerTypeWeekly(customerWeeklyRows)
       : [];
 
+    // 예측 탭: 사전(forecast)은 실적/예상 혼합, target/achievement은 BQ 소스 없음 → 0 스텁
+    const forecastDaily = forecastRows
+      ? buildForecastRows(forecastRows)
+      : [];
+
     return {
       daily,
       weekly,
@@ -112,8 +143,7 @@ export async function getTeamDashboardData(): Promise<TeamDashboardData> {
       revenueBreakdownWeekly,
       costBreakdownDaily,
       costBreakdownWeekly,
-      // 목표 관리용 BQ 소스 미존재 — 별도 feature로 처리 필요
-      forecastDaily: [],
+      forecastDaily,
       fetchedAt: new Date().toISOString(),
     };
   } catch (error) {

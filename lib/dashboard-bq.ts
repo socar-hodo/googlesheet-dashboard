@@ -7,6 +7,7 @@ import type {
   WeeklyRecord,
   RevenueBreakdownRow,
   CostBreakdownRow,
+  ForecastRow,
 } from "@/types/dashboard";
 
 // ── SQL file cache ──────────────────────────────────────────────────
@@ -114,6 +115,25 @@ export function buildCostBreakdownDaily(
     chargeTransportCost: 0,
     callTransportCost: 0,
     zoneOneWayTransportCost: 0,
+  }));
+}
+
+// 사전 매출: actual 우선, 미래는 expected 폴백
+// target/achievement은 BQ 목표 소스 부재로 0 스텁
+export function buildForecastRows(
+  rows: Record<string, unknown>[],
+): ForecastRow[] {
+  return rows.map((r) => ({
+    date: safeDate(r.d),
+    ulsanTarget: 0,
+    ulsanForecast: safeNumber(r.ulsan_forecast),
+    ulsanAchievement: 0,
+    gyeongnamTarget: 0,
+    gyeongnamForecast: safeNumber(r.gyeongnam_forecast),
+    gyeongnamAchievement: 0,
+    combinedTarget: 0,
+    combinedForecast: safeNumber(r.combined_forecast),
+    combinedAchievement: 0,
   }));
 }
 
