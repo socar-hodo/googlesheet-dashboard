@@ -23,7 +23,6 @@ export interface WeeklyRecord {
   usageHours: number;       // 총 이용시간 (시간)
   usageCount: number;       // 총 이용건수
   utilizationRate: number;  // 가동률 (%, 0-100 범위)
-  weeklyTarget: number;     // 주차 목표 (원) — Weekly 전용 필드
   revenuePerCar: number;    // 대당 매출 (원/대)
   usageCountPerCar: number; // 대당 이용건수 (건/대, 소수 가능)
   usageHoursPerCar: number; // 대당 이용시간 (시간/대, 소수 가능)
@@ -62,18 +61,10 @@ export interface CostBreakdownRow {
   zoneOneWayTransportCost: number;  // 존편도운반비 (드릴다운 세부)
 }
 
-/** 예측 데이터 한 행 — FORECAST 시트 (일별, 1행 헤더 구조) */
+/** 일별 사전 매출 — actual(과거) 우선, expected(미래) 폴백 */
 export interface ForecastRow {
-  date: string;                  // d 컬럼 (ISO YYYY-MM-DD)
-  ulsanTarget: number;           // 울산광역시(목표)
-  ulsanForecast: number;         // 울산광역시(사전)
-  ulsanAchievement: number;      // 울산광역시(달성)
-  gyeongnamTarget: number;       // 경상남도(목표)
-  gyeongnamForecast: number;     // 경상남도(사전)
-  gyeongnamAchievement: number;  // 경상남도(달성)
-  combinedTarget: number;        // 경남+울산(목표)
-  combinedForecast: number;      // 경남+울산(사전)
-  combinedAchievement: number;   // 경남+울산(달성)
+  date: string;            // YYYY-MM-DD
+  forecastRevenue: number; // 사전 매출 (원)
 }
 
 /** 지역 랭킹 한 행 — region1 또는 region2 레벨 */

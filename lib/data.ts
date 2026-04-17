@@ -5,10 +5,6 @@
 // 공통 필터:
 //   - car_sharing_type IN ('socar', 'zplus')  — 카셰어링 차량만
 //   - car_state IN ('운영', '수리')           — 실제 운영 차량만
-//
-// 예외:
-//   - weeklyTarget, forecast의 target/achievement은 BQ 목표 소스 부재로 0 스텁
-//     추후 목표 관리용 테이블 또는 API가 생기면 해당 로더를 추가한다.
 import type { TeamDashboardData } from "@/types/dashboard";
 import { isBigQueryConfigured, runParameterizedQuery } from "./bigquery";
 import { replaceSqlParams } from "./funnel";
@@ -157,7 +153,7 @@ export async function getTeamDashboardData(): Promise<TeamDashboardData> {
       ? buildCustomerTypeWeekly(customerWeeklyRows)
       : [];
 
-    // 예측 탭: 사전(forecast)은 실적/예상 혼합, target/achievement은 BQ 소스 없음 → 0 스텁
+    // 예측 탭: 사전(forecast)은 과거 actual + 미래 expected 혼합
     const forecastDaily = forecastRows
       ? buildForecastRows(forecastRows)
       : [];

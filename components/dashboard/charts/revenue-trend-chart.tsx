@@ -1,12 +1,11 @@
 "use client";
 // components/dashboard/charts/revenue-trend-chart.tsx
-// CHART-01: 매출 추이 — ComposedChart (Bar + 조건부 Line)
+// 매출 추이 Bar 차트
 
 import { useRef } from "react";
 import {
-  ComposedChart,
+  BarChart,
   Bar,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -47,8 +46,6 @@ export function RevenueTrendChart({ records, tab }: RevenueTrendChartProps) {
         ? formatDailyLabel((r as DailyRecord).date)
         : formatWeeklyLabel((r as WeeklyRecord).week),
     revenue: r.revenue,
-    target:
-      tab === "weekly" ? (r as WeeklyRecord).weeklyTarget : undefined,
   }));
 
   return (
@@ -60,7 +57,7 @@ export function RevenueTrendChart({ records, tab }: RevenueTrendChartProps) {
       <CardContent>
         <div ref={chartRef} role="img" aria-label="매출 추이 차트">
         <ResponsiveContainer width="100%" height={280} minWidth={0}>
-            <ComposedChart
+            <BarChart
               data={chartData}
               margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
             >
@@ -77,9 +74,9 @@ export function RevenueTrendChart({ records, tab }: RevenueTrendChartProps) {
                 width={55}
               />
               <Tooltip
-                formatter={(value, name) => [
+                formatter={(value) => [
                   `₩${Math.round(Number(value) / 10000).toLocaleString()}만`,
-                  name === "revenue" ? "실적" : "목표",
+                  "매출",
                 ]}
                 labelFormatter={(label) => `${label}`}
                 contentStyle={{
@@ -95,20 +92,10 @@ export function RevenueTrendChart({ records, tab }: RevenueTrendChartProps) {
               <Bar
                 dataKey="revenue"
                 fill={colors.chart1}
-                name="revenue"
+                name="매출"
                 radius={[2, 2, 0, 0]}
               />
-              {tab === "weekly" && (
-                <Line
-                  type="monotone"
-                  dataKey="target"
-                  stroke={colors.chart2}
-                  strokeWidth={2}
-                  dot={{ fill: colors.chart2, r: 3 }}
-                  name="target"
-                />
-              )}
-            </ComposedChart>
+            </BarChart>
         </ResponsiveContainer>
         </div>
       </CardContent>

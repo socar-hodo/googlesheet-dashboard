@@ -4,7 +4,6 @@
 import { TrendingUp, DollarSign, Car, Users, Activity, Clock } from 'lucide-react';
 import type { TeamDashboardData } from '@/types/dashboard';
 import {
-  calcAchievementRate,
   calcDelta,
   formatKpiValue,
   formatDelta,
@@ -124,13 +123,10 @@ export function KpiCards({ data, fullData, tab }: KpiCardsProps) {
     return <div><p className="text-muted-foreground">주차별 데이터가 없습니다.</p><p className="mt-1 text-xs text-muted-foreground/70">기간을 변경하거나 데이터 소스를 확인하세요.</p></div>;
   }
 
-  // 매출만 weeklyTarget 대비 달성률 표시, 나머지는 달성률 없음
   const cards = [
     {
       title: '매출',
       value: formatKpiValue(current.revenue, '원'),
-      target: formatKpiValue(current.weeklyTarget, '원'),
-      achievementRate: calcAchievementRate(current.revenue, current.weeklyTarget),
       delta: previous ? calcDelta(current.revenue, previous.revenue) : null,
       unit: '원' as const,
       icon: <TrendingUp className="h-4 w-4" />,
@@ -139,8 +135,6 @@ export function KpiCards({ data, fullData, tab }: KpiCardsProps) {
     {
       title: '대당 매출',
       value: formatKpiValue(current.revenuePerCar, '원/대'),
-      target: undefined as string | undefined,
-      achievementRate: undefined as number | undefined,
       delta: previous ? calcDelta(current.revenuePerCar, previous.revenuePerCar) : null,
       unit: '원/대' as const,
       icon: <Car className="h-4 w-4" />,
@@ -152,8 +146,6 @@ export function KpiCards({ data, fullData, tab }: KpiCardsProps) {
         current.revenue > 0 ? (current.profit / current.revenue) * 100 : 0,
         '%'
       ),
-      target: undefined as string | undefined,
-      achievementRate: undefined as number | undefined,
       delta: previous
         ? calcDelta(
             current.revenue > 0 ? (current.profit / current.revenue) * 100 : 0,
@@ -169,8 +161,6 @@ export function KpiCards({ data, fullData, tab }: KpiCardsProps) {
     {
       title: '대당 이용건수',
       value: formatKpiValue(current.usageCountPerCar, '건/대'),
-      target: undefined as string | undefined,
-      achievementRate: undefined as number | undefined,
       delta: previous ? calcDelta(current.usageCountPerCar, previous.usageCountPerCar) : null,
       unit: '건/대' as const,
       icon: <Users className="h-4 w-4" />,
@@ -179,8 +169,6 @@ export function KpiCards({ data, fullData, tab }: KpiCardsProps) {
     {
       title: '가동률',
       value: formatKpiValue(current.utilizationRate, '%'),
-      target: undefined as string | undefined,
-      achievementRate: undefined as number | undefined,
       delta: previous ? calcDelta(current.utilizationRate, previous.utilizationRate) : null,
       unit: '%' as const,
       icon: <Activity className="h-4 w-4" />,
@@ -189,8 +177,6 @@ export function KpiCards({ data, fullData, tab }: KpiCardsProps) {
     {
       title: '대당 이용시간',
       value: formatKpiValue(current.usageHoursPerCar, '시간/대'),
-      target: undefined as string | undefined,
-      achievementRate: undefined as number | undefined,
       delta: previous ? calcDelta(current.usageHoursPerCar, previous.usageHoursPerCar) : null,
       unit: '시간/대' as const,
       icon: <Clock className="h-4 w-4" />,
@@ -205,8 +191,6 @@ export function KpiCards({ data, fullData, tab }: KpiCardsProps) {
           key={card.title}
           title={card.title}
           value={card.value}
-          target={card.target}
-          achievementRate={card.achievementRate}
           icon={card.icon}
           deltaText={card.delta ? formatDelta(card.delta.percent, card.delta.absolute, card.unit) : undefined}
           deltaColorClass={card.delta ? getDeltaColorClass(card.delta.percent) : undefined}

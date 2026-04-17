@@ -111,29 +111,24 @@ describe('dailyToRows — DailyRecord 변환', () => {
 
 describe('weeklyToRows — WeeklyRecord 변환', () => {
   const records: WeeklyRecord[] = [
-    { week: '2월 1주차', revenue: 3000000, profit: 200000, usageHours: 40, usageCount: 25, utilizationRate: 75, isoWeek: 0, weeklyTarget: 5000000, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
-    { week: '2월 2주차', revenue: 4000000, profit: 300000, usageHours: 45, usageCount: 28, utilizationRate: 82, isoWeek: 0, weeklyTarget: 5000000, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
+    { week: '2월 1주차', revenue: 3000000, profit: 200000, usageHours: 40, usageCount: 25, utilizationRate: 75, isoWeek: 0, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
+    { week: '2월 2주차', revenue: 4000000, profit: 300000, usageHours: 45, usageCount: 28, utilizationRate: 82, isoWeek: 0, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
   ];
 
   it('입력 레코드 수와 동일한 행 수를 반환한다', () => {
     expect(weeklyToRows(records)).toHaveLength(2);
   });
 
-  it('첫 번째 행의 키 목록이 올바르다 (주차,매출,대당매출,손익,대당이용시간,대당이용건수,가동률,목표)', () => {
+  it('첫 번째 행의 키 목록이 올바르다 (주차,매출,대당매출,손익,대당이용시간,대당이용건수,가동률)', () => {
     const rows = weeklyToRows(records);
     const keys = Object.keys(rows[0]);
-    expect(keys).toEqual(['주차', '매출', '대당 매출', '손익', '대당 이용시간', '대당 이용건수', '가동률', '목표']);
+    expect(keys).toEqual(['주차', '매출', '대당 매출', '손익', '대당 이용시간', '대당 이용건수', '가동률']);
   });
 
   it('주차 필드 값이 원본 week 문자열과 동일하다', () => {
     const rows = weeklyToRows(records);
     expect(rows[0]['주차']).toBe('2월 1주차');
     expect(rows[1]['주차']).toBe('2월 2주차');
-  });
-
-  it('목표 필드가 weeklyTarget 원본 숫자와 동일하다', () => {
-    const rows = weeklyToRows(records);
-    expect(rows[0]['목표']).toBe(5000000);
   });
 
   it('빈 배열을 전달하면 빈 배열을 반환한다', () => {

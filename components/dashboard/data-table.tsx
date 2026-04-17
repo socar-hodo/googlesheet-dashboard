@@ -280,7 +280,6 @@ function WeeklyTable({ records }: { records: WeeklyRecord[] }) {
         case "usageHoursPerCar": return r.usageHoursPerCar;
         case "usageCountPerCar": return r.usageCountPerCar;
         case "utilizationRate": return r.utilizationRate;
-        case "weeklyTarget": return r.weeklyTarget;
         default: return 0;
       }
     };
@@ -297,7 +296,6 @@ function WeeklyTable({ records }: { records: WeeklyRecord[] }) {
 
   const sumRevenue = records.reduce((acc, r) => acc + r.revenue, 0);
   const sumProfit = records.reduce((acc, r) => acc + r.profit, 0);
-  const sumTarget = records.reduce((acc, r) => acc + r.weeklyTarget, 0);
 
   const len = records.length;
   const avgRevenue = len > 0 ? sumRevenue / len : 0;
@@ -308,7 +306,6 @@ function WeeklyTable({ records }: { records: WeeklyRecord[] }) {
     len > 0
       ? records.reduce((acc, r) => acc + r.utilizationRate, 0) / len
       : 0;
-  const avgTarget = len > 0 ? sumTarget / len : 0;
   const totalGpm = calcGpm(sumProfit, sumRevenue);
   const avgGpm = len > 0 ? gpms.reduce((a, b) => a + b, 0) / len : 0;
 
@@ -325,7 +322,6 @@ function WeeklyTable({ records }: { records: WeeklyRecord[] }) {
             <SortableHead column="usageHoursPerCar" sort={sort} onSort={handleSort} className="text-right">대당 이용시간</SortableHead>
             <SortableHead column="usageCountPerCar" sort={sort} onSort={handleSort} className="text-right">대당 이용건수</SortableHead>
             <SortableHead column="utilizationRate" sort={sort} onSort={handleSort} className="text-right">가동률</SortableHead>
-            <SortableHead column="weeklyTarget" sort={sort} onSort={handleSort} className="text-right">목표</SortableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -355,7 +351,6 @@ function WeeklyTable({ records }: { records: WeeklyRecord[] }) {
                 <TableCell className="text-right">{formatHoursPerCar(record.usageHoursPerCar)}</TableCell>
                 <TableCell className="text-right">{formatCountPerCar(record.usageCountPerCar)}</TableCell>
                 <TableCell className="text-right">{formatRate(record.utilizationRate)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(record.weeklyTarget)}</TableCell>
               </TableRow>
             );
           })}
@@ -368,7 +363,6 @@ function WeeklyTable({ records }: { records: WeeklyRecord[] }) {
             <TableCell className="text-right">-</TableCell>
             <TableCell className="text-right">-</TableCell>
             <TableCell className="text-right">-</TableCell>
-            <TableCell className="text-right">{formatCurrency(sumTarget)}</TableCell>
           </TableRow>
           <TableRow className="bg-secondary font-bold" aria-label="평균">
             <TableCell className="text-left">평균</TableCell>
@@ -379,7 +373,6 @@ function WeeklyTable({ records }: { records: WeeklyRecord[] }) {
             <TableCell className="text-right">{formatHoursPerCar(avgUsageHoursPerCar)}</TableCell>
             <TableCell className="text-right">{formatCountPerCar(avgUsageCountPerCar)}</TableCell>
             <TableCell className="text-right">{formatRate(avgUtilization)}</TableCell>
-            <TableCell className="text-right">{formatCurrency(Math.round(avgTarget))}</TableCell>
           </TableRow>
         </TableBody>
       </Table>

@@ -64,19 +64,14 @@ export const mockDailyRecords: DailyRecord[] = _mockDailyBase.map((r) => ({
 
 // --- 주차별 mock 데이터 (8개: 1주차 ~ 8주차) ---
 const _mockWeeklyBase: WeeklyMock[] = [
-  // 목표 기준 초과 케이스 (매출 > 6,000만원)
-  { week: "1주차", revenue: 67000000, profit: 8500000, usageHours: 320, usageCount: 215, utilizationRate: 78.4, weeklyTarget: 60000000 },
-  { week: "2주차", revenue: 72000000, profit: 11000000, usageHours: 345, usageCount: 240, utilizationRate: 86.5, weeklyTarget: 60000000 },
-  // 목표 미달 케이스 (매출 < 6,000만원)
-  { week: "3주차", revenue: 54000000, profit: -1500000, usageHours: 265, usageCount: 175, utilizationRate: 62.3, weeklyTarget: 60000000 },
-  { week: "4주차", revenue: 48000000, profit: -2000000, usageHours: 250, usageCount: 160, utilizationRate: 58.0, weeklyTarget: 60000000 },
-  // 목표 초과 케이스
-  { week: "5주차", revenue: 68000000, profit: 9200000, usageHours: 330, usageCount: 225, utilizationRate: 81.2, weeklyTarget: 60000000 },
-  { week: "6주차", revenue: 71000000, profit: 10500000, usageHours: 340, usageCount: 238, utilizationRate: 88.7, weeklyTarget: 60000000 },
-  // 목표 미달 케이스
-  { week: "7주차", revenue: 56000000, profit: 500000, usageHours: 275, usageCount: 182, utilizationRate: 64.1, weeklyTarget: 60000000 },
-  // 목표 초과 케이스
-  { week: "8주차", revenue: 69500000, profit: 10800000, usageHours: 335, usageCount: 230, utilizationRate: 91.0, weeklyTarget: 60000000 },
+  { week: "1주차", revenue: 67000000, profit: 8500000, usageHours: 320, usageCount: 215, utilizationRate: 78.4 },
+  { week: "2주차", revenue: 72000000, profit: 11000000, usageHours: 345, usageCount: 240, utilizationRate: 86.5 },
+  { week: "3주차", revenue: 54000000, profit: -1500000, usageHours: 265, usageCount: 175, utilizationRate: 62.3 },
+  { week: "4주차", revenue: 48000000, profit: -2000000, usageHours: 250, usageCount: 160, utilizationRate: 58.0 },
+  { week: "5주차", revenue: 68000000, profit: 9200000, usageHours: 330, usageCount: 225, utilizationRate: 81.2 },
+  { week: "6주차", revenue: 71000000, profit: 10500000, usageHours: 340, usageCount: 238, utilizationRate: 88.7 },
+  { week: "7주차", revenue: 56000000, profit: 500000, usageHours: 275, usageCount: 182, utilizationRate: 64.1 },
+  { week: "8주차", revenue: 69500000, profit: 10800000, usageHours: 335, usageCount: 230, utilizationRate: 91.0 },
 ];
 
 export const mockWeeklyRecords: WeeklyRecord[] = _mockWeeklyBase.map((r, i) => ({
@@ -116,13 +111,13 @@ export const mockTeamDashboardData: TeamDashboardData = {
   costBreakdownDaily: [] as CostBreakdownRow[],
   costBreakdownWeekly: [] as CostBreakdownRow[],
   forecastDaily: [
-    { date: "2026-03-01", ulsanTarget: 6000000, ulsanForecast: 5800000, ulsanAchievement: 96.7, gyeongnamTarget: 4500000, gyeongnamForecast: 4400000, gyeongnamAchievement: 97.8, combinedTarget: 10500000, combinedForecast: 10200000, combinedAchievement: 97.1 },
-    { date: "2026-03-02", ulsanTarget: 6000000, ulsanForecast: 5100000, ulsanAchievement: 85.0, gyeongnamTarget: 4500000, gyeongnamForecast: 4000000, gyeongnamAchievement: 88.9, combinedTarget: 10500000, combinedForecast: 9100000, combinedAchievement: 86.7 },
-    { date: "2026-03-03", ulsanTarget: 6000000, ulsanForecast: 6500000, ulsanAchievement: 108.3, gyeongnamTarget: 4500000, gyeongnamForecast: 5000000, gyeongnamAchievement: 111.1, combinedTarget: 10500000, combinedForecast: 11500000, combinedAchievement: 109.5 },
-    { date: "2026-03-04", ulsanTarget: 6000000, ulsanForecast: 4800000, ulsanAchievement: 80.0, gyeongnamTarget: 4500000, gyeongnamForecast: 3600000, gyeongnamAchievement: 80.0, combinedTarget: 10500000, combinedForecast: 8400000, combinedAchievement: 80.0 },
-    { date: "2026-03-05", ulsanTarget: 6000000, ulsanForecast: 5700000, ulsanAchievement: 95.0, gyeongnamTarget: 4500000, gyeongnamForecast: 4100000, gyeongnamAchievement: 91.1, combinedTarget: 10500000, combinedForecast: 9800000, combinedAchievement: 93.3 },
-    { date: "2026-03-06", ulsanTarget: 6000000, ulsanForecast: 5200000, ulsanAchievement: 86.7, gyeongnamTarget: 4500000, gyeongnamForecast: 3700000, gyeongnamAchievement: 82.2, combinedTarget: 10500000, combinedForecast: 8900000, combinedAchievement: 84.8 },
-    { date: "2026-03-07", ulsanTarget: 6000000, ulsanForecast: 6300000, ulsanAchievement: 105.0, gyeongnamTarget: 4500000, gyeongnamForecast: 4600000, gyeongnamAchievement: 102.2, combinedTarget: 10500000, combinedForecast: 10900000, combinedAchievement: 103.8 },
+    { date: "2026-03-01", forecastRevenue: 10200000 },
+    { date: "2026-03-02", forecastRevenue: 9100000 },
+    { date: "2026-03-03", forecastRevenue: 11500000 },
+    { date: "2026-03-04", forecastRevenue: 8400000 },
+    { date: "2026-03-05", forecastRevenue: 9800000 },
+    { date: "2026-03-06", forecastRevenue: 8900000 },
+    { date: "2026-03-07", forecastRevenue: 10900000 },
   ] as ForecastRow[],
   regionRanking: [],
   forecastRegionRanking: [],

@@ -56,7 +56,7 @@ export function dailyToRows(records: DailyRecord[]): Record<string, unknown>[] {
 
 /**
  * WeeklyRecord 배열을 내보내기용 plain object 배열로 변환한다.
- * 컬럼: 주차, 매출, 대당 매출, 손익, 대당 이용시간, 대당 이용건수, 가동률, 목표
+ * 컬럼: 주차, 매출, 대당 매출, 손익, 대당 이용시간, 대당 이용건수, 가동률
  */
 export function weeklyToRows(records: WeeklyRecord[]): Record<string, unknown>[] {
   return records.map((r) => ({
@@ -67,7 +67,6 @@ export function weeklyToRows(records: WeeklyRecord[]): Record<string, unknown>[]
     '대당 이용시간': Number(r.usageHoursPerCar.toFixed(1)),
     '대당 이용건수': Number(r.usageCountPerCar.toFixed(1)),
     가동률: r.utilizationRate,
-    목표: r.weeklyTarget,
   }));
 }
 
@@ -77,7 +76,7 @@ export function weeklyToRows(records: WeeklyRecord[]): Record<string, unknown>[]
 
 const DAILY_HEADERS = ['날짜', '매출', '대당 매출', '손익', '대당 이용시간', '대당 이용건수', '가동률'];
 
-const WEEKLY_HEADERS = ['주차', '매출', '대당 매출', '손익', '대당 이용시간', '대당 이용건수', '가동률', '목표'];
+const WEEKLY_HEADERS = ['주차', '매출', '대당 매출', '손익', '대당 이용시간', '대당 이용건수', '가동률'];
 
 // ---------------------------------------------------------------------------
 // 공개 내보내기 함수

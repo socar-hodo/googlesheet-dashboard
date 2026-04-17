@@ -74,7 +74,6 @@ export function buildWeeklyRecords(
     usageHours: safeNumber(r.usage_hours),
     usageCount: safeInt(r.usage_count),
     utilizationRate: safeNumber(r.utilization_rate),
-    weeklyTarget: 0,
     revenuePerCar: safeNumber(r.revenue_per_car),
     usageCountPerCar: safeNumber(r.usage_count_per_car),
     usageHoursPerCar: safeNumber(r.usage_hours_per_car),
@@ -148,22 +147,12 @@ export function sanitizeRegionName(name: string): string {
 }
 
 // 사전 매출: actual 우선, 미래는 expected 폴백
-// target/achievement은 BQ 목표 소스 부재로 0 스텁
-// 단일 forecast_revenue 컬럼을 combinedForecast에 매핑 (ForecastChart는 combined만 사용)
 export function buildForecastRows(
   rows: Record<string, unknown>[],
 ): ForecastRow[] {
   return rows.map((r) => ({
     date: safeDate(r.d),
-    ulsanTarget: 0,
-    ulsanForecast: 0,
-    ulsanAchievement: 0,
-    gyeongnamTarget: 0,
-    gyeongnamForecast: 0,
-    gyeongnamAchievement: 0,
-    combinedTarget: 0,
-    combinedForecast: safeNumber(r.forecast_revenue),
-    combinedAchievement: 0,
+    forecastRevenue: safeNumber(r.forecast_revenue),
   }));
 }
 

@@ -3,7 +3,6 @@
 import { Area, AreaChart, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import {
   Tooltip,
   TooltipContent,
@@ -11,25 +10,20 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import {
-  getAchievementColorClass,
-  getProgressColorClass,
-} from "@/lib/kpi-utils";
 
 /** KPI 제목별 설명 텍스트 */
 const KPI_DESCRIPTIONS: Record<string, string> = {
   매출: "해당 기간의 총 매출액",
+  "대당 매출": "운영일수(opr_day) 기준 대당 평균 매출",
   GPM: "Gross Profit Margin (매출 총이익률)",
-  이용건수: "해당 기간의 총 예약 이용건수",
+  "대당 이용건수": "운영일수(opr_day) 기준 대당 평균 예약 건수",
   가동률: "배치 시간 대비 이용 시간 비율",
-  이용시간: "해당 기간의 총 이용시간 합계",
+  "대당 이용시간": "운영일수(opr_day) 기준 대당 평균 이용 시간",
 };
 
 interface KpiCardProps {
   title: string;
   value: string;
-  target?: string;
-  achievementRate?: number;
   deltaText?: string;
   deltaColorClass?: string;
   icon: React.ReactNode;
@@ -39,8 +33,6 @@ interface KpiCardProps {
 export function KpiCard({
   title,
   value,
-  target,
-  achievementRate,
   deltaText,
   deltaColorClass,
   icon,
@@ -69,23 +61,6 @@ export function KpiCard({
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="text-3xl font-semibold tracking-[-0.04em]">{value}</div>
-        {achievementRate !== undefined && (
-          <>
-            <div
-              className={cn(
-                "text-xs font-medium",
-                getAchievementColorClass(achievementRate)
-              )}
-            >
-              달성률 {achievementRate}%
-            </div>
-            <Progress
-              value={Math.min(achievementRate, 100)}
-              className={cn("h-2", getProgressColorClass(achievementRate))}
-            />
-          </>
-        )}
-        {target && <p className="text-xs text-muted-foreground">목표: {target}</p>}
         {deltaText && (
           <Badge variant="outline" className={cn("text-xs font-medium", deltaColorClass)}>
             {deltaText}

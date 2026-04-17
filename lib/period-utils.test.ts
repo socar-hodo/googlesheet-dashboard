@@ -160,10 +160,10 @@ describe('parseWeekMonth', () => {
 
 describe('filterWeeklyByPeriod', () => {
   const records: WeeklyRecord[] = [
-    { week: '2월 1주차', revenue: 1000, profit: 100, usageHours: 8, usageCount: 5, utilizationRate: 80, isoWeek: 0, weeklyTarget: 5000, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
-    { week: '2월 2주차', revenue: 2000, profit: 200, usageHours: 9, usageCount: 6, utilizationRate: 85, isoWeek: 0, weeklyTarget: 5000, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
-    { week: '3월 1주차', revenue: 3000, profit: 300, usageHours: 7, usageCount: 4, utilizationRate: 70, isoWeek: 0, weeklyTarget: 5000, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
-    { week: '3월 2주차', revenue: 4000, profit: 400, usageHours: 10, usageCount: 7, utilizationRate: 90, isoWeek: 0, weeklyTarget: 5000, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
+    { week: '2월 1주차', revenue: 1000, profit: 100, usageHours: 8, usageCount: 5, utilizationRate: 80, isoWeek: 0, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
+    { week: '2월 2주차', revenue: 2000, profit: 200, usageHours: 9, usageCount: 6, utilizationRate: 85, isoWeek: 0, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
+    { week: '3월 1주차', revenue: 3000, profit: 300, usageHours: 7, usageCount: 4, utilizationRate: 70, isoWeek: 0, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
+    { week: '3월 2주차', revenue: 4000, profit: 400, usageHours: 10, usageCount: 7, utilizationRate: 90, isoWeek: 0, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
   ];
 
   it('this-month: 2026-03-04 기준 3월 레코드만 반환한다', () => {
@@ -182,8 +182,8 @@ describe('filterWeeklyByPeriod', () => {
 
   it('월 파싱 불가 레코드(예: "1주차")가 있으면 전체를 반환한다', () => {
     const unparseable: WeeklyRecord[] = [
-      { week: '1주차', revenue: 1000, profit: 100, usageHours: 8, usageCount: 5, utilizationRate: 80, isoWeek: 0, weeklyTarget: 5000, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
-      { week: '2주차', revenue: 2000, profit: 200, usageHours: 9, usageCount: 6, utilizationRate: 85, isoWeek: 0, weeklyTarget: 5000, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
+      { week: '1주차', revenue: 1000, profit: 100, usageHours: 8, usageCount: 5, utilizationRate: 80, isoWeek: 0, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
+      { week: '2주차', revenue: 2000, profit: 200, usageHours: 9, usageCount: 6, utilizationRate: 85, isoWeek: 0, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
     ];
     const result = filterWeeklyByPeriod(unparseable, 'this-month', new Date('2026-03-04'));
     expect(result).toHaveLength(2);
@@ -191,8 +191,8 @@ describe('filterWeeklyByPeriod', () => {
 
   it('last-month: 2026-01-15 기준 이전 연도 12월 레코드를 반환한다', () => {
     const decRecords: WeeklyRecord[] = [
-      { week: '11월 3주차', revenue: 1000, profit: 100, usageHours: 8, usageCount: 5, utilizationRate: 80, isoWeek: 0, weeklyTarget: 5000, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
-      { week: '12월 1주차', revenue: 2000, profit: 200, usageHours: 9, usageCount: 6, utilizationRate: 85, isoWeek: 0, weeklyTarget: 5000, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
+      { week: '11월 3주차', revenue: 1000, profit: 100, usageHours: 8, usageCount: 5, utilizationRate: 80, isoWeek: 0, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
+      { week: '12월 1주차', revenue: 2000, profit: 200, usageHours: 9, usageCount: 6, utilizationRate: 85, isoWeek: 0, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
     ];
     const result = filterWeeklyByPeriod(decRecords, 'last-month', new Date('2026-01-15'));
     expect(result).toHaveLength(1);

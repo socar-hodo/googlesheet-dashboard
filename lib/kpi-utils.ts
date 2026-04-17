@@ -1,18 +1,8 @@
 /**
  * KPI 계산/포맷팅 유틸리티
  *
- * 달성률 계산, 기간 비교 델타 계산, 색상 클래스 결정, 표시 문자열 포맷팅 함수 모음.
- * Phase 02-02의 KPI 카드 컴포넌트에서 import하여 사용한다.
+ * 기간 비교 델타 계산, 색상 클래스 결정, 표시 문자열 포맷팅 함수 모음.
  */
-
-/**
- * 달성률(%) 계산. target이 0이면 0 반환.
- * Weekly 탭 전용 — DailyRecord에는 목표값이 없음.
- */
-export function calcAchievementRate(actual: number, target: number): number {
-  if (target === 0) return 0;
-  return Math.min(Math.round((actual / target) * 100), 999); // 999% 상한
-}
 
 /**
  * 현재값과 직전값의 델타를 계산한다.
@@ -26,26 +16,6 @@ export function calcDelta(
   const absolute = current - previous;
   const percent = Math.round((absolute / Math.abs(previous)) * 100);
   return { percent, absolute };
-}
-
-/**
- * 달성률에 따른 텍스트 색상 Tailwind 클래스 반환.
- * KPI-05 기준: 80%+ 녹색, 60~80% 주황, 60% 미만 빨간.
- */
-export function getAchievementColorClass(rate: number): string {
-  if (rate >= 80) return 'text-green-600 dark:text-green-400';
-  if (rate >= 60) return 'text-orange-500 dark:text-orange-400';
-  return 'text-red-600 dark:text-red-400';
-}
-
-/**
- * 달성률에 따른 Progress 바 색상 Tailwind 클래스 반환.
- * KPI-05 기준: 80%+ 녹색, 60~80% 주황, 60% 미만 빨간.
- */
-export function getProgressColorClass(rate: number): string {
-  if (rate >= 80) return '[&>div]:bg-green-500';
-  if (rate >= 60) return '[&>div]:bg-orange-400';
-  return '[&>div]:bg-red-500';
 }
 
 /**
