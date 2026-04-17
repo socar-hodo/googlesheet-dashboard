@@ -5,6 +5,7 @@ import {
   buildDailyResponse,
   buildWeeklyResponse,
 } from "@/lib/customer-type";
+import { replaceSqlParams } from "@/lib/funnel";
 import { withAuth } from "@/lib/api-utils";
 
 function defaultStartDate(): string {
@@ -19,43 +20,37 @@ function defaultEndDate(): string {
   return d.toISOString().slice(0, 10);
 }
 
+// 날짜 형식 검증 (YYYY-MM-DD)
+function isValidDate(s: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(s);
+}
+
 export const GET = withAuth(async (req: NextRequest) => {
   const sp = req.nextUrl.searchParams;
   const startDate = sp.get("start_date") || defaultStartDate();
   const endDate = sp.get("end_date") || defaultEndDate();
-  const region1 = sp.get("region1") || "";
-  const zoneIds = sp
-    .get("zone_ids")
-    ?.split(",")
-    .map(Number)
-    .filter((n) => !isNaN(n)) ?? [];
 
-  const params = [
-    { name: "start_date", type: "DATE" as const, value: startDate },
-    { name: "end_date", type: "DATE" as const, value: endDate },
-    { name: "region1", type: "STRING" as const, value: region1 },
-    { name: "zone_ids", type: "INT64" as const, values: zoneIds },
-  ];
+  // 날짜 검증 — SQL injection 방지
+  const safeStart = isValidDate(startDate) ? startDate : defaultStartDate();
+  const safeEnd = isValidDate(endDate) ? endDate : defaultEndDate();
 
-  const dailySql = loadCustomerTypeSql("daily.sql");
-  const weeklySql = loadCustomerTypeSql("weekly.sql");
+  // 날짜는 문자열 치환 (기존 ROAS 쿼리 패턴과 동일)
+  const dailySql = replaceSqlParams(loadCustomerTypeSql("daily.sql"), {
+    start_date: safeStart,
+    end_date: safeEnd,
+  });
+  const weeklySql = replaceSqlParams(loadCustomerTypeSql("weekly.sql"), {
+    start_date: safeStart,
+    end_date: safeEnd,
+  });
 
   const [dailyRows, weeklyRows] = await Promise.all([
-    runParameterizedQuery(dailySql, params),
-    runParameterizedQuery(weeklySql, params),
+    runParameterizedQuery(dailySql),
+    runParameterizedQuery(weeklySql),
   ]);
 
   const daily = dailyRows ? buildDailyResponse(dailyRows) : [];
   const weekly = weeklyRows ? buildWeeklyResponse(weeklyRows) : [];
-
-  // 디버그: 날짜 범위 및 데이터 개수 확인
-  console.log(`[customer-type] range=${startDate}~${endDate} daily=${daily.length} weekly=${weekly.length}`);
-  if (daily.length > 0) {
-    console.log(`[customer-type] daily first=${daily[0].date} last=${daily[daily.length - 1].date}`);
-  }
-  if (weekly.length > 0) {
-    console.log(`[customer-type] weekly samples:`, weekly.map((w) => w.week).join(", "));
-  }
 
   return NextResponse.json({ daily, weekly });
 });

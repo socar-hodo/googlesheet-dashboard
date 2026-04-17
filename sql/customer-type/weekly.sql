@@ -1,5 +1,5 @@
 -- 주별 고객 유형(way)별 이용건수
--- params: @start_date (DATE), @end_date (DATE), @region1 (STRING), @zone_ids (ARRAY<INT64>)
+-- params: {start_date} (DATE string), {end_date} (DATE string)
 -- week format: "N월 N주차" (프론트엔드 호환)
 
 WITH raw AS (
@@ -7,24 +7,17 @@ WITH raw AS (
     r.date AS d,
     r.way
   FROM `socar-data.soda_store.reservation_v2` r
-  WHERE r.date BETWEEN @start_date AND @end_date
+  WHERE r.date BETWEEN '{start_date}' AND '{end_date}'
     AND r.state IN (3, 5)
     AND r.member_imaginary IN (0, 9)
-    AND (@region1 = '' OR r.zone_id IN (
-      SELECT id FROM `socar-data.socar_biz_base.carzone_info_daily` z
-      WHERE z.date = r.date
-        AND z.region1 = @region1
-    ))
-    AND (ARRAY_LENGTH(@zone_ids) = 0 OR r.zone_id IN UNNEST(@zone_ids))
+    AND r.sharing_type IN ('socar', 'zplus')
 )
 
 SELECT
   CONCAT(
     CAST(EXTRACT(MONTH FROM DATE_TRUNC(d, ISOWEEK)) AS STRING),
     '월 ',
-    CAST(
-      DIV(EXTRACT(DAY FROM DATE_TRUNC(d, ISOWEEK)) - 1, 7) + 1
-    AS STRING),
+    CAST(DIV(EXTRACT(DAY FROM DATE_TRUNC(d, ISOWEEK)) - 1, 7) + 1 AS STRING),
     '주차'
   ) AS week_label,
   EXTRACT(ISOYEAR FROM d) AS iso_year,
