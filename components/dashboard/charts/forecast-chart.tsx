@@ -170,7 +170,7 @@ export function ForecastChart({ data }: ForecastChartProps) {
         lineColor={colors.chart4}
       />
       <RegionChart
-        title="경남+울산"
+        title="전국"
         chartData={combinedData}
         colors={colors}
         targetColor={targetColor}

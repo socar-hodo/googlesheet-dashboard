@@ -1,4 +1,4 @@
--- 주차별 메트릭 + 매출·비용 세분화 통합 (경남+울산사업팀)
+-- 주차별 메트릭 + 매출·비용 세분화 통합 (전국)
 -- params: {start_date}, {end_date}
 -- week format: "N월 M주차" (프론트엔드 호환)
 
@@ -26,7 +26,6 @@ WITH profit AS (
     ) AS commission_cost
   FROM `socar-data.socar_biz_profit.profit_socar_car_daily`
   WHERE date BETWEEN '{start_date}' AND '{end_date}'
-    AND region1 IN ('경상남도', '울산광역시')
     AND car_sharing_type IN ('socar', 'zplus')
     AND car_state IN ('운영', '수리')
   GROUP BY date
@@ -39,7 +38,6 @@ operation AS (
     SUM(dp_min) AS dp_min
   FROM `socar-data.socar_biz.operation_per_car_daily_v2`
   WHERE date BETWEEN '{start_date}' AND '{end_date}'
-    AND region1 IN ('경상남도', '울산광역시')
     AND sharing_type IN ('socar', 'zplus')
   GROUP BY date
 ),

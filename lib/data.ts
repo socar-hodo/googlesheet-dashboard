@@ -1,13 +1,13 @@
-// 경남울산사업팀 매출 대시보드 — BigQuery 직접 연동 데이터 레이어
+// 호도 매출 대시보드 — BigQuery 직접 연동 데이터 레이어
 //
 // Google Sheets 의존성을 제거하고 모든 데이터를 BigQuery에서 조회한다.
-// 필터 조건:
-//   - region1 IN ('경상남도', '울산광역시')    — 부울경사업팀(경남+울산) 스코프
+// 스코프: 전국 카셰어링 차량 (지역 필터 없음)
+// 공통 필터:
 //   - car_sharing_type IN ('socar', 'zplus')  — 카셰어링 차량만
 //   - car_state IN ('운영', '수리')           — 실제 운영 차량만
 //
 // 예외:
-//   - weeklyTarget / forecastDaily는 BQ에 목표 데이터 소스가 없어 빈값 처리
+//   - weeklyTarget, forecast의 target/achievement은 BQ 목표 소스 부재로 0 스텁
 //     추후 목표 관리용 테이블 또는 API가 생기면 해당 로더를 추가한다.
 import type { TeamDashboardData } from "@/types/dashboard";
 import { isBigQueryConfigured, runParameterizedQuery } from "./bigquery";

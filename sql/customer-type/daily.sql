@@ -1,4 +1,4 @@
--- 일별 고객 유형(way)별 이용건수 — 경남+울산사업팀
+-- 일별 고객 유형(way)별 이용건수 — 전국
 -- params: {start_date} (DATE string), {end_date} (DATE string)
 -- way mapping: general → 왕복, d2d_round → 배달, d2d_oneway → 편도
 
@@ -12,6 +12,5 @@ WHERE r.date BETWEEN '{start_date}' AND '{end_date}'
   AND r.state IN (3, 5)
   AND r.member_imaginary IN (0, 9)
   AND r.sharing_type IN ('socar', 'zplus')
-  AND r.region1 IN ('경상남도', '울산광역시')
 GROUP BY d
 ORDER BY d

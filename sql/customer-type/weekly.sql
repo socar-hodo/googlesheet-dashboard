@@ -11,7 +11,6 @@ WITH raw AS (
     AND r.state IN (3, 5)
     AND r.member_imaginary IN (0, 9)
     AND r.sharing_type IN ('socar', 'zplus')
-    AND r.region1 IN ('경상남도', '울산광역시')
 )
 
 SELECT

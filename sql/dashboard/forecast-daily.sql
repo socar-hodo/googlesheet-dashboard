@@ -1,7 +1,7 @@
--- 일별 지역별 사전 매출 (경남+울산)
+-- 일별 지역별 사전 매출 (전국)
 -- params: {start_date}, {end_date}
 -- 로직: 과거 날짜는 actual(profit 테이블), 미래 날짜는 expected(reservation + charged/paid) 폴백
--- 출력: d, ulsan_forecast, gyeongnam_forecast, combined_forecast
+-- 출력: d, ulsan_forecast(울산 슬라이스), gyeongnam_forecast(경남 슬라이스), combined_forecast(전국 총합)
 
 WITH reservation_base AS (
   SELECT
@@ -14,7 +14,6 @@ WITH reservation_base AS (
     ON ri.zone_id = cz.id
   WHERE ri.state IN (1, 2, 3)
     AND ri.member_imaginary IN (0, 9)
-    AND cz.region1 IN ('경상남도', '울산광역시')
     AND ri.way IN ('round', 'z2d_oneway', 'd2d_oneway', 'd2d_round', 'd2d_rev')
     AND DATE(IFNULL(ri.return_at, ri.end_at), 'Asia/Seoul')
         BETWEEN '{start_date}' AND '{end_date}'
@@ -54,7 +53,6 @@ actual_rev AS (
     SUM(revenue) AS _rev_total
   FROM `socar-data.socar_biz_profit.profit_socar_car_daily`
   WHERE date BETWEEN '{start_date}' AND '{end_date}'
-    AND region1 IN ('경상남도', '울산광역시')
     AND car_state IN ('수리', '운영')
     AND car_sharing_type IN ('socar', 'zplus')
   GROUP BY date, region1
