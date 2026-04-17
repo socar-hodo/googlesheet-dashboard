@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 
 Milestone: v1.2 — COMPLETE ✅ (shipped 2026-03-02)
 Milestone: v1.3 — PLANNING (Phase 11-12 not started)
-Last activity: 2026-03-02 — v1.2 milestone archive complete
+Last activity: 2026-04-17 - Completed quick task 260417-glt: 고객 유형 분석 BQ 직접 연동
 
 ## v1.3 Phase Map
 
@@ -48,6 +48,12 @@ Last activity: 2026-03-02 — v1.2 milestone archive complete
 
 - Google Sheets에 대여/PF/주행/부름/기타 매출 컬럼 실제 존재 여부 확인 필요 — 없으면 0 폴백
 - COST-02 드릴다운 UI: shadcn/ui Collapsible 사용 여부 결정 필요
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260417-glt | 고객 유형 분석 BQ 직접 연동 — reservation_v2에서 way 기준 왕복/배달/편도 건수 집계 API 추가 | 2026-04-17 | pending | [260417-glt-bq-reservation-v2-way-api](./quick/260417-glt-bq-reservation-v2-way-api/) |
 
 ## Session Continuity
 
