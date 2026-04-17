@@ -121,5 +121,7 @@ export const mockTeamDashboardData: TeamDashboardData = {
   ] as ForecastRow[],
   regionRanking: [],
   forecastRegionRanking: [],
+  regionOptions: [],
+  currentRegion: {},
   fetchedAt: "2026-03-08T00:00:00.000Z",
 };

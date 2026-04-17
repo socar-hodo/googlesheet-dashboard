@@ -67,6 +67,12 @@ export interface ForecastRow {
   forecastRevenue: number; // 사전 매출 (원)
 }
 
+/** 드롭다운용 지역 옵션 — region1별 하위 region2 목록 */
+export interface RegionOption {
+  region1: string;
+  region2List: string[];
+}
+
 /** 지역 랭킹 한 행 — region1 또는 region2 레벨 */
 export interface RegionRankingRow {
   region: string;           // region1 (전국) 또는 region2 (drill)
@@ -90,7 +96,9 @@ export interface TeamDashboardData {
   costBreakdownDaily: CostBreakdownRow[];
   costBreakdownWeekly: CostBreakdownRow[];
   forecastDaily: ForecastRow[]; // FORECAST 시트 (일별 사전 매출/달성률)
-  regionRanking: RegionRankingRow[]; // 최근 기간 기준 region1 랭킹 (초기 SSR)
-  forecastRegionRanking: RegionRankingRow[]; // 사전 매출 기준 region1 랭킹 (예측 탭)
+  regionRanking: RegionRankingRow[]; // 선택 지역 기준 하위 랭킹
+  forecastRegionRanking: RegionRankingRow[]; // 사전 매출 기준 하위 랭킹 (예측 탭)
+  regionOptions: RegionOption[]; // 드롭다운용 region1/region2 옵션
+  currentRegion: { region1?: string; region2?: string }; // 현재 선택된 지역 (URL 기반)
   fetchedAt: string;        // ISO 8601 타임스탬프 (예: "2026-02-22T09:00:00.000Z")
 }

@@ -1,10 +1,10 @@
 // 호도 매출 대시보드 — BigQuery 직접 연동 데이터 레이어
 //
 // Google Sheets 의존성을 제거하고 모든 데이터를 BigQuery에서 조회한다.
-// 스코프: 전국 카셰어링 차량 (지역 필터 없음)
 // 공통 필터:
 //   - car_sharing_type IN ('socar', 'zplus')  — 카셰어링 차량만
 //   - car_state IN ('운영', '수리')           — 실제 운영 차량만
+// 지역 필터: region1/region2 선택이 있으면 해당 지역으로만 집계
 import type { TeamDashboardData } from "@/types/dashboard";
 import { isBigQueryConfigured, runParameterizedQuery } from "./bigquery";
 import { replaceSqlParams } from "./funnel";
@@ -18,6 +18,9 @@ import {
   buildCostBreakdownWeekly,
   buildForecastRows,
   buildRegionRanking,
+  buildRegionOptions,
+  buildRegionFilter,
+  sanitizeRegionName,
 } from "./dashboard-bq";
 import {
   loadCustomerTypeSql,
@@ -52,22 +55,60 @@ function forecastRange(): { start: string; end: string } {
   };
 }
 
+export interface RegionSelection {
+  region1?: string;
+  region2?: string;
+}
+
+/** 지역 선택 상태에 따라 ranking의 group level을 결정:
+ *  - 지역 없음   → region1 랭킹 (전국 17개 시/도)
+ *  - region1만  → region2 랭킹 (해당 시/도 내 구/군)
+ *  - region1+2  → 더 이상 drill 할 하위 레벨 없음 → region2 랭킹 유지 (단일 행) */
+function rankingGroupField(sel: RegionSelection): "region1" | "region2" {
+  return sel.region1 ? "region2" : "region1";
+}
+
 /**
  * 팀 대시보드 전체 데이터를 BigQuery에서 가져온다.
- *
- * - BQ 환경변수 미설정 → mockTeamDashboardData 즉시 반환 (로컬 미인증 환경)
- * - 5개 쿼리 병렬 실행: daily-metrics, weekly-metrics, customer-type daily/weekly
- *   + daily/weekly 메트릭 쿼리에 매출·비용 세분화가 함께 포함되어 있음
+ * @param selection 선택된 region1/region2 (미지정 시 전국)
  */
-export async function getTeamDashboardData(): Promise<TeamDashboardData> {
+export async function getTeamDashboardData(
+  selection: RegionSelection = {},
+): Promise<TeamDashboardData> {
   if (!isBigQueryConfigured()) {
     return mockTeamDashboardData;
   }
 
+  // 입력 검증·sanitize (SQL injection 방지)
+  const region1 = selection.region1
+    ? sanitizeRegionName(selection.region1)
+    : undefined;
+  const region2 = selection.region2
+    ? sanitizeRegionName(selection.region2)
+    : undefined;
+  // region2만 있고 region1 없는 경우는 불가 (region2는 region1 하위)
+  const effRegion2 = region1 ? region2 : undefined;
+  const regionFilter = buildRegionFilter(region1, effRegion2);
+
   const { start, end } = defaultRange();
-  const params = { start_date: start, end_date: end };
+  const params = {
+    start_date: start,
+    end_date: end,
+    region_filter: regionFilter,
+  };
   const fcRange = forecastRange();
-  const fcParams = { start_date: fcRange.start, end_date: fcRange.end };
+  const fcParams = {
+    start_date: fcRange.start,
+    end_date: fcRange.end,
+    region_filter: regionFilter,
+  };
+
+  // 랭킹 기간: 최근 30일
+  const rankingStart = new Date();
+  rankingStart.setDate(rankingStart.getDate() - 30);
+  const rankingEnd = new Date();
+  rankingEnd.setDate(rankingEnd.getDate() - 1);
+  const rankingGroup = rankingGroupField({ region1, region2: effRegion2 });
 
   try {
     const dailyMetricsSql = replaceSqlParams(
@@ -80,16 +121,7 @@ export async function getTeamDashboardData(): Promise<TeamDashboardData> {
     );
     const forecastSql = replaceSqlParams(
       loadDashboardSql("forecast-daily.sql"),
-      { ...fcParams, region_filter: "" },
-    );
-    const forecastRankingSql = replaceSqlParams(
-      loadDashboardSql("forecast-region-ranking.sql"),
-      {
-        start_date: fcRange.start,
-        end_date: fcRange.end,
-        group_field: "region1",
-        parent_filter: "",
-      },
+      fcParams,
     );
     const customerDailySql = replaceSqlParams(
       loadCustomerTypeSql("daily.sql"),
@@ -99,20 +131,25 @@ export async function getTeamDashboardData(): Promise<TeamDashboardData> {
       loadCustomerTypeSql("weekly.sql"),
       params,
     );
-    // 초기 SSR: region1 전국 랭킹 (최근 30일)
-    const rankingStart = new Date();
-    rankingStart.setDate(rankingStart.getDate() - 30);
-    const rankingEnd = new Date();
-    rankingEnd.setDate(rankingEnd.getDate() - 1);
     const regionRankingSql = replaceSqlParams(
       loadDashboardSql("region-ranking.sql"),
       {
         start_date: rankingStart.toISOString().slice(0, 10),
         end_date: rankingEnd.toISOString().slice(0, 10),
-        group_field: "region1",
-        parent_filter: "",
+        group_field: rankingGroup,
+        parent_filter: regionFilter,
       },
     );
+    const forecastRankingSql = replaceSqlParams(
+      loadDashboardSql("forecast-region-ranking.sql"),
+      {
+        start_date: fcRange.start,
+        end_date: fcRange.end,
+        group_field: rankingGroup,
+        parent_filter: regionFilter,
+      },
+    );
+    const regionListSql = loadDashboardSql("region-list.sql");
 
     const [
       dailyRows,
@@ -122,6 +159,7 @@ export async function getTeamDashboardData(): Promise<TeamDashboardData> {
       customerWeeklyRows,
       regionRankingRows,
       forecastRankingRows,
+      regionListRows,
     ] = await Promise.all([
       runParameterizedQuery(dailyMetricsSql),
       runParameterizedQuery(weeklyMetricsSql),
@@ -130,6 +168,7 @@ export async function getTeamDashboardData(): Promise<TeamDashboardData> {
       runParameterizedQuery(customerWeeklySql),
       runParameterizedQuery(regionRankingSql),
       runParameterizedQuery(forecastRankingSql),
+      runParameterizedQuery(regionListSql),
     ]);
 
     const daily = dailyRows ? buildDailyRecords(dailyRows) : [];
@@ -152,17 +191,14 @@ export async function getTeamDashboardData(): Promise<TeamDashboardData> {
     const customerTypeWeekly = customerWeeklyRows
       ? buildCustomerTypeWeekly(customerWeeklyRows)
       : [];
-
-    // 예측 탭: 사전(forecast)은 과거 actual + 미래 expected 혼합
-    const forecastDaily = forecastRows
-      ? buildForecastRows(forecastRows)
-      : [];
+    const forecastDaily = forecastRows ? buildForecastRows(forecastRows) : [];
     const regionRanking = regionRankingRows
       ? buildRegionRanking(regionRankingRows)
       : [];
     const forecastRegionRanking = forecastRankingRows
       ? buildRegionRanking(forecastRankingRows)
       : [];
+    const regionOptions = regionListRows ? buildRegionOptions(regionListRows) : [];
 
     return {
       daily,
@@ -176,6 +212,8 @@ export async function getTeamDashboardData(): Promise<TeamDashboardData> {
       forecastDaily,
       regionRanking,
       forecastRegionRanking,
+      regionOptions,
+      currentRegion: { region1, region2: effRegion2 },
       fetchedAt: new Date().toISOString(),
     };
   } catch (error) {

@@ -10,7 +10,7 @@ import { UpdateTimestamp } from '@/components/dashboard/update-timestamp';
 export const dynamic = 'force-dynamic';
 
 // period 파라미터 추가 — 기간 필터 URL 상태 복원에 사용
-type SearchParams = Promise<{ tab?: string; period?: string }>;
+type SearchParams = Promise<{ tab?: string; period?: string; region1?: string; region2?: string }>;
 
 export default async function DashboardPage({
   searchParams,
@@ -18,10 +18,10 @@ export default async function DashboardPage({
   searchParams: SearchParams;
 }) {
   // Next.js 16: searchParams는 Promise — await 필수
-  const { tab = 'daily', period } = await searchParams;
+  const { tab = 'daily', period, region1, region2 } = await searchParams;
   const activeTab = tab === 'weekly' ? 'weekly' : tab === 'forecast' ? 'forecast' : 'daily';
 
-  const data = await getTeamDashboardData();
+  const data = await getTeamDashboardData({ region1, region2 });
 
   return (
     <div className="space-y-6">

@@ -29,6 +29,7 @@ WITH profit AS (
   WHERE date BETWEEN '{start_date}' AND '{end_date}'
     AND car_sharing_type IN ('socar', 'zplus')
     AND car_state IN ('운영', '수리')
+    {region_filter}
   GROUP BY date
 ),
 
@@ -40,6 +41,7 @@ operation AS (
   FROM `socar-data.socar_biz.operation_per_car_daily_v2`
   WHERE date BETWEEN '{start_date}' AND '{end_date}'
     AND sharing_type IN ('socar', 'zplus')
+    {region_filter}
   GROUP BY date
 ),
 

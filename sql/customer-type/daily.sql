@@ -12,5 +12,6 @@ WHERE r.date BETWEEN '{start_date}' AND '{end_date}'
   AND r.state IN (3, 5)
   AND r.member_imaginary IN (0, 9)
   AND r.sharing_type IN ('socar', 'zplus')
+  {region_filter}
 GROUP BY d
 ORDER BY d
