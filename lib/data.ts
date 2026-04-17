@@ -5,7 +5,8 @@
 //   - car_sharing_type IN ('socar', 'zplus')  — 카셰어링 차량만
 //   - car_state IN ('운영', '수리')           — 실제 운영 차량만
 // 지역 필터: region1/region2 선택이 있으면 해당 지역으로만 집계
-import type { TeamDashboardData } from "@/types/dashboard";
+import { unstable_cache } from "next/cache";
+import type { TeamDashboardData, RegionOption } from "@/types/dashboard";
 import { isBigQueryConfigured, runParameterizedQuery } from "./bigquery";
 import { replaceSqlParams } from "./funnel";
 import {
@@ -59,6 +60,21 @@ export interface RegionSelection {
   region1?: string;
   region2?: string;
 }
+
+/**
+ * 지역 옵션 리스트 — 1시간 캐시 (대시보드 전체 SSR에서 공유).
+ * region1/region2 목록은 일 단위로도 거의 바뀌지 않는 준정적 데이터.
+ */
+const getCachedRegionOptions = unstable_cache(
+  async (): Promise<RegionOption[]> => {
+    if (!isBigQueryConfigured()) return [];
+    const sql = loadDashboardSql("region-list.sql");
+    const rows = await runParameterizedQuery(sql);
+    return rows ? buildRegionOptions(rows) : [];
+  },
+  ["dashboard-region-options"],
+  { revalidate: 3600, tags: ["dashboard-region-options"] },
+);
 
 /** 지역 선택 상태에 따라 ranking의 group level을 결정:
  *  - 지역 없음   → region1 랭킹 (전국 17개 시/도)
@@ -149,8 +165,6 @@ export async function getTeamDashboardData(
         parent_filter: regionFilter,
       },
     );
-    const regionListSql = loadDashboardSql("region-list.sql");
-
     const [
       dailyRows,
       weeklyRows,
@@ -159,7 +173,7 @@ export async function getTeamDashboardData(
       customerWeeklyRows,
       regionRankingRows,
       forecastRankingRows,
-      regionListRows,
+      regionOptions,
     ] = await Promise.all([
       runParameterizedQuery(dailyMetricsSql),
       runParameterizedQuery(weeklyMetricsSql),
@@ -168,7 +182,7 @@ export async function getTeamDashboardData(
       runParameterizedQuery(customerWeeklySql),
       runParameterizedQuery(regionRankingSql),
       runParameterizedQuery(forecastRankingSql),
-      runParameterizedQuery(regionListSql),
+      getCachedRegionOptions(),
     ]);
 
     const daily = dailyRows ? buildDailyRecords(dailyRows) : [];
@@ -198,7 +212,6 @@ export async function getTeamDashboardData(
     const forecastRegionRanking = forecastRankingRows
       ? buildRegionRanking(forecastRankingRows)
       : [];
-    const regionOptions = regionListRows ? buildRegionOptions(regionListRows) : [];
 
     return {
       daily,
