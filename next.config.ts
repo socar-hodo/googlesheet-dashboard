@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
     "/api/funnel/regions": ["./sql/**/*.sql"],
     "/api/funnel/weekly": ["./sql/**/*.sql"],
     "/api/funnel/detail": ["./sql/**/*.sql"],
-    "/api/customer-type": ["./sql/**/*.sql"],
+    "/dashboard": ["./sql/**/*.sql"],
   },
 };
 
