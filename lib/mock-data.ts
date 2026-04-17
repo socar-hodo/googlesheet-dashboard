@@ -105,5 +105,6 @@ export const mockTeamDashboardData: TeamDashboardData = {
     { date: "2026-03-06", ulsanTarget: 6000000, ulsanForecast: 5200000, ulsanAchievement: 86.7, gyeongnamTarget: 4500000, gyeongnamForecast: 3700000, gyeongnamAchievement: 82.2, combinedTarget: 10500000, combinedForecast: 8900000, combinedAchievement: 84.8 },
     { date: "2026-03-07", ulsanTarget: 6000000, ulsanForecast: 6300000, ulsanAchievement: 105.0, gyeongnamTarget: 4500000, gyeongnamForecast: 4600000, gyeongnamAchievement: 102.2, combinedTarget: 10500000, combinedForecast: 10900000, combinedAchievement: 103.8 },
   ] as ForecastRow[],
+  regionRanking: [],
   fetchedAt: "2026-03-08T00:00:00.000Z",
 };

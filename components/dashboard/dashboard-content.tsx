@@ -3,8 +3,11 @@
 // DashboardContent — 기간 필터 상태 소유 Client Component
 // 전체 데이터를 수신하여 선택된 기간에 맞게 필터링 후 하위 컴포넌트에 전달
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useState, useCallback, useMemo } from 'react';
-import type { TeamDashboardData } from '@/types/dashboard';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { ArrowLeft } from 'lucide-react';
+import type { TeamDashboardData, RegionRankingRow } from '@/types/dashboard';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { exportToCsv, exportToXlsx } from '@/lib/export-utils';
 import {
@@ -23,6 +26,8 @@ import { KpiCards } from './kpi-cards';
 import { ChartsSection } from './charts/charts-section';
 import { DataTable } from './data-table';
 import { ForecastChart } from './charts/forecast-chart';
+import { RegionRanking } from './region-ranking';
+import { RegionDetailTable } from './region-detail-table';
 
 interface DashboardContentProps {
   data: TeamDashboardData;
@@ -68,6 +73,45 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
   // 기간 상태 — URL 파라미터를 검증하여 초기값 설정
   const [period, setPeriodState] = useState<PeriodKey>(() => parsePeriod(initialPeriod, tab));
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
+
+  // 지역 드릴다운 — 전국(null) ↔ 선택된 region1 (region2 랭킹 표시)
+  const [drillRegion, setDrillRegion] = useState<string | null>(null);
+  const [regionDetailRanking, setRegionDetailRanking] = useState<RegionRankingRow[]>([]);
+  const [drillLoading, setDrillLoading] = useState(false);
+
+  useEffect(() => {
+    if (!drillRegion) {
+      setRegionDetailRanking([]);
+      return;
+    }
+    const controller = new AbortController();
+    setDrillLoading(true);
+    fetch(`/api/dashboard/region-detail?region1=${encodeURIComponent(drillRegion)}`, {
+      signal: controller.signal,
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+      .then((result: { ranking: RegionRankingRow[] }) => {
+        if (!controller.signal.aborted) setRegionDetailRanking(result.ranking);
+      })
+      .catch((err) => {
+        if (!controller.signal.aborted) {
+          console.warn('[region-detail] fetch failed:', err);
+          toast.error('지역 상세 조회 실패');
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setDrillLoading(false);
+      });
+    return () => controller.abort();
+  }, [drillRegion]);
+
+  const handleRegionClick = useCallback((region: string) => {
+    setDrillRegion((prev) => (prev ? prev : region)); // region2 단계에서는 더 drill 불가
+  }, []);
+
+  const handleBackToNational = useCallback(() => {
+    setDrillRegion(null);
+  }, []);
 
   /** 기간 변경 핸들러 — 상태 업데이트와 URL 동기화를 함께 처리 */
   const handlePeriodChange = useCallback(
@@ -193,6 +237,45 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
 
           {/* 차트 4종 — 필터링된 데이터 기반 */}
           <ChartsSection data={filteredData} tab={tab} />
+
+          {/* 지역 분석 — 전국 region1 랭킹 또는 region1 drill → region2 랭킹 */}
+          <section>
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-semibold text-foreground">지역 분석</h2>
+                <Badge variant="secondary" className="text-xs">
+                  {drillRegion ?? '전국'}
+                </Badge>
+                {drillLoading && (
+                  <span className="text-xs text-muted-foreground animate-pulse">로딩중...</span>
+                )}
+              </div>
+              {drillRegion && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1 text-muted-foreground"
+                  onClick={handleBackToNational}
+                >
+                  <ArrowLeft className="h-4 w-4" /> 전국
+                </Button>
+              )}
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <RegionRanking
+                data={drillRegion ? regionDetailRanking : data.regionRanking}
+                canDrillDown={!drillRegion}
+                onRegionClick={handleRegionClick}
+              />
+              <div className="md:col-span-2">
+                <RegionDetailTable
+                  data={drillRegion ? regionDetailRanking : data.regionRanking}
+                  canDrillDown={!drillRegion}
+                  onRegionClick={handleRegionClick}
+                />
+              </div>
+            </div>
+          </section>
 
           {/* 데이터 테이블 — 필터링된 데이터 기반 */}
           <section>

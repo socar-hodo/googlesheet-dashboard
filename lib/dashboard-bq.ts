@@ -8,6 +8,7 @@ import type {
   RevenueBreakdownRow,
   CostBreakdownRow,
   ForecastRow,
+  RegionRankingRow,
 } from "@/types/dashboard";
 
 // ── SQL file cache ──────────────────────────────────────────────────
@@ -116,6 +117,27 @@ export function buildCostBreakdownDaily(
     callTransportCost: 0,
     zoneOneWayTransportCost: 0,
   }));
+}
+
+export function buildRegionRanking(
+  rows: Record<string, unknown>[],
+): RegionRankingRow[] {
+  return rows.map((r) => ({
+    region: String(r.region ?? ""),
+    revenue: safeNumber(r.revenue),
+    profit: safeNumber(r.profit),
+    gpm: safeNumber(r.gpm),
+    usageCount: safeInt(r.usage_count),
+    usageHours: safeNumber(r.usage_hours),
+    utilizationRate: safeNumber(r.utilization_rate),
+  }));
+}
+
+// ── Region filter 유틸 ─────────────────────────────────────────────
+// SQL injection 방지: region 이름은 한글·영문·숫자·공백·특별시/광역시 등만 허용
+// 작은따옴표·세미콜론 등은 거부 → 안전한 문자열 치환 가능
+export function sanitizeRegionName(name: string): string {
+  return name.replace(/[^가-힣A-Za-z0-9\s()-]/g, "").slice(0, 50);
 }
 
 // 사전 매출: actual 우선, 미래는 expected 폴백

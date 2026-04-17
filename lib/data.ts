@@ -21,6 +21,7 @@ import {
   buildCostBreakdownDaily,
   buildCostBreakdownWeekly,
   buildForecastRows,
+  buildRegionRanking,
 } from "./dashboard-bq";
 import {
   loadCustomerTypeSql,
@@ -93,6 +94,20 @@ export async function getTeamDashboardData(): Promise<TeamDashboardData> {
       loadCustomerTypeSql("weekly.sql"),
       params,
     );
+    // 초기 SSR: region1 전국 랭킹 (최근 30일)
+    const rankingStart = new Date();
+    rankingStart.setDate(rankingStart.getDate() - 30);
+    const rankingEnd = new Date();
+    rankingEnd.setDate(rankingEnd.getDate() - 1);
+    const regionRankingSql = replaceSqlParams(
+      loadDashboardSql("region-ranking.sql"),
+      {
+        start_date: rankingStart.toISOString().slice(0, 10),
+        end_date: rankingEnd.toISOString().slice(0, 10),
+        group_field: "region1",
+        parent_filter: "",
+      },
+    );
 
     const [
       dailyRows,
@@ -100,12 +115,14 @@ export async function getTeamDashboardData(): Promise<TeamDashboardData> {
       forecastRows,
       customerDailyRows,
       customerWeeklyRows,
+      regionRankingRows,
     ] = await Promise.all([
       runParameterizedQuery(dailyMetricsSql),
       runParameterizedQuery(weeklyMetricsSql),
       runParameterizedQuery(forecastSql),
       runParameterizedQuery(customerDailySql),
       runParameterizedQuery(customerWeeklySql),
+      runParameterizedQuery(regionRankingSql),
     ]);
 
     const daily = dailyRows ? buildDailyRecords(dailyRows) : [];
@@ -133,6 +150,9 @@ export async function getTeamDashboardData(): Promise<TeamDashboardData> {
     const forecastDaily = forecastRows
       ? buildForecastRows(forecastRows)
       : [];
+    const regionRanking = regionRankingRows
+      ? buildRegionRanking(regionRankingRows)
+      : [];
 
     return {
       daily,
@@ -144,6 +164,7 @@ export async function getTeamDashboardData(): Promise<TeamDashboardData> {
       costBreakdownDaily,
       costBreakdownWeekly,
       forecastDaily,
+      regionRanking,
       fetchedAt: new Date().toISOString(),
     };
   } catch (error) {

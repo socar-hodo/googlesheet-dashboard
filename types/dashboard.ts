@@ -69,6 +69,17 @@ export interface ForecastRow {
   combinedAchievement: number;   // 경남+울산(달성)
 }
 
+/** 지역 랭킹 한 행 — region1 또는 region2 레벨 */
+export interface RegionRankingRow {
+  region: string;           // region1 (전국) 또는 region2 (drill)
+  revenue: number;
+  profit: number;
+  gpm: number;              // 0~1 비율 (SAFE_DIVIDE 결과)
+  usageCount: number;
+  usageHours: number;
+  utilizationRate: number;  // 0~100 퍼센트
+}
+
 /** 대시보드 전체 데이터 컨테이너 */
 export interface TeamDashboardData {
   daily: DailyRecord[];
@@ -81,5 +92,6 @@ export interface TeamDashboardData {
   costBreakdownDaily: CostBreakdownRow[];
   costBreakdownWeekly: CostBreakdownRow[];
   forecastDaily: ForecastRow[]; // FORECAST 시트 (일별 사전 매출/달성률)
+  regionRanking: RegionRankingRow[]; // 최근 기간 기준 region1 랭킹 (초기 SSR)
   fetchedAt: string;        // ISO 8601 타임스탬프 (예: "2026-02-22T09:00:00.000Z")
 }
