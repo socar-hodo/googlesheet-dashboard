@@ -68,6 +68,7 @@ export function buildWeeklyRecords(
 ): WeeklyRecord[] {
   return rows.map((r) => ({
     week: String(r.week_label ?? ""),
+    isoWeek: safeInt(r.iso_week),
     revenue: safeNumber(r.revenue),
     profit: safeNumber(r.profit),
     usageHours: safeNumber(r.usage_hours),

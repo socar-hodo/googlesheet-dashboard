@@ -111,8 +111,8 @@ describe('dailyToRows — DailyRecord 변환', () => {
 
 describe('weeklyToRows — WeeklyRecord 변환', () => {
   const records: WeeklyRecord[] = [
-    { week: '2월 1주차', revenue: 3000000, profit: 200000, usageHours: 40, usageCount: 25, utilizationRate: 75, weeklyTarget: 5000000, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
-    { week: '2월 2주차', revenue: 4000000, profit: 300000, usageHours: 45, usageCount: 28, utilizationRate: 82, weeklyTarget: 5000000, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
+    { week: '2월 1주차', revenue: 3000000, profit: 200000, usageHours: 40, usageCount: 25, utilizationRate: 75, isoWeek: 0, weeklyTarget: 5000000, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
+    { week: '2월 2주차', revenue: 4000000, profit: 300000, usageHours: 45, usageCount: 28, utilizationRate: 82, isoWeek: 0, weeklyTarget: 5000000, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
   ];
 
   it('입력 레코드 수와 동일한 행 수를 반환한다', () => {

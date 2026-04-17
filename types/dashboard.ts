@@ -16,7 +16,8 @@ export interface DailyRecord {
 
 /** Weekly 시트 한 행 — 주차별 기록 */
 export interface WeeklyRecord {
-  week: string;             // 주차 (시트 원본 형식 그대로, 예: "1주차", "2월 3주차")
+  week: string;             // 월별 주차 표기 (예: "4월 1주차")
+  isoWeek: number;          // ISO 주차 번호 (예: 15 → "W15")
   revenue: number;          // 총 매출 (원)
   profit: number;           // 손익 (원, 음수 가능)
   usageHours: number;       // 총 이용시간 (시간)

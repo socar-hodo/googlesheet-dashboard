@@ -333,7 +333,14 @@ function WeeklyTable({ records }: { records: WeeklyRecord[] }) {
             const record = records[originalIndex];
             return (
               <TableRow key={record.week} className={cn("hover:bg-muted/40", displayIndex % 2 === 1 ? "bg-muted/30" : "")}>
-                <TableCell className="text-left">{record.week}</TableCell>
+                <TableCell className="text-left">
+                  {record.week}
+                  {record.isoWeek > 0 && (
+                    <span className="ml-1.5 text-xs text-muted-foreground">
+                      (W{record.isoWeek})
+                    </span>
+                  )}
+                </TableCell>
                 <TableCell className="text-right">{formatCurrency(record.revenue)}</TableCell>
                 <TableCell className="text-right">{formatRevenuePerCar(record.revenuePerCar)}</TableCell>
                 <TableCell className="text-right">{formatGpm(gpms[originalIndex])}</TableCell>

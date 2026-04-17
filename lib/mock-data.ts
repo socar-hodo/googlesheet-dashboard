@@ -2,7 +2,7 @@
 import type { DailyRecord, WeeklyRecord, TeamDashboardData, CustomerTypeRow, RevenueBreakdownRow, CostBreakdownRow, ForecastRow } from "@/types/dashboard";
 
 type DailyMock = Omit<DailyRecord, "revenuePerCar" | "usageCountPerCar" | "usageHoursPerCar">;
-type WeeklyMock = Omit<WeeklyRecord, "revenuePerCar" | "usageCountPerCar" | "usageHoursPerCar">;
+type WeeklyMock = Omit<WeeklyRecord, "revenuePerCar" | "usageCountPerCar" | "usageHoursPerCar" | "isoWeek">;
 const MOCK_CAR_COUNT = 200; // 대당 지표 fallback 계산용 가상 차량 수
 
 // --- 일별 mock 데이터 (43개: 2026-01-26 ~ 2026-03-08) ---
@@ -79,8 +79,9 @@ const _mockWeeklyBase: WeeklyMock[] = [
   { week: "8주차", revenue: 69500000, profit: 10800000, usageHours: 335, usageCount: 230, utilizationRate: 91.0, weeklyTarget: 60000000 },
 ];
 
-export const mockWeeklyRecords: WeeklyRecord[] = _mockWeeklyBase.map((r) => ({
+export const mockWeeklyRecords: WeeklyRecord[] = _mockWeeklyBase.map((r, i) => ({
   ...r,
+  isoWeek: i + 1,
   revenuePerCar: r.revenue / MOCK_CAR_COUNT,
   usageCountPerCar: r.usageCount / MOCK_CAR_COUNT,
   usageHoursPerCar: r.usageHours / MOCK_CAR_COUNT,
