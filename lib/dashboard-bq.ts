@@ -142,19 +142,20 @@ export function sanitizeRegionName(name: string): string {
 
 // 사전 매출: actual 우선, 미래는 expected 폴백
 // target/achievement은 BQ 목표 소스 부재로 0 스텁
+// 단일 forecast_revenue 컬럼을 combinedForecast에 매핑 (ForecastChart는 combined만 사용)
 export function buildForecastRows(
   rows: Record<string, unknown>[],
 ): ForecastRow[] {
   return rows.map((r) => ({
     date: safeDate(r.d),
     ulsanTarget: 0,
-    ulsanForecast: safeNumber(r.ulsan_forecast),
+    ulsanForecast: 0,
     ulsanAchievement: 0,
     gyeongnamTarget: 0,
-    gyeongnamForecast: safeNumber(r.gyeongnam_forecast),
+    gyeongnamForecast: 0,
     gyeongnamAchievement: 0,
     combinedTarget: 0,
-    combinedForecast: safeNumber(r.combined_forecast),
+    combinedForecast: safeNumber(r.forecast_revenue),
     combinedAchievement: 0,
   }));
 }

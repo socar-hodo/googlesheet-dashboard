@@ -21,6 +21,7 @@ import { getChartColors, type ChartColorMode } from "./chart-colors";
 
 interface ForecastChartProps {
   data: ForecastRow[];
+  title?: string;
 }
 
 function formatDateLabel(date: string): string {
@@ -122,7 +123,7 @@ function RegionChart({ title, chartData, colors, targetColor, forecastColor, lin
   );
 }
 
-export function ForecastChart({ data }: ForecastChartProps) {
+export function ForecastChart({ data, title = "전국" }: ForecastChartProps) {
   const { resolvedTheme } = useTheme();
   const colors = getChartColors(resolvedTheme === "dark");
   // 목표 bar: 모든 지역 공통 회색 — 사전 bar와 명확히 구분
@@ -140,7 +141,7 @@ export function ForecastChart({ data }: ForecastChartProps) {
   return (
     <div className="space-y-4">
       <RegionChart
-        title="전국"
+        title={title}
         chartData={combinedData}
         colors={colors}
         targetColor={targetColor}

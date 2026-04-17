@@ -84,7 +84,16 @@ export async function getTeamDashboardData(): Promise<TeamDashboardData> {
     );
     const forecastSql = replaceSqlParams(
       loadDashboardSql("forecast-daily.sql"),
-      fcParams,
+      { ...fcParams, region_filter: "" },
+    );
+    const forecastRankingSql = replaceSqlParams(
+      loadDashboardSql("forecast-region-ranking.sql"),
+      {
+        start_date: fcRange.start,
+        end_date: fcRange.end,
+        group_field: "region1",
+        parent_filter: "",
+      },
     );
     const customerDailySql = replaceSqlParams(
       loadCustomerTypeSql("daily.sql"),
@@ -116,6 +125,7 @@ export async function getTeamDashboardData(): Promise<TeamDashboardData> {
       customerDailyRows,
       customerWeeklyRows,
       regionRankingRows,
+      forecastRankingRows,
     ] = await Promise.all([
       runParameterizedQuery(dailyMetricsSql),
       runParameterizedQuery(weeklyMetricsSql),
@@ -123,6 +133,7 @@ export async function getTeamDashboardData(): Promise<TeamDashboardData> {
       runParameterizedQuery(customerDailySql),
       runParameterizedQuery(customerWeeklySql),
       runParameterizedQuery(regionRankingSql),
+      runParameterizedQuery(forecastRankingSql),
     ]);
 
     const daily = dailyRows ? buildDailyRecords(dailyRows) : [];
@@ -153,6 +164,9 @@ export async function getTeamDashboardData(): Promise<TeamDashboardData> {
     const regionRanking = regionRankingRows
       ? buildRegionRanking(regionRankingRows)
       : [];
+    const forecastRegionRanking = forecastRankingRows
+      ? buildRegionRanking(forecastRankingRows)
+      : [];
 
     return {
       daily,
@@ -165,6 +179,7 @@ export async function getTeamDashboardData(): Promise<TeamDashboardData> {
       costBreakdownWeekly,
       forecastDaily,
       regionRanking,
+      forecastRegionRanking,
       fetchedAt: new Date().toISOString(),
     };
   } catch (error) {

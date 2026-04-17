@@ -93,5 +93,6 @@ export interface TeamDashboardData {
   costBreakdownWeekly: CostBreakdownRow[];
   forecastDaily: ForecastRow[]; // FORECAST 시트 (일별 사전 매출/달성률)
   regionRanking: RegionRankingRow[]; // 최근 기간 기준 region1 랭킹 (초기 SSR)
+  forecastRegionRanking: RegionRankingRow[]; // 사전 매출 기준 region1 랭킹 (예측 탭)
   fetchedAt: string;        // ISO 8601 타임스탬프 (예: "2026-02-22T09:00:00.000Z")
 }

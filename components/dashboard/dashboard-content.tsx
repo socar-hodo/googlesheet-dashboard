@@ -5,7 +5,7 @@
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import type { TeamDashboardData, RegionRankingRow } from '@/types/dashboard';
+import type { TeamDashboardData, RegionRankingRow, ForecastRow } from '@/types/dashboard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -28,6 +28,7 @@ import { DataTable } from './data-table';
 import { ForecastChart } from './charts/forecast-chart';
 import { RegionRanking } from './region-ranking';
 import { RegionDetailTable } from './region-detail-table';
+import { ForecastDetailTable } from './forecast-detail-table';
 
 interface DashboardContentProps {
   data: TeamDashboardData;
@@ -79,6 +80,12 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
   const [regionDetailRanking, setRegionDetailRanking] = useState<RegionRankingRow[]>([]);
   const [drillLoading, setDrillLoading] = useState(false);
 
+  // 예측 탭 드릴다운 — 별도 state (사전 매출 랭킹과 region-specific forecast 차트)
+  const [forecastDrillRegion, setForecastDrillRegion] = useState<string | null>(null);
+  const [forecastDetailRanking, setForecastDetailRanking] = useState<RegionRankingRow[]>([]);
+  const [forecastDrillData, setForecastDrillData] = useState<ForecastRow[]>([]);
+  const [forecastDrillLoading, setForecastDrillLoading] = useState(false);
+
   useEffect(() => {
     if (!drillRegion) {
       setRegionDetailRanking([]);
@@ -111,6 +118,45 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
 
   const handleBackToNational = useCallback(() => {
     setDrillRegion(null);
+  }, []);
+
+  // 예측 탭 drill fetch
+  useEffect(() => {
+    if (!forecastDrillRegion) {
+      setForecastDetailRanking([]);
+      setForecastDrillData([]);
+      return;
+    }
+    const controller = new AbortController();
+    setForecastDrillLoading(true);
+    fetch(`/api/dashboard/forecast-detail?region1=${encodeURIComponent(forecastDrillRegion)}`, {
+      signal: controller.signal,
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+      .then((result: { forecast: ForecastRow[]; ranking: RegionRankingRow[] }) => {
+        if (!controller.signal.aborted) {
+          setForecastDrillData(result.forecast);
+          setForecastDetailRanking(result.ranking);
+        }
+      })
+      .catch((err) => {
+        if (!controller.signal.aborted) {
+          console.warn('[forecast-detail] fetch failed:', err);
+          toast.error('지역 사전 매출 조회 실패');
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setForecastDrillLoading(false);
+      });
+    return () => controller.abort();
+  }, [forecastDrillRegion]);
+
+  const handleForecastRegionClick = useCallback((region: string) => {
+    setForecastDrillRegion((prev) => (prev ? prev : region));
+  }, []);
+
+  const handleForecastBackToNational = useCallback(() => {
+    setForecastDrillRegion(null);
   }, []);
 
   /** 기간 변경 핸들러 — 상태 업데이트와 URL 동기화를 함께 처리 */
@@ -214,19 +260,74 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
         customRange={customRange}
       />
 
-      {/* 예측 탭: ForecastChart만 렌더링 */}
+      {/* 예측 탭: ForecastChart + 지역 드릴다운 랭킹 */}
       {tab === 'forecast' ? (
-        <section>
-          <h2 className="mb-4 text-lg font-semibold text-foreground">매출 예측</h2>
-          {filteredData.forecastDaily.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-3xl border border-border/60 bg-card/80 py-16 backdrop-blur">
-              <p className="text-sm text-muted-foreground">선택한 기간에 예측 데이터가 없습니다.</p>
-              <p className="mt-1 text-xs text-muted-foreground/70">기간을 변경하거나 데이터 소스를 확인하세요.</p>
+        <>
+          <section>
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-semibold text-foreground">매출 예측</h2>
+                <Badge variant="secondary" className="text-xs">
+                  {forecastDrillRegion ?? '전국'}
+                </Badge>
+                {forecastDrillLoading && (
+                  <span className="text-xs text-muted-foreground animate-pulse">로딩중...</span>
+                )}
+              </div>
+              {forecastDrillRegion && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1 text-muted-foreground"
+                  onClick={handleForecastBackToNational}
+                >
+                  <ArrowLeft className="h-4 w-4" /> 전국
+                </Button>
+              )}
             </div>
-          ) : (
-            <ForecastChart data={filteredData.forecastDaily} />
-          )}
-        </section>
+            {(() => {
+              const chartData = forecastDrillRegion ? forecastDrillData : filteredData.forecastDaily;
+              // 기간 필터 적용 — drill 데이터에도 동일 범위로 필터링
+              const range = getDateRange(period, undefined, customRange);
+              const today = new Date();
+              let forecastEnd = range.end;
+              if (period === 'this-week') {
+                const sunday = new Date(today);
+                sunday.setDate(today.getDate() + (7 - (today.getDay() || 7)));
+                forecastEnd = toLocalDateStr(sunday);
+              } else if (period === 'this-month') {
+                const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                forecastEnd = toLocalDateStr(lastDay);
+              }
+              const filtered = chartData.filter((r) => r.date >= range.start && r.date <= forecastEnd);
+              return filtered.length === 0 ? (
+                <div className="flex flex-col items-center justify-center rounded-3xl border border-border/60 bg-card/80 py-16 backdrop-blur">
+                  <p className="text-sm text-muted-foreground">선택한 기간에 예측 데이터가 없습니다.</p>
+                </div>
+              ) : (
+                <ForecastChart data={filtered} title={forecastDrillRegion ?? '전국'} />
+              );
+            })()}
+          </section>
+
+          <section>
+            <h3 className="mb-4 text-base font-semibold text-foreground">지역 분석</h3>
+            <div className="grid gap-4 md:grid-cols-3">
+              <RegionRanking
+                data={forecastDrillRegion ? forecastDetailRanking : data.forecastRegionRanking}
+                canDrillDown={!forecastDrillRegion}
+                onRegionClick={handleForecastRegionClick}
+              />
+              <div className="md:col-span-2">
+                <ForecastDetailTable
+                  data={forecastDrillRegion ? forecastDetailRanking : data.forecastRegionRanking}
+                  canDrillDown={!forecastDrillRegion}
+                  onRegionClick={handleForecastRegionClick}
+                />
+              </div>
+            </div>
+          </section>
+        </>
       ) : (
         <>
           {/* KPI 카드 — 필터링된 데이터(current/previous)와 전체 이력(sparkline) 기반 */}

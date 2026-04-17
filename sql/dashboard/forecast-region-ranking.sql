@@ -1,14 +1,15 @@
--- 일별 사전 매출 (지역 필터 가능)
--- params: {start_date}, {end_date}, {region_filter}
--- region_filter 예시:
---   전국:                  ''
---   region1 drill:         "AND region1 = '서울특별시'"
---   region1+region2 drill: "AND region1 = '서울특별시' AND region2 = '강남구'"
--- 로직: 과거 날짜는 actual(profit 테이블), 미래는 expected(reservation + charged/paid) 폴백
+-- 지역별 사전 매출 랭킹 (actual 우선 + expected 폴백)
+-- params: {start_date}, {end_date}, {group_field}, {parent_filter}
+-- group_field: region1 또는 region2
+-- parent_filter 예시:
+--   전국 랭킹:                    ''
+--   region1 drill → region2 랭킹: "AND region1 = '서울특별시'"
 
 WITH reservation_base AS (
   SELECT
     ri.id AS reservation_id,
+    cz.region1,
+    cz.region2,
     CASE WHEN ri.state = 3 THEN DATE(ri.return_at, "Asia/Seoul")
          ELSE DATE(IFNULL(ri.reserved_end_at, ri.end_at), "Asia/Seoul") END AS end_date
   FROM `socar-data.tianjin_replica.reservation_info` ri
@@ -19,7 +20,7 @@ WITH reservation_base AS (
     AND ri.way IN ('round', 'z2d_oneway', 'd2d_oneway', 'd2d_round', 'd2d_rev')
     AND DATE(IFNULL(ri.return_at, ri.end_at), 'Asia/Seoul')
         BETWEEN '{start_date}' AND '{end_date}'
-    {region_filter}
+    {parent_filter}
 ),
 
 expected_rev AS (
@@ -52,27 +53,44 @@ expected_rev AS (
 actual_rev AS (
   SELECT
     date,
+    region1,
+    region2,
     SUM(revenue) AS _rev_total
   FROM `socar-data.socar_biz_profit.profit_socar_car_daily`
   WHERE date BETWEEN '{start_date}' AND '{end_date}'
     AND car_state IN ('수리', '운영')
     AND car_sharing_type IN ('socar', 'zplus')
-    {region_filter}
-  GROUP BY date
+    {parent_filter}
+  GROUP BY date, region1, region2
 ),
 
 expected_daily AS (
   SELECT
-    r.end_date AS date,
+    r.end_date,
+    r.region1,
+    r.region2,
     SUM(e._rev_total) AS _rev_total
   FROM reservation_base r
   LEFT JOIN expected_rev e USING (reservation_id)
-  GROUP BY r.end_date
+  GROUP BY r.end_date, r.region1, r.region2
+),
+
+combined AS (
+  SELECT
+    COALESCE(ac.region1, ed.region1) AS region1,
+    COALESCE(ac.region2, ed.region2) AS region2,
+    IFNULL(ac._rev_total, ed._rev_total) AS revenue
+  FROM expected_daily ed
+  FULL OUTER JOIN actual_rev ac
+    ON ed.end_date = ac.date
+    AND ed.region1 = ac.region1
+    AND ed.region2 = ac.region2
 )
 
 SELECT
-  FORMAT_DATE('%Y-%m-%d', COALESCE(ac.date, ed.date)) AS d,
-  IFNULL(ac._rev_total, ed._rev_total) AS forecast_revenue
-FROM expected_daily ed
-FULL OUTER JOIN actual_rev ac USING (date)
-ORDER BY d
+  {group_field} AS region,
+  SUM(revenue) AS revenue
+FROM combined
+WHERE {group_field} IS NOT NULL AND {group_field} != ''
+GROUP BY region
+ORDER BY revenue DESC
