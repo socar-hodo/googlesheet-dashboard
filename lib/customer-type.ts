@@ -23,13 +23,23 @@ function safeInt(v: unknown): number {
   return Number.isFinite(n) ? Math.round(n) : 0;
 }
 
+// ── BQ Date → "YYYY-MM-DD" 안전 변환 ────────────────────────────────
+// BQ SDK는 DATE를 { value: "2026-04-17" } 객체로 반환할 수 있음
+function safeDate(v: unknown): string {
+  if (v == null) return "";
+  if (typeof v === "object" && "value" in (v as Record<string, unknown>)) {
+    return String((v as Record<string, unknown>).value);
+  }
+  return String(v).slice(0, 10);
+}
+
 // ── BQ row → CustomerTypeRow 변환 ───────────────────────────────────
 
 export function buildDailyResponse(
   rows: Record<string, unknown>[],
 ): CustomerTypeRow[] {
   return rows.map((r) => ({
-    date: String(r.d ?? "").slice(0, 10), // BigQuery DATE → "YYYY-MM-DD"
+    date: safeDate(r.d),
     roundTripCount: safeInt(r.round_trip_count),
     callCount: safeInt(r.call_count),
     oneWayCount: safeInt(r.one_way_count),

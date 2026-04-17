@@ -45,8 +45,17 @@ export const GET = withAuth(async (req: NextRequest) => {
     runParameterizedQuery(weeklySql, params),
   ]);
 
-  return NextResponse.json({
-    daily: dailyRows ? buildDailyResponse(dailyRows) : [],
-    weekly: weeklyRows ? buildWeeklyResponse(weeklyRows) : [],
-  });
+  const daily = dailyRows ? buildDailyResponse(dailyRows) : [];
+  const weekly = weeklyRows ? buildWeeklyResponse(weeklyRows) : [];
+
+  // 디버그: 날짜 범위 및 데이터 개수 확인
+  console.log(`[customer-type] range=${startDate}~${endDate} daily=${daily.length} weekly=${weekly.length}`);
+  if (daily.length > 0) {
+    console.log(`[customer-type] daily first=${daily[0].date} last=${daily[daily.length - 1].date}`);
+  }
+  if (weekly.length > 0) {
+    console.log(`[customer-type] weekly samples:`, weekly.map((w) => w.week).join(", "));
+  }
+
+  return NextResponse.json({ daily, weekly });
 });

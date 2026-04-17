@@ -4,15 +4,15 @@
 
 WITH raw AS (
   SELECT
-    DATE(r.rent_start_at, 'Asia/Seoul') AS d,
+    r.date AS d,
     r.way
   FROM `socar-data.soda_store.reservation_v2` r
-  WHERE DATE(r.rent_start_at, 'Asia/Seoul') BETWEEN @start_date AND @end_date
+  WHERE r.date BETWEEN @start_date AND @end_date
     AND r.state IN (3, 5)
     AND r.member_imaginary IN (0, 9)
     AND (@region1 = '' OR r.zone_id IN (
       SELECT id FROM `socar-data.socar_biz_base.carzone_info_daily` z
-      WHERE z.date = DATE(r.rent_start_at, 'Asia/Seoul')
+      WHERE z.date = r.date
         AND z.region1 = @region1
     ))
     AND (ARRAY_LENGTH(@zone_ids) = 0 OR r.zone_id IN UNNEST(@zone_ids))
