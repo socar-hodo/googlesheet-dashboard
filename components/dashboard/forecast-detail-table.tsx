@@ -9,6 +9,15 @@ import type { RegionRankingRow } from "@/types/dashboard";
 
 type SortKey = "region" | "revenue" | "share";
 
+function SortIcon({ active, asc }: { active: boolean; asc: boolean }) {
+  if (!active) return null;
+  return asc ? (
+    <ChevronUp className="inline h-3 w-3" />
+  ) : (
+    <ChevronDown className="inline h-3 w-3" />
+  );
+}
+
 interface Props {
   data: RegionRankingRow[];
   canDrillDown?: boolean;
@@ -39,15 +48,6 @@ export function ForecastDetailTable({ data, canDrillDown = false, onRegionClick 
       setSortKey(key);
       setSortAsc(false);
     }
-  }
-
-  function SortIcon({ col }: { col: SortKey }) {
-    if (sortKey !== col) return null;
-    return sortAsc ? (
-      <ChevronUp className="inline h-3 w-3" />
-    ) : (
-      <ChevronDown className="inline h-3 w-3" />
-    );
   }
 
   function handleExport() {
@@ -87,19 +87,19 @@ export function ForecastDetailTable({ data, canDrillDown = false, onRegionClick 
                   className="cursor-pointer px-3 py-2 text-left font-medium"
                   onClick={() => toggleSort("region")}
                 >
-                  지역 <SortIcon col="region" />
+                  지역 <SortIcon active={sortKey === "region"} asc={sortAsc} />
                 </th>
                 <th
                   className="cursor-pointer px-3 py-2 text-right font-medium"
                   onClick={() => toggleSort("revenue")}
                 >
-                  사전 매출 <SortIcon col="revenue" />
+                  사전 매출 <SortIcon active={sortKey === "revenue"} asc={sortAsc} />
                 </th>
                 <th
                   className="cursor-pointer px-3 py-2 text-right font-medium"
                   onClick={() => toggleSort("share")}
                 >
-                  비중 <SortIcon col="share" />
+                  비중 <SortIcon active={sortKey === "share"} asc={sortAsc} />
                 </th>
               </tr>
             </thead>

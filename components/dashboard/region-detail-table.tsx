@@ -9,6 +9,15 @@ import type { RegionRankingRow } from "@/types/dashboard";
 
 type SortKey = keyof RegionRankingRow;
 
+function SortIcon({ active, asc }: { active: boolean; asc: boolean }) {
+  if (!active) return null;
+  return asc ? (
+    <ChevronUp className="inline h-3 w-3" />
+  ) : (
+    <ChevronDown className="inline h-3 w-3" />
+  );
+}
+
 interface Props {
   data: RegionRankingRow[];
   canDrillDown?: boolean;
@@ -33,15 +42,6 @@ export function RegionDetailTable({ data, canDrillDown = false, onRegionClick }:
       setSortKey(key);
       setSortAsc(false);
     }
-  }
-
-  function SortIcon({ col }: { col: SortKey }) {
-    if (sortKey !== col) return null;
-    return sortAsc ? (
-      <ChevronUp className="inline h-3 w-3" />
-    ) : (
-      <ChevronDown className="inline h-3 w-3" />
-    );
   }
 
   function handleExport() {
@@ -95,7 +95,7 @@ export function RegionDetailTable({ data, canDrillDown = false, onRegionClick }:
                     className={`cursor-pointer px-3 py-2 font-medium ${col.align}`}
                     onClick={() => toggleSort(col.key)}
                   >
-                    {col.label} <SortIcon col={col.key} />
+                    {col.label} <SortIcon active={sortKey === col.key} asc={sortAsc} />
                   </th>
                 ))}
               </tr>
