@@ -33,18 +33,20 @@ function formatCurrency(value: number): string {
   return `₩${Math.round(value / 10000).toLocaleString()}만`;
 }
 
-function formatHours(hours: number): string {
-  const h = Math.floor(hours);
-  const m = Math.round((hours % 1) * 60);
-  return `${h}h ${m}m`;
+function formatRevenuePerCar(value: number): string {
+  return `₩${Math.round(value).toLocaleString()}원`;
+}
+
+function formatHoursPerCar(hours: number): string {
+  return `${hours.toFixed(1)}시간`;
+}
+
+function formatCountPerCar(count: number): string {
+  return `${count.toFixed(1)}건`;
 }
 
 function formatRate(rate: number): string {
   return `${rate.toFixed(1)}%`;
-}
-
-function formatCount(count: number): string {
-  return `${count.toLocaleString()}건`;
 }
 
 function calcGpm(profit: number, revenue: number): number {
@@ -160,9 +162,10 @@ function DailyTable({ records }: { records: DailyRecord[] }) {
       switch (sort.column) {
         case "date": return r.date;
         case "revenue": return r.revenue;
+        case "revenuePerCar": return r.revenuePerCar;
         case "gpm": return gpms[i];
-        case "usageHours": return r.usageHours;
-        case "usageCount": return r.usageCount;
+        case "usageHoursPerCar": return r.usageHoursPerCar;
+        case "usageCountPerCar": return r.usageCountPerCar;
         case "utilizationRate": return r.utilizationRate;
         default: return 0;
       }
@@ -180,13 +183,12 @@ function DailyTable({ records }: { records: DailyRecord[] }) {
 
   const sumRevenue = records.reduce((acc, r) => acc + r.revenue, 0);
   const sumProfit = records.reduce((acc, r) => acc + r.profit, 0);
-  const sumUsageHours = records.reduce((acc, r) => acc + r.usageHours, 0);
-  const sumUsageCount = records.reduce((acc, r) => acc + r.usageCount, 0);
 
   const len = records.length;
   const avgRevenue = len > 0 ? sumRevenue / len : 0;
-  const avgUsageHours = len > 0 ? sumUsageHours / len : 0;
-  const avgUsageCount = len > 0 ? sumUsageCount / len : 0;
+  const avgRevenuePerCar = len > 0 ? records.reduce((a, r) => a + r.revenuePerCar, 0) / len : 0;
+  const avgUsageHoursPerCar = len > 0 ? records.reduce((a, r) => a + r.usageHoursPerCar, 0) / len : 0;
+  const avgUsageCountPerCar = len > 0 ? records.reduce((a, r) => a + r.usageCountPerCar, 0) / len : 0;
   const avgUtilization =
     len > 0
       ? records.reduce((acc, r) => acc + r.utilizationRate, 0) / len
@@ -201,10 +203,11 @@ function DailyTable({ records }: { records: DailyRecord[] }) {
           <TableRow>
             <SortableHead column="date" sort={sort} onSort={handleSort} className="text-left">날짜</SortableHead>
             <SortableHead column="revenue" sort={sort} onSort={handleSort} className="text-right">매출</SortableHead>
+            <SortableHead column="revenuePerCar" sort={sort} onSort={handleSort} className="text-right">대당 매출</SortableHead>
             <SortableHead column="gpm" sort={sort} onSort={handleSort} className="text-right">GPM</SortableHead>
             <TableHead scope="col" className="text-right">GPM 추이</TableHead>
-            <SortableHead column="usageHours" sort={sort} onSort={handleSort} className="text-right">이용시간</SortableHead>
-            <SortableHead column="usageCount" sort={sort} onSort={handleSort} className="text-right">이용건수</SortableHead>
+            <SortableHead column="usageHoursPerCar" sort={sort} onSort={handleSort} className="text-right">대당 이용시간</SortableHead>
+            <SortableHead column="usageCountPerCar" sort={sort} onSort={handleSort} className="text-right">대당 이용건수</SortableHead>
             <SortableHead column="utilizationRate" sort={sort} onSort={handleSort} className="text-right">가동률</SortableHead>
           </TableRow>
         </TableHeader>
@@ -215,6 +218,7 @@ function DailyTable({ records }: { records: DailyRecord[] }) {
               <TableRow key={record.date} className={cn("hover:bg-muted/40", displayIndex % 2 === 1 ? "bg-muted/30" : "")}>
                 <TableCell className="text-left">{record.date}</TableCell>
                 <TableCell className="text-right">{formatCurrency(record.revenue)}</TableCell>
+                <TableCell className="text-right">{formatRevenuePerCar(record.revenuePerCar)}</TableCell>
                 <TableCell className="text-right">{formatGpm(gpms[originalIndex])}</TableCell>
                 <TableCell
                   className={`text-right ${gpmTrendClass(
@@ -224,8 +228,8 @@ function DailyTable({ records }: { records: DailyRecord[] }) {
                 >
                   {formatGpmTrend(gpms[originalIndex], originalIndex > 0 ? gpms[originalIndex - 1] : null)}
                 </TableCell>
-                <TableCell className="text-right">{formatHours(record.usageHours)}</TableCell>
-                <TableCell className="text-right">{formatCount(record.usageCount)}</TableCell>
+                <TableCell className="text-right">{formatHoursPerCar(record.usageHoursPerCar)}</TableCell>
+                <TableCell className="text-right">{formatCountPerCar(record.usageCountPerCar)}</TableCell>
                 <TableCell className="text-right">{formatRate(record.utilizationRate)}</TableCell>
               </TableRow>
             );
@@ -233,19 +237,21 @@ function DailyTable({ records }: { records: DailyRecord[] }) {
           <TableRow className="bg-secondary font-bold" aria-label="합계">
             <TableCell className="text-left">합계</TableCell>
             <TableCell className="text-right">{formatCurrency(sumRevenue)}</TableCell>
+            <TableCell className="text-right">-</TableCell>
             <TableCell className="text-right">{formatGpm(totalGpm)}</TableCell>
             <TableCell className="text-right">-</TableCell>
-            <TableCell className="text-right">{formatHours(sumUsageHours)}</TableCell>
-            <TableCell className="text-right">{formatCount(sumUsageCount)}</TableCell>
+            <TableCell className="text-right">-</TableCell>
+            <TableCell className="text-right">-</TableCell>
             <TableCell className="text-right">-</TableCell>
           </TableRow>
           <TableRow className="bg-secondary font-bold" aria-label="평균">
             <TableCell className="text-left">평균</TableCell>
             <TableCell className="text-right">{formatCurrency(Math.round(avgRevenue))}</TableCell>
+            <TableCell className="text-right">{formatRevenuePerCar(avgRevenuePerCar)}</TableCell>
             <TableCell className="text-right">{formatGpm(avgGpm)}</TableCell>
             <TableCell className="text-right">-</TableCell>
-            <TableCell className="text-right">{formatHours(avgUsageHours)}</TableCell>
-            <TableCell className="text-right">{formatCount(Math.round(avgUsageCount))}</TableCell>
+            <TableCell className="text-right">{formatHoursPerCar(avgUsageHoursPerCar)}</TableCell>
+            <TableCell className="text-right">{formatCountPerCar(avgUsageCountPerCar)}</TableCell>
             <TableCell className="text-right">{formatRate(avgUtilization)}</TableCell>
           </TableRow>
         </TableBody>
@@ -269,9 +275,10 @@ function WeeklyTable({ records }: { records: WeeklyRecord[] }) {
       switch (sort.column) {
         case "week": return r.week;
         case "revenue": return r.revenue;
+        case "revenuePerCar": return r.revenuePerCar;
         case "gpm": return gpms[i];
-        case "usageHours": return r.usageHours;
-        case "usageCount": return r.usageCount;
+        case "usageHoursPerCar": return r.usageHoursPerCar;
+        case "usageCountPerCar": return r.usageCountPerCar;
         case "utilizationRate": return r.utilizationRate;
         case "weeklyTarget": return r.weeklyTarget;
         default: return 0;
@@ -290,14 +297,13 @@ function WeeklyTable({ records }: { records: WeeklyRecord[] }) {
 
   const sumRevenue = records.reduce((acc, r) => acc + r.revenue, 0);
   const sumProfit = records.reduce((acc, r) => acc + r.profit, 0);
-  const sumUsageHours = records.reduce((acc, r) => acc + r.usageHours, 0);
-  const sumUsageCount = records.reduce((acc, r) => acc + r.usageCount, 0);
   const sumTarget = records.reduce((acc, r) => acc + r.weeklyTarget, 0);
 
   const len = records.length;
   const avgRevenue = len > 0 ? sumRevenue / len : 0;
-  const avgUsageHours = len > 0 ? sumUsageHours / len : 0;
-  const avgUsageCount = len > 0 ? sumUsageCount / len : 0;
+  const avgRevenuePerCar = len > 0 ? records.reduce((a, r) => a + r.revenuePerCar, 0) / len : 0;
+  const avgUsageHoursPerCar = len > 0 ? records.reduce((a, r) => a + r.usageHoursPerCar, 0) / len : 0;
+  const avgUsageCountPerCar = len > 0 ? records.reduce((a, r) => a + r.usageCountPerCar, 0) / len : 0;
   const avgUtilization =
     len > 0
       ? records.reduce((acc, r) => acc + r.utilizationRate, 0) / len
@@ -313,10 +319,11 @@ function WeeklyTable({ records }: { records: WeeklyRecord[] }) {
           <TableRow>
             <SortableHead column="week" sort={sort} onSort={handleSort} className="text-left">주차별</SortableHead>
             <SortableHead column="revenue" sort={sort} onSort={handleSort} className="text-right">매출</SortableHead>
+            <SortableHead column="revenuePerCar" sort={sort} onSort={handleSort} className="text-right">대당 매출</SortableHead>
             <SortableHead column="gpm" sort={sort} onSort={handleSort} className="text-right">GPM</SortableHead>
             <TableHead scope="col" className="text-right">GPM 추이</TableHead>
-            <SortableHead column="usageHours" sort={sort} onSort={handleSort} className="text-right">이용시간</SortableHead>
-            <SortableHead column="usageCount" sort={sort} onSort={handleSort} className="text-right">이용건수</SortableHead>
+            <SortableHead column="usageHoursPerCar" sort={sort} onSort={handleSort} className="text-right">대당 이용시간</SortableHead>
+            <SortableHead column="usageCountPerCar" sort={sort} onSort={handleSort} className="text-right">대당 이용건수</SortableHead>
             <SortableHead column="utilizationRate" sort={sort} onSort={handleSort} className="text-right">가동률</SortableHead>
             <SortableHead column="weeklyTarget" sort={sort} onSort={handleSort} className="text-right">목표</SortableHead>
           </TableRow>
@@ -328,6 +335,7 @@ function WeeklyTable({ records }: { records: WeeklyRecord[] }) {
               <TableRow key={record.week} className={cn("hover:bg-muted/40", displayIndex % 2 === 1 ? "bg-muted/30" : "")}>
                 <TableCell className="text-left">{record.week}</TableCell>
                 <TableCell className="text-right">{formatCurrency(record.revenue)}</TableCell>
+                <TableCell className="text-right">{formatRevenuePerCar(record.revenuePerCar)}</TableCell>
                 <TableCell className="text-right">{formatGpm(gpms[originalIndex])}</TableCell>
                 <TableCell
                   className={`text-right ${gpmTrendClass(
@@ -337,8 +345,8 @@ function WeeklyTable({ records }: { records: WeeklyRecord[] }) {
                 >
                   {formatGpmTrend(gpms[originalIndex], originalIndex > 0 ? gpms[originalIndex - 1] : null)}
                 </TableCell>
-                <TableCell className="text-right">{formatHours(record.usageHours)}</TableCell>
-                <TableCell className="text-right">{formatCount(record.usageCount)}</TableCell>
+                <TableCell className="text-right">{formatHoursPerCar(record.usageHoursPerCar)}</TableCell>
+                <TableCell className="text-right">{formatCountPerCar(record.usageCountPerCar)}</TableCell>
                 <TableCell className="text-right">{formatRate(record.utilizationRate)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(record.weeklyTarget)}</TableCell>
               </TableRow>
@@ -347,20 +355,22 @@ function WeeklyTable({ records }: { records: WeeklyRecord[] }) {
           <TableRow className="bg-secondary font-bold" aria-label="합계">
             <TableCell className="text-left">합계</TableCell>
             <TableCell className="text-right">{formatCurrency(sumRevenue)}</TableCell>
+            <TableCell className="text-right">-</TableCell>
             <TableCell className="text-right">{formatGpm(totalGpm)}</TableCell>
             <TableCell className="text-right">-</TableCell>
-            <TableCell className="text-right">{formatHours(sumUsageHours)}</TableCell>
-            <TableCell className="text-right">{formatCount(sumUsageCount)}</TableCell>
+            <TableCell className="text-right">-</TableCell>
+            <TableCell className="text-right">-</TableCell>
             <TableCell className="text-right">-</TableCell>
             <TableCell className="text-right">{formatCurrency(sumTarget)}</TableCell>
           </TableRow>
           <TableRow className="bg-secondary font-bold" aria-label="평균">
             <TableCell className="text-left">평균</TableCell>
             <TableCell className="text-right">{formatCurrency(Math.round(avgRevenue))}</TableCell>
+            <TableCell className="text-right">{formatRevenuePerCar(avgRevenuePerCar)}</TableCell>
             <TableCell className="text-right">{formatGpm(avgGpm)}</TableCell>
             <TableCell className="text-right">-</TableCell>
-            <TableCell className="text-right">{formatHours(avgUsageHours)}</TableCell>
-            <TableCell className="text-right">{formatCount(Math.round(avgUsageCount))}</TableCell>
+            <TableCell className="text-right">{formatHoursPerCar(avgUsageHoursPerCar)}</TableCell>
+            <TableCell className="text-right">{formatCountPerCar(avgUsageCountPerCar)}</TableCell>
             <TableCell className="text-right">{formatRate(avgUtilization)}</TableCell>
             <TableCell className="text-right">{formatCurrency(Math.round(avgTarget))}</TableCell>
           </TableRow>

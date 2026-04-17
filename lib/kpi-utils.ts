@@ -63,10 +63,12 @@ export function getDeltaColorClass(percent: number): string {
  * 금액이 아닌 KPI(이용건수, 가동률, 이용시간)는 unit 파라미터로 구분.
  * CONTEXT.md 결정에 따라 ▲/▼ 화살표 사용.
  */
+export type KpiUnit = '원' | '건' | '%' | '시간' | '원/대' | '건/대' | '시간/대';
+
 export function formatDelta(
   percent: number,
   absolute: number,
-  unit: '원' | '건' | '%' | '시간'
+  unit: KpiUnit
 ): string {
   const arrow = percent >= 0 ? '▲' : '▼';
   const sign = percent >= 0 ? '+' : '';
@@ -74,11 +76,20 @@ export function formatDelta(
     const absWon = Math.abs(absolute);
     return `${arrow} ${sign}${percent}% / ₩${Math.round(absWon / 10000).toLocaleString()}만`;
   }
+  if (unit === '원/대') {
+    return `${arrow} ${sign}${percent}% / ₩${Math.round(Math.abs(absolute)).toLocaleString()}원`;
+  }
   if (unit === '%') {
     return `${arrow} ${sign}${percent}% / ${Math.abs(absolute).toFixed(1)}%p`;
   }
   if (unit === '시간') {
     return `${arrow} ${sign}${percent}% / ${Math.abs(absolute).toLocaleString()}시간`;
+  }
+  if (unit === '시간/대') {
+    return `${arrow} ${sign}${percent}% / ${Math.abs(absolute).toFixed(1)}시간`;
+  }
+  if (unit === '건/대') {
+    return `${arrow} ${sign}${percent}% / ${Math.abs(absolute).toFixed(1)}건`;
   }
   // 건수
   return `${arrow} ${sign}${percent}% / ${Math.abs(absolute).toLocaleString()}건`;
@@ -86,14 +97,23 @@ export function formatDelta(
 
 /**
  * KPI 종류에 따라 표시 문자열 반환.
- * CLAUDE.md 규칙: 금액은 ₩N만, 시간은 N시간, 건수는 N건, 비율은 N%.
+ * - 원:        ₩N만 (만원 단위)
+ * - 원/대:     ₩N,NNN원 (대당 매출은 금액이 작아 원 단위)
+ * - %:         N.N%
+ * - 시간:      N시간 (정수)
+ * - 시간/대:   N.N시간 (소수 1자리)
+ * - 건:        N건 (정수)
+ * - 건/대:     N.N건 (소수 1자리)
  */
 export function formatKpiValue(
   value: number,
-  unit: '원' | '건' | '%' | '시간'
+  unit: KpiUnit
 ): string {
   if (unit === '원') return `₩${Math.round(value / 10000).toLocaleString()}만`;
+  if (unit === '원/대') return `₩${Math.round(value).toLocaleString()}원`;
   if (unit === '%') return `${value.toFixed(1)}%`;
-  if (unit === '시간') return `${value.toLocaleString()}시간`;
+  if (unit === '시간') return `${Math.round(value).toLocaleString()}시간`;
+  if (unit === '시간/대') return `${value.toFixed(1)}시간`;
+  if (unit === '건/대') return `${value.toFixed(1)}건`;
   return `${value.toLocaleString()}건`;
 }

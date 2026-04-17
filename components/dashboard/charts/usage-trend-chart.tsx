@@ -1,5 +1,5 @@
 // components/dashboard/charts/usage-trend-chart.tsx
-// CHART-04: 이용건수/이용시간 이중 YAxis Bar 차트
+// 대당 이용건수/대당 이용시간 이중 YAxis Bar 차트 (opr_day 기준)
 "use client";
 
 import { useRef } from 'react';
@@ -30,24 +30,24 @@ export function UsageTrendChart({ records, tab }: UsageTrendChartProps) {
   const { resolvedTheme } = useTheme();
   const colors = getChartColors(resolvedTheme === 'dark');
 
-  // X축 레이블 변환 + 이중 YAxis 데이터 변환 (RESEARCH.md Pattern 7)
+  // X축 레이블 변환 + 이중 YAxis 데이터 변환
   const chartData = records.map((r) => ({
     label:
       tab === 'daily'
         ? formatDailyLabel((r as DailyRecord).date)
         : formatWeeklyLabel((r as WeeklyRecord).week),
-    usageCount: r.usageCount,
-    usageHours: r.usageHours,
+    usageCountPerCar: r.usageCountPerCar,
+    usageHoursPerCar: r.usageHoursPerCar,
   }));
 
   return (
     <Card className="group/chart">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>이용건수 / 이용시간</CardTitle>
-        <ChartDownloadButton chartRef={chartRef} filename="이용건수_이용시간" />
+        <CardTitle>대당 이용건수 / 대당 이용시간</CardTitle>
+        <ChartDownloadButton chartRef={chartRef} filename="대당_이용건수_이용시간" />
       </CardHeader>
       <CardContent>
-        <div ref={chartRef} role="img" aria-label="이용건수 및 이용시간 차트">
+        <div ref={chartRef} role="img" aria-label="대당 이용건수 및 대당 이용시간 차트">
         <ResponsiveContainer width="100%" height={280} minWidth={0}>
             <ComposedChart
               data={chartData}
@@ -58,7 +58,6 @@ export function UsageTrendChart({ records, tab }: UsageTrendChartProps) {
                 dataKey="label"
                 tick={{ fill: colors.axis, fontSize: 11 }}
               />
-              {/* 좌 Y축 — 이용건수 (yAxisId 필수, Pitfall 3 방지) */}
               <YAxis
                 yAxisId="left"
                 orientation="left"
@@ -66,7 +65,6 @@ export function UsageTrendChart({ records, tab }: UsageTrendChartProps) {
                 tickFormatter={(v) => `${v}건`}
                 width={45}
               />
-              {/* 우 Y축 — 이용시간 (yAxisId 필수, Pitfall 3 방지) */}
               <YAxis
                 yAxisId="right"
                 orientation="right"
@@ -76,7 +74,9 @@ export function UsageTrendChart({ records, tab }: UsageTrendChartProps) {
               />
               <Tooltip
                 formatter={(value, name) => [
-                  name === '이용건수' ? `${value}건` : `${value}h`,
+                  name === '대당 이용건수'
+                    ? `${Number(value).toFixed(1)}건`
+                    : `${Number(value).toFixed(1)}시간`,
                   name,
                 ]}
                 labelFormatter={(label) => `${label}`}
@@ -91,19 +91,18 @@ export function UsageTrendChart({ records, tab }: UsageTrendChartProps) {
               {chartData.length > 14 && (
                 <Brush dataKey="label" height={20} stroke="var(--chart-1)" travellerWidth={8} />
               )}
-              {/* yAxisId가 YAxis의 yAxisId prop과 반드시 일치해야 함 */}
               <Bar
                 yAxisId="left"
-                dataKey="usageCount"
+                dataKey="usageCountPerCar"
                 fill={colors.chart1}
-                name="이용건수"
+                name="대당 이용건수"
                 radius={[2, 2, 0, 0]}
               />
               <Bar
                 yAxisId="right"
-                dataKey="usageHours"
+                dataKey="usageHoursPerCar"
                 fill={colors.chart2}
-                name="이용시간"
+                name="대당 이용시간"
                 radius={[2, 2, 0, 0]}
               />
             </ComposedChart>

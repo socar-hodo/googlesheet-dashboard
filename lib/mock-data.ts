@@ -1,9 +1,13 @@
 // 경남울산사업팀 매출 대시보드 — 개발/폴백용 mock 데이터
 import type { DailyRecord, WeeklyRecord, TeamDashboardData, CustomerTypeRow, RevenueBreakdownRow, CostBreakdownRow, ForecastRow } from "@/types/dashboard";
 
+type DailyMock = Omit<DailyRecord, "revenuePerCar" | "usageCountPerCar" | "usageHoursPerCar">;
+type WeeklyMock = Omit<WeeklyRecord, "revenuePerCar" | "usageCountPerCar" | "usageHoursPerCar">;
+const MOCK_CAR_COUNT = 200; // 대당 지표 fallback 계산용 가상 차량 수
+
 // --- 일별 mock 데이터 (43개: 2026-01-26 ~ 2026-03-08) ---
 // 2026-03 데이터 추가: 기본 period가 this-month(3월)이므로 현재 날짜 기준 데이터 필요
-export const mockDailyRecords: DailyRecord[] = [
+const _mockDailyBase: DailyMock[] = [
   // 1주차: 2026-01-26 ~ 2026-02-01
   { date: "2026-01-26", revenue: 9200000, profit: 1200000, usageHours: 42, usageCount: 28, utilizationRate: 72.5 },
   { date: "2026-01-27", revenue: 10500000, profit: 1800000, usageHours: 48, usageCount: 35, utilizationRate: 83.2 },
@@ -51,8 +55,15 @@ export const mockDailyRecords: DailyRecord[] = [
   { date: "2026-03-08", revenue: 10100000, profit: 1620000, usageHours: 46, usageCount: 37, utilizationRate: 79.4 },
 ];
 
+export const mockDailyRecords: DailyRecord[] = _mockDailyBase.map((r) => ({
+  ...r,
+  revenuePerCar: r.revenue / MOCK_CAR_COUNT,
+  usageCountPerCar: r.usageCount / MOCK_CAR_COUNT,
+  usageHoursPerCar: r.usageHours / MOCK_CAR_COUNT,
+}));
+
 // --- 주차별 mock 데이터 (8개: 1주차 ~ 8주차) ---
-export const mockWeeklyRecords: WeeklyRecord[] = [
+const _mockWeeklyBase: WeeklyMock[] = [
   // 목표 기준 초과 케이스 (매출 > 6,000만원)
   { week: "1주차", revenue: 67000000, profit: 8500000, usageHours: 320, usageCount: 215, utilizationRate: 78.4, weeklyTarget: 60000000 },
   { week: "2주차", revenue: 72000000, profit: 11000000, usageHours: 345, usageCount: 240, utilizationRate: 86.5, weeklyTarget: 60000000 },
@@ -67,6 +78,13 @@ export const mockWeeklyRecords: WeeklyRecord[] = [
   // 목표 초과 케이스
   { week: "8주차", revenue: 69500000, profit: 10800000, usageHours: 335, usageCount: 230, utilizationRate: 91.0, weeklyTarget: 60000000 },
 ];
+
+export const mockWeeklyRecords: WeeklyRecord[] = _mockWeeklyBase.map((r) => ({
+  ...r,
+  revenuePerCar: r.revenue / MOCK_CAR_COUNT,
+  usageCountPerCar: r.usageCount / MOCK_CAR_COUNT,
+  usageHoursPerCar: r.usageHours / MOCK_CAR_COUNT,
+}));
 
 // --- 통합 mock 데이터 ---
 export const mockTeamDashboardData: TeamDashboardData = {

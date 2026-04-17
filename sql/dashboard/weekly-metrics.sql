@@ -9,6 +9,7 @@ WITH profit AS (
     SUM(profit) AS profit,
     SUM(utime) AS usage_hours,
     SUM(nuse) AS usage_count,
+    SUM(opr_day) AS opr_day,
     SUM(_rev_rent) AS rental_revenue,
     SUM(_rev_pf) AS pf_revenue,
     SUM(_rev_oil) AS driving_revenue,
@@ -45,7 +46,7 @@ operation AS (
 merged AS (
   SELECT
     p.date,
-    p.revenue, p.profit, p.usage_hours, p.usage_count,
+    p.revenue, p.profit, p.usage_hours, p.usage_count, p.opr_day,
     p.rental_revenue, p.pf_revenue, p.driving_revenue, p.call_revenue, p.other_revenue,
     p.transport_cost, p.fuel_cost, p.parking_cost, p.inspection_cost, p.depreciation_cost, p.commission_cost,
     o.op_min, o.dp_min
@@ -66,6 +67,10 @@ SELECT
   SUM(profit) AS profit,
   SUM(usage_hours) AS usage_hours,
   SUM(usage_count) AS usage_count,
+  SUM(opr_day) AS opr_day,
+  SAFE_DIVIDE(SUM(revenue), SUM(opr_day)) AS revenue_per_car,
+  SAFE_DIVIDE(SUM(usage_count), SUM(opr_day)) AS usage_count_per_car,
+  SAFE_DIVIDE(SUM(usage_hours), SUM(opr_day)) AS usage_hours_per_car,
   SAFE_DIVIDE(SUM(op_min), SUM(dp_min)) * 100 AS utilization_rate,
   SUM(rental_revenue) AS rental_revenue,
   SUM(pf_revenue) AS pf_revenue,

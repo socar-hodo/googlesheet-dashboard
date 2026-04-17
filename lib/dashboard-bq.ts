@@ -57,6 +57,9 @@ export function buildDailyRecords(
     usageHours: safeNumber(r.usage_hours),
     usageCount: safeInt(r.usage_count),
     utilizationRate: safeNumber(r.utilization_rate),
+    revenuePerCar: safeNumber(r.revenue_per_car),
+    usageCountPerCar: safeNumber(r.usage_count_per_car),
+    usageHoursPerCar: safeNumber(r.usage_hours_per_car),
   }));
 }
 
@@ -71,6 +74,9 @@ export function buildWeeklyRecords(
     usageCount: safeInt(r.usage_count),
     utilizationRate: safeNumber(r.utilization_rate),
     weeklyTarget: 0,
+    revenuePerCar: safeNumber(r.revenue_per_car),
+    usageCountPerCar: safeNumber(r.usage_count_per_car),
+    usageHoursPerCar: safeNumber(r.usage_hours_per_car),
   }));
 }
 

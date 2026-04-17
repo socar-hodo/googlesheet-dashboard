@@ -3,23 +3,29 @@
 /** Daily 시트 한 행 — 일자별 기록 */
 export interface DailyRecord {
   date: string;             // 일자 (시트 원본 형식 그대로, 예: "2026-02-21")
-  revenue: number;          // 매출 (원)
+  revenue: number;          // 총 매출 (원)
   profit: number;           // 손익 (원, 음수 가능)
-  usageHours: number;       // 이용시간 (시간)
-  usageCount: number;       // 이용건수
+  usageHours: number;       // 총 이용시간 (시간)
+  usageCount: number;       // 총 이용건수
   utilizationRate: number;  // 가동률 (%, 0-100 범위)
-  // monthlyTarget 없음 — Daily 시트에는 목표 컬럼이 존재하지 않음 (CONTEXT.md 결정)
+  // 대당 지표 — opr_day 기준
+  revenuePerCar: number;    // 대당 매출 (원/대)
+  usageCountPerCar: number; // 대당 이용건수 (건/대, 소수 가능)
+  usageHoursPerCar: number; // 대당 이용시간 (시간/대, 소수 가능)
 }
 
 /** Weekly 시트 한 행 — 주차별 기록 */
 export interface WeeklyRecord {
   week: string;             // 주차 (시트 원본 형식 그대로, 예: "1주차", "2월 3주차")
-  revenue: number;          // 매출 (원)
+  revenue: number;          // 총 매출 (원)
   profit: number;           // 손익 (원, 음수 가능)
-  usageHours: number;       // 이용시간 (시간)
-  usageCount: number;       // 이용건수
+  usageHours: number;       // 총 이용시간 (시간)
+  usageCount: number;       // 총 이용건수
   utilizationRate: number;  // 가동률 (%, 0-100 범위)
   weeklyTarget: number;     // 주차 목표 (원) — Weekly 전용 필드
+  revenuePerCar: number;    // 대당 매출 (원/대)
+  usageCountPerCar: number; // 대당 이용건수 (건/대, 소수 가능)
+  usageHoursPerCar: number; // 대당 이용시간 (시간/대, 소수 가능)
 }
 
 /** 고객 유형별 이용 건수 — 일별/주차별 공용 */

@@ -46,25 +46,26 @@ export function dailyToRows(records: DailyRecord[]): Record<string, unknown>[] {
   return records.map((r) => ({
     날짜: r.date,
     매출: r.revenue,
+    '대당 매출': Math.round(r.revenuePerCar),
     손익: r.profit,
-    이용시간: r.usageHours,
-    이용건수: r.usageCount,
+    '대당 이용시간': Number(r.usageHoursPerCar.toFixed(1)),
+    '대당 이용건수': Number(r.usageCountPerCar.toFixed(1)),
     가동률: r.utilizationRate,
   }));
 }
 
 /**
  * WeeklyRecord 배열을 내보내기용 plain object 배열로 변환한다.
- * 컬럼 순서: 주차, 매출, 손익, 이용시간, 이용건수, 가동률, 목표
- * 숫자값은 포맷 없는 raw number
+ * 컬럼: 주차, 매출, 대당 매출, 손익, 대당 이용시간, 대당 이용건수, 가동률, 목표
  */
 export function weeklyToRows(records: WeeklyRecord[]): Record<string, unknown>[] {
   return records.map((r) => ({
     주차: r.week,
     매출: r.revenue,
+    '대당 매출': Math.round(r.revenuePerCar),
     손익: r.profit,
-    이용시간: r.usageHours,
-    이용건수: r.usageCount,
+    '대당 이용시간': Number(r.usageHoursPerCar.toFixed(1)),
+    '대당 이용건수': Number(r.usageCountPerCar.toFixed(1)),
     가동률: r.utilizationRate,
     목표: r.weeklyTarget,
   }));
@@ -74,11 +75,9 @@ export function weeklyToRows(records: WeeklyRecord[]): Record<string, unknown>[]
 // CSV 헤더 매핑 (tab별)
 // ---------------------------------------------------------------------------
 
-/** daily 탭 CSV 헤더 (날짜, 매출, 손익, 이용시간, 이용건수, 가동률) */
-const DAILY_HEADERS = ['날짜', '매출', '손익', '이용시간', '이용건수', '가동률'];
+const DAILY_HEADERS = ['날짜', '매출', '대당 매출', '손익', '대당 이용시간', '대당 이용건수', '가동률'];
 
-/** weekly 탭 CSV 헤더 (주차, 매출, 손익, 이용시간, 이용건수, 가동률, 목표) */
-const WEEKLY_HEADERS = ['주차', '매출', '손익', '이용시간', '이용건수', '가동률', '목표'];
+const WEEKLY_HEADERS = ['주차', '매출', '대당 매출', '손익', '대당 이용시간', '대당 이용건수', '가동률', '목표'];
 
 // ---------------------------------------------------------------------------
 // 공개 내보내기 함수

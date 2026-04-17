@@ -1,7 +1,7 @@
 'use client';
 
-// KPI 카드 그리드 — TeamDashboardData에서 5개 KPI 카드 렌더링
-import { TrendingUp, DollarSign, Users, Activity, Clock } from 'lucide-react';
+// KPI 카드 그리드 — TeamDashboardData에서 6개 KPI 카드 렌더링 (매출/대당매출/GPM/대당건수/가동률/대당시간)
+import { TrendingUp, DollarSign, Car, Users, Activity, Clock } from 'lucide-react';
 import type { TeamDashboardData } from '@/types/dashboard';
 import {
   calcAchievementRate,
@@ -33,7 +33,7 @@ export function KpiCards({ data, fullData, tab }: KpiCardsProps) {
       return <div><p className="text-muted-foreground">일별 데이터가 없습니다.</p><p className="mt-1 text-xs text-muted-foreground/70">기간을 변경하거나 데이터 소스를 확인하세요.</p></div>;
     }
 
-    // 카드 정의 배열 (비즈니스 중요도 순)
+    // 카드 정의 배열 (비즈니스 중요도 순) — 매출/대당매출/GPM/대당건수/가동률/대당시간
     const cards = [
       {
         title: '매출',
@@ -42,6 +42,14 @@ export function KpiCards({ data, fullData, tab }: KpiCardsProps) {
         unit: '원' as const,
         icon: <TrendingUp className="h-4 w-4" />,
         sparklineData: sparklineSorted.map(d => d.revenue).slice(-DAILY_N),
+      },
+      {
+        title: '대당 매출',
+        value: formatKpiValue(current.revenuePerCar, '원/대'),
+        delta: previous ? calcDelta(current.revenuePerCar, previous.revenuePerCar) : null,
+        unit: '원/대' as const,
+        icon: <Car className="h-4 w-4" />,
+        sparklineData: sparklineSorted.map(d => d.revenuePerCar).slice(-DAILY_N),
       },
       {
         title: 'GPM',
@@ -62,12 +70,12 @@ export function KpiCards({ data, fullData, tab }: KpiCardsProps) {
           .slice(-DAILY_N),
       },
       {
-        title: '이용건수',
-        value: formatKpiValue(current.usageCount, '건'),
-        delta: previous ? calcDelta(current.usageCount, previous.usageCount) : null,
-        unit: '건' as const,
+        title: '대당 이용건수',
+        value: formatKpiValue(current.usageCountPerCar, '건/대'),
+        delta: previous ? calcDelta(current.usageCountPerCar, previous.usageCountPerCar) : null,
+        unit: '건/대' as const,
         icon: <Users className="h-4 w-4" />,
-        sparklineData: sparklineSorted.map(d => d.usageCount).slice(-DAILY_N),
+        sparklineData: sparklineSorted.map(d => d.usageCountPerCar).slice(-DAILY_N),
       },
       {
         title: '가동률',
@@ -78,17 +86,17 @@ export function KpiCards({ data, fullData, tab }: KpiCardsProps) {
         sparklineData: sparklineSorted.map(d => d.utilizationRate).slice(-DAILY_N),
       },
       {
-        title: '이용시간',
-        value: formatKpiValue(current.usageHours, '시간'),
-        delta: previous ? calcDelta(current.usageHours, previous.usageHours) : null,
-        unit: '시간' as const,
+        title: '대당 이용시간',
+        value: formatKpiValue(current.usageHoursPerCar, '시간/대'),
+        delta: previous ? calcDelta(current.usageHoursPerCar, previous.usageHoursPerCar) : null,
+        unit: '시간/대' as const,
         icon: <Clock className="h-4 w-4" />,
-        sparklineData: sparklineSorted.map(d => d.usageHours).slice(-DAILY_N),
+        sparklineData: sparklineSorted.map(d => d.usageHoursPerCar).slice(-DAILY_N),
       },
     ];
 
     return (
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 xl:grid-cols-6">
         {cards.map((card) => (
           <KpiCard
             key={card.title}
@@ -129,6 +137,16 @@ export function KpiCards({ data, fullData, tab }: KpiCardsProps) {
       sparklineData: weeklySorted.map(d => d.revenue).slice(-WEEKLY_N),
     },
     {
+      title: '대당 매출',
+      value: formatKpiValue(current.revenuePerCar, '원/대'),
+      target: undefined as string | undefined,
+      achievementRate: undefined as number | undefined,
+      delta: previous ? calcDelta(current.revenuePerCar, previous.revenuePerCar) : null,
+      unit: '원/대' as const,
+      icon: <Car className="h-4 w-4" />,
+      sparklineData: weeklySorted.map(d => d.revenuePerCar).slice(-WEEKLY_N),
+    },
+    {
       title: 'GPM',
       value: formatKpiValue(
         current.revenue > 0 ? (current.profit / current.revenue) * 100 : 0,
@@ -149,14 +167,14 @@ export function KpiCards({ data, fullData, tab }: KpiCardsProps) {
         .slice(-WEEKLY_N),
     },
     {
-      title: '이용건수',
-      value: formatKpiValue(current.usageCount, '건'),
+      title: '대당 이용건수',
+      value: formatKpiValue(current.usageCountPerCar, '건/대'),
       target: undefined as string | undefined,
       achievementRate: undefined as number | undefined,
-      delta: previous ? calcDelta(current.usageCount, previous.usageCount) : null,
-      unit: '건' as const,
+      delta: previous ? calcDelta(current.usageCountPerCar, previous.usageCountPerCar) : null,
+      unit: '건/대' as const,
       icon: <Users className="h-4 w-4" />,
-      sparklineData: weeklySorted.map(d => d.usageCount).slice(-WEEKLY_N),
+      sparklineData: weeklySorted.map(d => d.usageCountPerCar).slice(-WEEKLY_N),
     },
     {
       title: '가동률',
@@ -169,19 +187,19 @@ export function KpiCards({ data, fullData, tab }: KpiCardsProps) {
       sparklineData: weeklySorted.map(d => d.utilizationRate).slice(-WEEKLY_N),
     },
     {
-      title: '이용시간',
-      value: formatKpiValue(current.usageHours, '시간'),
+      title: '대당 이용시간',
+      value: formatKpiValue(current.usageHoursPerCar, '시간/대'),
       target: undefined as string | undefined,
       achievementRate: undefined as number | undefined,
-      delta: previous ? calcDelta(current.usageHours, previous.usageHours) : null,
-      unit: '시간' as const,
+      delta: previous ? calcDelta(current.usageHoursPerCar, previous.usageHoursPerCar) : null,
+      unit: '시간/대' as const,
       icon: <Clock className="h-4 w-4" />,
-      sparklineData: weeklySorted.map(d => d.usageHours).slice(-WEEKLY_N),
+      sparklineData: weeklySorted.map(d => d.usageHoursPerCar).slice(-WEEKLY_N),
     },
   ];
 
   return (
-    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 xl:grid-cols-6">
       {cards.map((card) => (
         <KpiCard
           key={card.title}

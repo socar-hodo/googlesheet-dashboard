@@ -69,18 +69,18 @@ describe('escapeCsvField — RFC 4180 준수', () => {
 
 describe('dailyToRows — DailyRecord 변환', () => {
   const records: DailyRecord[] = [
-    { date: '2026-03-01', revenue: 1000000, profit: 100000, usageHours: 8, usageCount: 5, utilizationRate: 80 },
-    { date: '2026-03-02', revenue: 2000000, profit: -50000, usageHours: 9, usageCount: 6, utilizationRate: 85 },
+    { date: '2026-03-01', revenue: 1000000, profit: 100000, usageHours: 8, usageCount: 5, utilizationRate: 80, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
+    { date: '2026-03-02', revenue: 2000000, profit: -50000, usageHours: 9, usageCount: 6, utilizationRate: 85, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
   ];
 
   it('입력 레코드 수와 동일한 행 수를 반환한다', () => {
     expect(dailyToRows(records)).toHaveLength(2);
   });
 
-  it('첫 번째 행의 키 목록이 올바르다 (날짜,매출,손익,이용시간,이용건수,가동률)', () => {
+  it('첫 번째 행의 키 목록이 올바르다 (날짜,매출,대당매출,손익,대당이용시간,대당이용건수,가동률)', () => {
     const rows = dailyToRows(records);
     const keys = Object.keys(rows[0]);
-    expect(keys).toEqual(['날짜', '매출', '손익', '이용시간', '이용건수', '가동률']);
+    expect(keys).toEqual(['날짜', '매출', '대당 매출', '손익', '대당 이용시간', '대당 이용건수', '가동률']);
   });
 
   it('날짜 필드 값이 원본 date 문자열과 동일하다', () => {
@@ -111,18 +111,18 @@ describe('dailyToRows — DailyRecord 변환', () => {
 
 describe('weeklyToRows — WeeklyRecord 변환', () => {
   const records: WeeklyRecord[] = [
-    { week: '2월 1주차', revenue: 3000000, profit: 200000, usageHours: 40, usageCount: 25, utilizationRate: 75, weeklyTarget: 5000000 },
-    { week: '2월 2주차', revenue: 4000000, profit: 300000, usageHours: 45, usageCount: 28, utilizationRate: 82, weeklyTarget: 5000000 },
+    { week: '2월 1주차', revenue: 3000000, profit: 200000, usageHours: 40, usageCount: 25, utilizationRate: 75, weeklyTarget: 5000000, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
+    { week: '2월 2주차', revenue: 4000000, profit: 300000, usageHours: 45, usageCount: 28, utilizationRate: 82, weeklyTarget: 5000000, revenuePerCar: 0, usageCountPerCar: 0, usageHoursPerCar: 0 },
   ];
 
   it('입력 레코드 수와 동일한 행 수를 반환한다', () => {
     expect(weeklyToRows(records)).toHaveLength(2);
   });
 
-  it('첫 번째 행의 키 목록이 올바르다 (주차,매출,손익,이용시간,이용건수,가동률,목표)', () => {
+  it('첫 번째 행의 키 목록이 올바르다 (주차,매출,대당매출,손익,대당이용시간,대당이용건수,가동률,목표)', () => {
     const rows = weeklyToRows(records);
     const keys = Object.keys(rows[0]);
-    expect(keys).toEqual(['주차', '매출', '손익', '이용시간', '이용건수', '가동률', '목표']);
+    expect(keys).toEqual(['주차', '매출', '대당 매출', '손익', '대당 이용시간', '대당 이용건수', '가동률', '목표']);
   });
 
   it('주차 필드 값이 원본 week 문자열과 동일하다', () => {
