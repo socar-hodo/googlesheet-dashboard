@@ -51,12 +51,12 @@ export function RegionSelector({ regionOptions, current }: Props) {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       <Select
         value={current.region1 ?? ALL_REGIONS}
         onValueChange={(v) => navigate(v === ALL_REGIONS ? undefined : v, undefined)}
       >
-        <SelectTrigger className="h-9 min-w-[130px] text-sm">
+        <SelectTrigger className="h-8 min-w-[120px] rounded-full border border-border/60 bg-background/60 text-xs">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -74,7 +74,7 @@ export function RegionSelector({ regionOptions, current }: Props) {
         onValueChange={(v) => navigate(current.region1, v === ALL_REGION2 ? undefined : v)}
         disabled={!current.region1}
       >
-        <SelectTrigger className="h-9 min-w-[130px] text-sm">
+        <SelectTrigger className="h-8 min-w-[120px] rounded-full border border-border/60 bg-background/60 text-xs">
           <SelectValue placeholder={current.region1 ? "시/군/구 전체" : "상위 지역 먼저"} />
         </SelectTrigger>
         <SelectContent>

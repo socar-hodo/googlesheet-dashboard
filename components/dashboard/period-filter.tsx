@@ -49,14 +49,18 @@ export function PeriodFilter({ periods, active, onChange, onCustomRange, customR
   };
 
   return (
-    <div className="flex flex-wrap gap-1.5" role="group" aria-label="기간 선택">
+    <div
+      className="inline-flex items-center gap-1 rounded-full bg-muted/40 p-1"
+      role="group"
+      aria-label="기간 선택"
+    >
       {periods.map((p) => (
         <Button
           key={p}
-          variant={active === p ? "default" : "outline"}
+          variant={active === p ? "default" : "ghost"}
           size="sm"
           onClick={() => onChange(p)}
-          className="min-w-[72px]"
+          className="h-7 rounded-full px-3 text-xs"
           aria-pressed={active === p}
         >
           {PERIOD_LABELS[p]}
@@ -66,10 +70,10 @@ export function PeriodFilter({ periods, active, onChange, onCustomRange, customR
         <Popover>
           <PopoverTrigger asChild>
             <Button
-              variant={active === "custom" ? "default" : "outline"}
+              variant={active === "custom" ? "default" : "ghost"}
               size="sm"
               onClick={() => onChange("custom")}
-              className="min-w-[72px]"
+              className="h-7 rounded-full px-3 text-xs"
               aria-pressed={active === "custom"}
             >
               <CalendarDays className="mr-1 h-3.5 w-3.5" />

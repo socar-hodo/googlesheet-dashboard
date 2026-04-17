@@ -5,8 +5,6 @@
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useState, useCallback, useMemo } from 'react';
 import type { TeamDashboardData } from '@/types/dashboard';
-import { toast } from 'sonner';
-import { exportToCsv, exportToXlsx } from '@/lib/export-utils';
 import {
   type PeriodKey,
   type DateRange,
@@ -26,7 +24,6 @@ import { ForecastChart } from './charts/forecast-chart';
 import { RegionRanking } from './region-ranking';
 import { RegionDetailTable } from './region-detail-table';
 import { ForecastDetailTable } from './forecast-detail-table';
-import { RegionSelector } from './region-selector';
 
 interface DashboardContentProps {
   data: TeamDashboardData;
@@ -133,28 +130,6 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
     }
   }, [data, tab, period, customRange]);
 
-  const handleExportCsv = useCallback(() => {
-    if (tab === 'forecast') return;
-    const records = tab === 'daily' ? filteredData.daily : filteredData.weekly;
-    try {
-      exportToCsv(records, tab);
-      toast.success('CSV 파일이 다운로드되었습니다.');
-    } catch {
-      toast.error('CSV 내보내기에 실패했습니다.');
-    }
-  }, [filteredData, tab]);
-
-  const handleExportXlsx = useCallback(() => {
-    if (tab === 'forecast') return;
-    const records = tab === 'daily' ? filteredData.daily : filteredData.weekly;
-    try {
-      exportToXlsx(records, tab);
-      toast.success('Excel 파일이 다운로드되었습니다.');
-    } catch {
-      toast.error('Excel 내보내기에 실패했습니다.');
-    }
-  }, [filteredData, tab]);
-
   const regionLabel = currentRegion1
     ? currentRegion2
       ? `${currentRegion1} · ${currentRegion2}`
@@ -164,24 +139,15 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
 
   return (
     <div className="space-y-6">
-      {/* 지역 선택 + 헤더 */}
-      <div className="flex flex-wrap items-center gap-3">
-        <RegionSelector
-          regionOptions={data.regionOptions}
-          current={data.currentRegion}
-        />
-        <div className="flex-1">
-          <DashboardHeader
-            tab={tab}
-            period={period}
-            onPeriodChange={handlePeriodChange}
-            onExportCsv={handleExportCsv}
-            onExportXlsx={handleExportXlsx}
-            onCustomRange={handleCustomRange}
-            customRange={customRange}
-          />
-        </div>
-      </div>
+      <DashboardHeader
+        tab={tab}
+        period={period}
+        onPeriodChange={handlePeriodChange}
+        onCustomRange={handleCustomRange}
+        customRange={customRange}
+        regionOptions={data.regionOptions}
+        currentRegion={data.currentRegion}
+      />
 
       {/* 예측 탭: ForecastChart + 지역 랭킹 */}
       {tab === 'forecast' ? (
