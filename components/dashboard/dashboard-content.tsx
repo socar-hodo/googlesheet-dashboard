@@ -3,8 +3,8 @@
 // DashboardContent — 기간 필터 상태 소유 Client Component
 // 전체 데이터를 수신하여 선택된 기간에 맞게 필터링 후 하위 컴포넌트에 전달
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useState, useCallback, useMemo } from 'react';
-import type { TeamDashboardData } from '@/types/dashboard';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import type { TeamDashboardData, CustomerTypeRow } from '@/types/dashboard';
 import { toast } from 'sonner';
 import { exportToCsv, exportToXlsx } from '@/lib/export-utils';
 import {
@@ -69,6 +69,34 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
   const [period, setPeriodState] = useState<PeriodKey>(() => parsePeriod(initialPeriod, tab));
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
 
+  // BQ 고객 유형 데이터 — Sheets 데이터 대체
+  const [bqCustomerDaily, setBqCustomerDaily] = useState<CustomerTypeRow[]>([]);
+  const [bqCustomerWeekly, setBqCustomerWeekly] = useState<CustomerTypeRow[]>([]);
+
+  useEffect(() => {
+    const today = new Date();
+    const end = new Date(today);
+    end.setDate(end.getDate() - 1);
+    const start = new Date(today);
+    start.setDate(start.getDate() - 90);
+
+    const startDate = start.toISOString().slice(0, 10);
+    const endDate = end.toISOString().slice(0, 10);
+
+    fetch(`/api/customer-type?start_date=${startDate}&end_date=${endDate}`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((result) => {
+        if (result.daily?.length) setBqCustomerDaily(result.daily);
+        if (result.weekly?.length) setBqCustomerWeekly(result.weekly);
+      })
+      .catch((err) => {
+        console.warn('[DashboardContent] BQ customer-type fetch failed:', err.message);
+      });
+  }, []);
+
   /** 기간 변경 핸들러 — 상태 업데이트와 URL 동기화를 함께 처리 */
   const handlePeriodChange = useCallback(
     (newPeriod: PeriodKey) => {
@@ -92,6 +120,16 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
     [router, searchParams, pathname],
   );
 
+  // BQ 데이터가 있으면 Sheets 데이터 대체
+  const effectiveData = useMemo<TeamDashboardData>(() => {
+    if (bqCustomerDaily.length === 0 && bqCustomerWeekly.length === 0) return data;
+    return {
+      ...data,
+      customerTypeDaily: bqCustomerDaily.length > 0 ? bqCustomerDaily : data.customerTypeDaily,
+      customerTypeWeekly: bqCustomerWeekly.length > 0 ? bqCustomerWeekly : data.customerTypeWeekly,
+    };
+  }, [data, bqCustomerDaily, bqCustomerWeekly]);
+
   /** 선택된 기간에 맞게 데이터를 필터링한다 */
   const filteredData = useMemo<TeamDashboardData>(() => {
     if (tab === 'forecast') {
@@ -108,30 +146,30 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
         const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
         forecastEnd = toLocalDateStr(lastDay);
       }
-      const filteredForecastDaily = data.forecastDaily.filter(
+      const filteredForecastDaily = effectiveData.forecastDaily.filter(
         (r) => r.date >= range.start && r.date <= forecastEnd,
       );
-      return { ...data, forecastDaily: filteredForecastDaily };
+      return { ...effectiveData, forecastDaily: filteredForecastDaily };
     }
     if (tab === 'daily') {
       const range = getDateRange(period, undefined, customRange);
-      const filtered = filterDailyByPeriod(data.daily, range);
+      const filtered = filterDailyByPeriod(effectiveData.daily, range);
       // 고객 유형 일별 데이터도 동일한 날짜 범위로 필터링
-      const filteredCustomerTypeDaily = data.customerTypeDaily.filter(
+      const filteredCustomerTypeDaily = effectiveData.customerTypeDaily.filter(
         (r) => r.date !== undefined && r.date >= range.start && r.date <= range.end,
       );
-      return { ...data, daily: filtered, customerTypeDaily: filteredCustomerTypeDaily };
+      return { ...effectiveData, daily: filtered, customerTypeDaily: filteredCustomerTypeDaily };
     } else {
       // Weekly 탭: this-month 또는 last-month만 유효 (parsePeriod에서 보장됨)
       const weeklyPeriod = (period === 'last-month' ? 'last-month' : 'this-month') as
         | 'this-month'
         | 'last-month';
-      const filtered = filterWeeklyByPeriod(data.weekly, weeklyPeriod);
+      const filtered = filterWeeklyByPeriod(effectiveData.weekly, weeklyPeriod);
       // 고객 유형 주차별 데이터도 동일한 월 기준으로 필터링
-      const filteredCustomerTypeWeekly = filterCustomerTypeWeekly(data.customerTypeWeekly, weeklyPeriod);
-      return { ...data, weekly: filtered, customerTypeWeekly: filteredCustomerTypeWeekly };
+      const filteredCustomerTypeWeekly = filterCustomerTypeWeekly(effectiveData.customerTypeWeekly, weeklyPeriod);
+      return { ...effectiveData, weekly: filtered, customerTypeWeekly: filteredCustomerTypeWeekly };
     }
-  }, [data, tab, period, customRange]);
+  }, [effectiveData, tab, period, customRange]);
 
   /** CSV 내보내기 핸들러 — 현재 필터링된 데이터를 .csv로 다운로드 */
   const handleExportCsv = useCallback(() => {
