@@ -130,20 +130,6 @@ export function ForecastChart({ data }: ForecastChartProps) {
 
   const labels = data.map((r) => formatDateLabel(r.date));
 
-  const ulsanData = data.map((r, i) => ({
-    label: labels[i],
-    target: r.ulsanTarget,
-    forecast: r.ulsanForecast,
-    rate: r.ulsanAchievement,
-  }));
-
-  const gyeongnamData = data.map((r, i) => ({
-    label: labels[i],
-    target: r.gyeongnamTarget,
-    forecast: r.gyeongnamForecast,
-    rate: r.gyeongnamAchievement,
-  }));
-
   const combinedData = data.map((r, i) => ({
     label: labels[i],
     target: r.combinedTarget,
@@ -154,27 +140,11 @@ export function ForecastChart({ data }: ForecastChartProps) {
   return (
     <div className="space-y-4">
       <RegionChart
-        title="울산광역시"
-        chartData={ulsanData}
-        colors={colors}
-        targetColor={targetColor}
-        forecastColor={colors.chart1}
-        lineColor={colors.chart2}
-      />
-      <RegionChart
-        title="경상남도"
-        chartData={gyeongnamData}
-        colors={colors}
-        targetColor={targetColor}
-        forecastColor={colors.chart3}
-        lineColor={colors.chart4}
-      />
-      <RegionChart
         title="전국"
         chartData={combinedData}
         colors={colors}
         targetColor={targetColor}
-        forecastColor={colors.chart5}
+        forecastColor={colors.chart1}
         lineColor={colors.chart2}
       />
     </div>
