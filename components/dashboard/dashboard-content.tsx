@@ -10,6 +10,7 @@ import {
   type PeriodKey,
   type DateRange,
   getDateRange,
+  getPreviousRange,
   filterDailyByPeriod,
   filterWeeklyByPeriod,
   filterCustomerTypeWeekly,
@@ -141,8 +142,8 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
   }, [data, tab, period, customRange]);
 
   /** 연령×이용시간 매트릭스 — 현재/직전 기간 데이터 분리.
-   *  Daily: 선택 기간 + 직전 동일 길이 기간.
-   *  Weekly(this-month/last-month): 월 1일~말일(현재는 오늘까지) + 직전 같은 길이 윈도우. */
+   *  Daily/Weekly 공통: period 키에 따라 캘린더 정렬된 직전 기간을 사용
+   *  (this-week→전주, this-month→전월 등). custom만 동일 길이 직전 윈도우. */
   const usageMatrixPeriods = useMemo<{
     current: UsageMatrixRow[];
     previous: UsageMatrixRow[];
@@ -150,44 +151,21 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
     previousRange?: DateRange;
   }>(() => {
     if (tab === 'forecast') return { current: [], previous: [] };
-    // 두 탭 모두 date 범위 기준 필터 — weekly는 월 1일부터 말일(또는 오늘)까지로 해석
-    let rangeStart: string;
-    let rangeEnd: string;
+    let currentRange: DateRange;
     if (tab === 'daily') {
-      const range = getDateRange(period, undefined, customRange);
-      rangeStart = range.start;
-      rangeEnd = range.end;
+      currentRange = getDateRange(period, undefined, customRange);
     } else {
-      // weekly: this-month or last-month의 월 범위로 변환
+      // weekly: this-month / last-month 월 범위로 변환
       const today = new Date();
       const weeklyPeriod = period === 'last-month' ? 'last-month' : 'this-month';
-      const y = today.getFullYear();
-      const m = today.getMonth(); // 0-indexed
-      if (weeklyPeriod === 'this-month') {
-        rangeStart = toLocalDateStr(new Date(y, m, 1));
-        rangeEnd = toLocalDateStr(today);
-      } else {
-        rangeStart = toLocalDateStr(new Date(y, m - 1, 1));
-        rangeEnd = toLocalDateStr(new Date(y, m, 0)); // 전월 말일
-      }
+      currentRange = getDateRange(weeklyPeriod, today);
     }
-    const startDate = new Date(rangeStart + 'T00:00:00');
-    const endDate = new Date(rangeEnd + 'T00:00:00');
-    const lengthDays = Math.round((endDate.getTime() - startDate.getTime()) / 86400000) + 1;
-    const prevEnd = new Date(startDate);
-    prevEnd.setDate(prevEnd.getDate() - 1);
-    const prevStart = new Date(prevEnd);
-    prevStart.setDate(prevStart.getDate() - (lengthDays - 1));
-    const prevStartStr = toLocalDateStr(prevStart);
-    const prevEndStr = toLocalDateStr(prevEnd);
-    const current = data.usageMatrix.filter((r) => r.date >= rangeStart && r.date <= rangeEnd);
-    const previous = data.usageMatrix.filter((r) => r.date >= prevStartStr && r.date <= prevEndStr);
-    return {
-      current,
-      previous,
-      currentRange: { start: rangeStart, end: rangeEnd },
-      previousRange: { start: prevStartStr, end: prevEndStr },
-    };
+    const weeklyKey: PeriodKey = period === 'last-month' ? 'last-month' : 'this-month';
+    const keyForPrev: PeriodKey = tab === 'weekly' ? weeklyKey : period;
+    const previousRange = getPreviousRange(keyForPrev, currentRange);
+    const current = data.usageMatrix.filter((r) => r.date >= currentRange.start && r.date <= currentRange.end);
+    const previous = data.usageMatrix.filter((r) => r.date >= previousRange.start && r.date <= previousRange.end);
+    return { current, previous, currentRange, previousRange };
   }, [tab, data, period, customRange]);
 
   const regionLabel = currentRegion1
@@ -203,18 +181,8 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
     if (tab === 'daily') {
       const range = getDateRange(period, undefined, customRange);
       const currentRecords = filterDailyByPeriod(data.daily, range);
-      // 직전 같은 길이 기간 계산
-      const startDate = new Date(range.start + 'T00:00:00');
-      const endDate = new Date(range.end + 'T00:00:00');
-      const lengthDays = Math.round((endDate.getTime() - startDate.getTime()) / 86400000) + 1;
-      const prevEnd = new Date(startDate);
-      prevEnd.setDate(prevEnd.getDate() - 1);
-      const prevStart = new Date(prevEnd);
-      prevStart.setDate(prevStart.getDate() - (lengthDays - 1));
-      const prevRange = {
-        start: toLocalDateStr(prevStart),
-        end: toLocalDateStr(prevEnd),
-      };
+      // 증감은 캘린더 정렬된 직전 기간 대비 (this-week→전주, this-month→전월)
+      const prevRange = getPreviousRange(period, range);
       const previousRecords = filterDailyByPeriod(data.daily, prevRange);
 
       const sparklineN = 14;
