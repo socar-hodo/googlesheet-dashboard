@@ -47,7 +47,7 @@ export function RelocationMoveOrdersTable({ moveOrders }: Props) {
     else { setSortKey(k); setSortDir(k === "order_id" ? "asc" : "desc"); }
   }
 
-  function SortHead({ label, k }: { label: string; k: SortKey }) {
+  function renderSortHead(label: string, k: SortKey) {
     const icon = sortKey === k ? (sortDir === "asc" ? " ▲" : " ▼") : "";
     return (
       <TableHead onClick={() => toggleSort(k)} className="cursor-pointer select-none hover:text-foreground">
@@ -89,13 +89,13 @@ export function RelocationMoveOrdersTable({ moveOrders }: Props) {
           <Table>
             <TableHeader className="sticky top-0 bg-card">
               <TableRow>
-                <SortHead label="순위" k="order_id" />
+                {renderSortHead("순위", "order_id")}
                 <TableHead>출발 존</TableHead>
                 <TableHead>도착 존</TableHead>
-                <SortHead label="대수" k="cars" />
-                <SortHead label="거리" k="distance_km" />
-                <SortHead label="탁송비" k="cost_est" />
-                <SortHead label="연 이득" k="gain_per_year" />
+                {renderSortHead("대수", "cars")}
+                {renderSortHead("거리", "distance_km")}
+                {renderSortHead("탁송비", "cost_est")}
+                {renderSortHead("연 이득", "gain_per_year")}
               </TableRow>
             </TableHeader>
             <TableBody>
