@@ -12,9 +12,10 @@ import { RelocationSummaryCards } from "./relocation-summary-cards";
 import { RelocationClusterBreakdown } from "./relocation-cluster-breakdown";
 import { RelocationTopRegions } from "./relocation-top-regions";
 import { RelocationMoveOrdersTable } from "./relocation-move-orders-table";
-import { RegionExcludeFilter } from "./region-exclude-filter";
+import { RegionIncludeFilter } from "./region-include-filter";
 import {
   RELOCATION_DEFAULTS,
+  REGION1_OPTIONS,
   type OptimizeMacroResponse,
 } from "@/types/relocation";
 
@@ -28,7 +29,7 @@ export function RelocationForm() {
     min_cars_per_region: String(RELOCATION_DEFAULTS.min_cars_per_region),
     top_n: String(RELOCATION_DEFAULTS.top_n),
   });
-  const [excludedRegions, setExcludedRegions] = useState<string[]>([]);
+  const [includedRegions, setIncludedRegions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<OptimizeMacroResponse | null>(null);
 
@@ -38,6 +39,12 @@ export function RelocationForm() {
     setResult(null);
     try {
       const endpoint = isRawMode ? "/api/relocation/run?raw=1" : "/api/relocation/run";
+      // include → exclude 변환: 선택 없음/전체 선택 = 전국 (exclude 비움),
+      // 부분 선택 = 나머지 지역 모두 exclude
+      const excludeRegions =
+        includedRegions.length === 0 || includedRegions.length === REGION1_OPTIONS.length
+          ? []
+          : REGION1_OPTIONS.filter((r) => !includedRegions.includes(r));
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -47,7 +54,7 @@ export function RelocationForm() {
           max_pct_per_region: Number(params.max_pct_per_region),
           min_cars_per_region: Number(params.min_cars_per_region),
           top_n: Number(params.top_n),
-          exclude_regions: excludedRegions,
+          exclude_regions: excludeRegions,
         }),
       });
       const data = await res.json();
@@ -114,9 +121,9 @@ export function RelocationForm() {
           </CardContent>
         </Card>
 
-        <RegionExcludeFilter
-          excluded={excludedRegions}
-          onChange={setExcludedRegions}
+        <RegionIncludeFilter
+          included={includedRegions}
+          onChange={setIncludedRegions}
         />
       </div>
 
