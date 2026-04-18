@@ -1,54 +1,73 @@
-// 차량 재배치 의사결정 도구 — 타입 정의
+// v1.3 zone-simulator Macro API schema.
+// Source: zone-simulator /api/optimize (mode=macro) response.
 
-export const PAST_DAYS_OPTIONS = [7, 14, 30] as const;
-export const FUTURE_DAYS_OPTIONS = [3, 7, 14] as const;
+export interface OptimizeMacroRequest {
+  mode: "macro";
+  total_transfer: number;
+  max_pct_per_region: number;
+  min_cars_per_region: number;
+  top_n: number;
+}
 
-export interface RelocationParams {
-  region1: string;       // "전체" 또는 특정 시/도
-  pastDays: 7 | 14 | 30;
-  futureDays: 3 | 7 | 14;
-  weights: {
-    utilization: number;     // α (0~1)
-    revenue: number;         // β (0~1)
-    prereservation: number;  // γ (0~1), 합계 = 1.0
+export interface ZoneSummary {
+  zone_id: number;
+  zone_name: string;
+  region1: string;
+  region2: string;
+  cluster: string;
+  current_cars: number;
+  util_pct: number;
+}
+
+export interface MoveOrder {
+  order_id: number;
+  src_zone: ZoneSummary;
+  dst_zone: ZoneSummary;
+  cars: number;
+  distance_km: number;
+  cost_est: number;
+  gain_per_year: number;
+}
+
+export interface RegionDelta {
+  region1: string;
+  region2: string;
+  cluster: string;
+  alpha: number;
+  current_cars: number;
+  delta_cars: number;
+  delta_rev_yr: number;
+}
+
+export interface OptimizeMacroResponse {
+  mode: "macro";
+  params: OptimizeMacroRequest;
+  summary: {
+    actual_transfer: number;
+    delta_rev_yr: number;
+    by_cluster: Record<string, number>;
+    total_cost_est: number;
+    net_gain_yr: number;
   };
+  suggestions: {
+    increase: RegionDelta[];
+    decrease: RegionDelta[];
+  };
+  move_orders: MoveOrder[];
 }
 
-export interface RelocationRow {
-  region1: string;
-  region2: string;
-  utilRate: number;        // 가동률 (0~1)
-  revPerCar: number;       // 대당매출 (원)
-  prereservRate: number;   // 사전예약률 (0~1)
-  carCount: number;        // 차량 수 (past_operation 기준)
-  score: number;           // 복합 스코어 (0~1)
-  tier: "top" | "mid" | "bottom";  // 상위20% / 중간 / 하위20%
-}
+/** 파라미터 기본값 (zone-simulator와 동기화) */
+export const RELOCATION_DEFAULTS: OptimizeMacroRequest = {
+  mode: "macro",
+  total_transfer: 500,
+  max_pct_per_region: 0.20,
+  min_cars_per_region: 5,
+  top_n: 30,
+};
 
-export interface RelocationRecommendation {
-  fromZone: string;    // 송출 존 (region2)
-  fromRegion1: string; // 송출 시/도 (region1)
-  toZone: string;      // 수신 존 (region2)
-  toRegion1: string;   // 수신 시/도 (region1)
-  carCount: number;    // 권장 이동 대수 (최소 1)
-  sameRegion: boolean; // 동일 region1 여부
-}
-
-export interface RelocationCarCandidate {
-  carId: number;
-  carName: string;
-  carNum: string;
-  region1: string;
-  region2: string;
-  utilRate: number | null; // 과거 N일 가동률 (낮을수록 재배치 우선)
-}
-
-export interface RelocationResult {
-  rows: RelocationRow[];
-  recommendations: RelocationRecommendation[];
-  fetchedAt: string;   // ISO 8601
-}
-
-export interface RelocationError {
-  errors: string[];
-}
+/** CSV 컬럼 헤더 (배차팀 전달용) */
+export const MOVE_ORDER_CSV_HEADERS = [
+  "순위", "출발존ID", "출발존명", "출발지역1", "출발지역2",
+  "도착존ID", "도착존명", "도착지역1", "도착지역2",
+  "대수", "거리km", "탁송비", "연이득",
+] as const;
