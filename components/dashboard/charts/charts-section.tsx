@@ -9,6 +9,7 @@ import { ProfitTrendChart } from './profit-trend-chart';
 import { UtilizationTrendChart } from './utilization-trend-chart';
 import { UsageTrendChart } from './usage-trend-chart';
 import { CustomerTypeSection } from './customer-type-section';
+import { RevenueBreakdownSection } from './revenue-breakdown-section';
 import { UsageDurationSection } from './usage-duration-section';
 
 interface DateRange {
@@ -74,6 +75,14 @@ export function ChartsSection({
         weekly={data.customerTypeWeekly}
         tab={tab}
       />
+      <h2 className="text-lg font-semibold text-foreground">매출 세분화</h2>
+      <ChartErrorBoundary title="매출 세분화">
+        <RevenueBreakdownSection
+          daily={data.revenueBreakdownDaily}
+          weekly={data.revenueBreakdownWeekly}
+          tab={tab}
+        />
+      </ChartErrorBoundary>
       <h2 className="text-lg font-semibold text-foreground">이용시간 구간 분석</h2>
       <ChartErrorBoundary title="이용시간 구간 분석">
         <UsageDurationSection

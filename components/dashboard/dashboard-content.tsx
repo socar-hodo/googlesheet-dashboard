@@ -13,6 +13,7 @@ import {
   filterDailyByPeriod,
   filterWeeklyByPeriod,
   filterCustomerTypeWeekly,
+  parseWeekMonth,
   DEFAULT_DAILY_PERIOD,
   DEFAULT_WEEKLY_PERIOD,
   DAILY_PERIODS,
@@ -121,10 +122,14 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
       const filteredCustomerTypeDaily = data.customerTypeDaily.filter(
         (r) => r.date !== undefined && r.date >= range.start && r.date <= range.end,
       );
+      const filteredRevenueBreakdownDaily = data.revenueBreakdownDaily.filter(
+        (r) => r.date >= range.start && r.date <= range.end,
+      );
       return {
         ...data,
         daily: filtered,
         customerTypeDaily: filteredCustomerTypeDaily,
+        revenueBreakdownDaily: filteredRevenueBreakdownDaily,
       };
     } else {
       const weeklyPeriod = (period === 'last-month' ? 'last-month' : 'this-month') as
@@ -132,10 +137,20 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
         | 'last-month';
       const filtered = filterWeeklyByPeriod(data.weekly, weeklyPeriod);
       const filteredCustomerTypeWeekly = filterCustomerTypeWeekly(data.customerTypeWeekly, weeklyPeriod);
+      // revenueBreakdownWeekly: week_label("2월 3주차")이 date 필드에 저장됨 → 월 파싱으로 필터
+      const today = new Date();
+      const currentMonth = today.getMonth() + 1;
+      const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+      const targetMonth = weeklyPeriod === 'this-month' ? currentMonth : lastMonth;
+      const hasUnparseable = data.revenueBreakdownWeekly.some((r) => parseWeekMonth(r.date) === null);
+      const filteredRevenueBreakdownWeekly = hasUnparseable
+        ? data.revenueBreakdownWeekly
+        : data.revenueBreakdownWeekly.filter((r) => parseWeekMonth(r.date) === targetMonth);
       return {
         ...data,
         weekly: filtered,
         customerTypeWeekly: filteredCustomerTypeWeekly,
+        revenueBreakdownWeekly: filteredRevenueBreakdownWeekly,
       };
     }
   }, [data, tab, period, customRange]);
