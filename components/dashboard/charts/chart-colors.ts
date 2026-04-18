@@ -4,6 +4,7 @@ export interface ChartColorMode {
   chart3: string;
   chart4: string;
   chart5: string;
+  chart6: string;
   profitPositive: string;
   profitNegative: string;
   utilizationLine: string;
@@ -20,6 +21,7 @@ export const CHART_COLORS = {
     chart3: "#0a1491",
     chart4: "#3d94ff",
     chart5: "#7ebfff",
+    chart6: "#002a66",
     profitPositive: "#0078ff",
     profitNegative: "#ef4444",
     utilizationLine: "#005aff",
@@ -34,6 +36,7 @@ export const CHART_COLORS = {
     chart3: "#d6ebff",
     chart4: "#0078ff",
     chart5: "#a3d1ff",
+    chart6: "#ebf5ff",
     profitPositive: "#66b0ff",
     profitNegative: "#fb7185",
     utilizationLine: "#3393ff",

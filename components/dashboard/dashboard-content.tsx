@@ -125,11 +125,15 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
       const filteredRevenueBreakdownDaily = data.revenueBreakdownDaily.filter(
         (r) => r.date >= range.start && r.date <= range.end,
       );
+      const filteredCostBreakdownDaily = data.costBreakdownDaily.filter(
+        (r) => r.date >= range.start && r.date <= range.end,
+      );
       return {
         ...data,
         daily: filtered,
         customerTypeDaily: filteredCustomerTypeDaily,
         revenueBreakdownDaily: filteredRevenueBreakdownDaily,
+        costBreakdownDaily: filteredCostBreakdownDaily,
       };
     } else {
       const weeklyPeriod = (period === 'last-month' ? 'last-month' : 'this-month') as
@@ -146,11 +150,16 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
       const filteredRevenueBreakdownWeekly = hasUnparseable
         ? data.revenueBreakdownWeekly
         : data.revenueBreakdownWeekly.filter((r) => parseWeekMonth(r.date) === targetMonth);
+      const hasUnparseableCost = data.costBreakdownWeekly.some((r) => parseWeekMonth(r.date) === null);
+      const filteredCostBreakdownWeekly = hasUnparseableCost
+        ? data.costBreakdownWeekly
+        : data.costBreakdownWeekly.filter((r) => parseWeekMonth(r.date) === targetMonth);
       return {
         ...data,
         weekly: filtered,
         customerTypeWeekly: filteredCustomerTypeWeekly,
         revenueBreakdownWeekly: filteredRevenueBreakdownWeekly,
+        costBreakdownWeekly: filteredCostBreakdownWeekly,
       };
     }
   }, [data, tab, period, customRange]);

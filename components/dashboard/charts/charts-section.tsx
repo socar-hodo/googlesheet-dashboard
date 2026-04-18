@@ -10,6 +10,7 @@ import { UtilizationTrendChart } from './utilization-trend-chart';
 import { UsageTrendChart } from './usage-trend-chart';
 import { CustomerTypeSection } from './customer-type-section';
 import { RevenueBreakdownSection } from './revenue-breakdown-section';
+import { CostBreakdownSection } from './cost-breakdown-section';
 import { UsageDurationSection } from './usage-duration-section';
 
 interface DateRange {
@@ -80,6 +81,14 @@ export function ChartsSection({
         <RevenueBreakdownSection
           daily={data.revenueBreakdownDaily}
           weekly={data.revenueBreakdownWeekly}
+          tab={tab}
+        />
+      </ChartErrorBoundary>
+      <h2 className="text-lg font-semibold text-foreground">비용 분석</h2>
+      <ChartErrorBoundary title="비용 분석">
+        <CostBreakdownSection
+          daily={data.costBreakdownDaily}
+          weekly={data.costBreakdownWeekly}
           tab={tab}
         />
       </ChartErrorBoundary>
