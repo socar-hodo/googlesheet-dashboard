@@ -1,7 +1,7 @@
 'use client';
 
 // components/dashboard/charts/cost-breakdown-trend.tsx
-// 비용 분석 추이 — 운반/연료/주차/검차/감가/수수료 누적 스택 바 (COST-01, COST-03)
+// 비용 분석 추이 — 13개 카테고리 누적 스택 바 (COST-01, COST-03)
 
 import {
   BarChart,
@@ -60,7 +60,14 @@ export function CostBreakdownTrend({ data, tab }: CostBreakdownTrendProps) {
       row.parkingCost +
       row.inspectionCost +
       row.depreciationCost +
-      row.commissionCost,
+      row.commissionCost +
+      row.washCost +
+      row.maintenanceCost +
+      row.repairCost +
+      row.insuranceCost +
+      row.taxCost +
+      row.communicationCost +
+      row.chargeEvCost,
     0,
   );
   if (data.length === 0 || totalCost === 0) {
@@ -76,14 +83,22 @@ export function CostBreakdownTrend({ data, tab }: CostBreakdownTrendProps) {
     );
   }
 
+  // 도넛과 동일한 카테고리 순서·색 매핑 (고정비→변동비 성격 순)
   const chartData = data.map((row) => ({
     label: formatXLabel(row.date, tab),
-    운반: row.transportCost,
-    연료: row.fuelCost,
-    주차: row.parkingCost,
-    검차: row.inspectionCost,
     감가: row.depreciationCost,
     수수료: row.commissionCost,
+    연료: row.fuelCost,
+    주차: row.parkingCost,
+    운반: row.transportCost,
+    점검: row.inspectionCost,
+    보험: row.insuranceCost,
+    세금: row.taxCost,
+    수리: row.repairCost,
+    EV충전: row.chargeEvCost,
+    세차: row.washCost,
+    유지: row.maintenanceCost,
+    통신: row.communicationCost,
   }));
 
   const CustomTooltip = ({ active, payload, label }: TooltipContentProps<number, string>) => {
@@ -96,15 +111,19 @@ export function CostBreakdownTrend({ data, tab }: CostBreakdownTrendProps) {
           border: `1px solid ${colors.tooltip.border}`,
           borderRadius: '8px',
           padding: '8px',
-          fontSize: '12px',
+          fontSize: '11px',
+          maxHeight: 320,
+          overflow: 'auto',
         }}
       >
         <p style={{ marginBottom: 4 }}>{label}</p>
-        {payload.map((p: { dataKey?: string | number; name?: string; value?: number; fill?: string }) => (
-          <p key={String(p.dataKey)} style={{ color: p.fill }}>
-            {p.name}: {formatWonShort(p.value ?? 0)}
-          </p>
-        ))}
+        {payload
+          .filter((p: { value?: number }) => (p.value ?? 0) > 0)
+          .map((p: { dataKey?: string | number; name?: string; value?: number; fill?: string }) => (
+            <p key={String(p.dataKey)} style={{ color: p.fill }}>
+              {p.name}: {formatWonShort(p.value ?? 0)}
+            </p>
+          ))}
         <p
           style={{
             borderTop: `1px solid ${colors.tooltip.border}`,
@@ -142,13 +161,20 @@ export function CostBreakdownTrend({ data, tab }: CostBreakdownTrendProps) {
                 tickLine={false}
               />
               <Tooltip content={CustomTooltip} />
-              <Legend />
-              <Bar dataKey="운반" stackId="a" fill={colors.chart1} />
-              <Bar dataKey="연료" stackId="a" fill={colors.chart2} />
-              <Bar dataKey="주차" stackId="a" fill={colors.chart3} />
-              <Bar dataKey="검차" stackId="a" fill={colors.chart4} />
-              <Bar dataKey="감가" stackId="a" fill={colors.chart5} />
-              <Bar dataKey="수수료" stackId="a" fill={colors.chart6} radius={[2, 2, 0, 0]} />
+              <Legend wrapperStyle={{ fontSize: '11px' }} />
+              <Bar dataKey="감가" stackId="a" fill={colors.chart1} />
+              <Bar dataKey="수수료" stackId="a" fill={colors.chart2} />
+              <Bar dataKey="연료" stackId="a" fill={colors.chart3} />
+              <Bar dataKey="주차" stackId="a" fill={colors.chart4} />
+              <Bar dataKey="운반" stackId="a" fill={colors.chart5} />
+              <Bar dataKey="점검" stackId="a" fill={colors.chart6} />
+              <Bar dataKey="보험" stackId="a" fill={colors.chart7} />
+              <Bar dataKey="세금" stackId="a" fill={colors.chart8} />
+              <Bar dataKey="수리" stackId="a" fill={colors.chart9} />
+              <Bar dataKey="EV충전" stackId="a" fill={colors.chart10} />
+              <Bar dataKey="세차" stackId="a" fill={colors.chart11} />
+              <Bar dataKey="유지" stackId="a" fill={colors.chart12} />
+              <Bar dataKey="통신" stackId="a" fill={colors.chart13} radius={[2, 2, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

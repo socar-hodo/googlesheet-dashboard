@@ -1,7 +1,7 @@
 'use client';
 
 // components/dashboard/charts/cost-breakdown-donut.tsx
-// 비용 분석 도넛 — 운반/연료/주차/검차/감가/수수료 6개 카테고리 합산 (COST-01)
+// 비용 분석 도넛 — 13개 카테고리 합산 (COST-01)
 
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 import { useTheme } from 'next-themes';
@@ -21,38 +21,90 @@ function formatWonShort(won: number): string {
   return `${Math.round(man).toLocaleString()}만원`;
 }
 
+interface CostTotals {
+  depreciation: number;
+  commission: number;
+  fuel: number;
+  parking: number;
+  transport: number;
+  inspection: number;
+  insurance: number;
+  tax: number;
+  repair: number;
+  chargeEv: number;
+  wash: number;
+  maintenance: number;
+  communication: number;
+}
+
 export function CostBreakdownDonut({ data }: CostBreakdownDonutProps) {
   const { resolvedTheme } = useTheme();
   const colors = getChartColors(resolvedTheme === 'dark');
 
-  const totals = data.reduce(
+  const totals: CostTotals = data.reduce(
     (acc, row) => ({
-      transport: acc.transport + row.transportCost,
-      fuel: acc.fuel + row.fuelCost,
-      parking: acc.parking + row.parkingCost,
-      inspection: acc.inspection + row.inspectionCost,
       depreciation: acc.depreciation + row.depreciationCost,
       commission: acc.commission + row.commissionCost,
+      fuel: acc.fuel + row.fuelCost,
+      parking: acc.parking + row.parkingCost,
+      transport: acc.transport + row.transportCost,
+      inspection: acc.inspection + row.inspectionCost,
+      insurance: acc.insurance + row.insuranceCost,
+      tax: acc.tax + row.taxCost,
+      repair: acc.repair + row.repairCost,
+      chargeEv: acc.chargeEv + row.chargeEvCost,
+      wash: acc.wash + row.washCost,
+      maintenance: acc.maintenance + row.maintenanceCost,
+      communication: acc.communication + row.communicationCost,
     }),
-    { transport: 0, fuel: 0, parking: 0, inspection: 0, depreciation: 0, commission: 0 },
+    {
+      depreciation: 0,
+      commission: 0,
+      fuel: 0,
+      parking: 0,
+      transport: 0,
+      inspection: 0,
+      insurance: 0,
+      tax: 0,
+      repair: 0,
+      chargeEv: 0,
+      wash: 0,
+      maintenance: 0,
+      communication: 0,
+    },
   );
 
   const total =
-    totals.transport +
+    totals.depreciation +
+    totals.commission +
     totals.fuel +
     totals.parking +
+    totals.transport +
     totals.inspection +
-    totals.depreciation +
-    totals.commission;
+    totals.insurance +
+    totals.tax +
+    totals.repair +
+    totals.chargeEv +
+    totals.wash +
+    totals.maintenance +
+    totals.communication;
 
+  // 색 매핑은 카테고리별 고정 (도넛 조각 순서가 크기순으로 바뀌어도 같은 카테고리는 같은 색)
   const pieData = [
-    { name: '운반', value: totals.transport, color: colors.chart1 },
-    { name: '연료', value: totals.fuel, color: colors.chart2 },
-    { name: '주차', value: totals.parking, color: colors.chart3 },
-    { name: '검차', value: totals.inspection, color: colors.chart4 },
-    { name: '감가', value: totals.depreciation, color: colors.chart5 },
-    { name: '수수료', value: totals.commission, color: colors.chart6 },
-  ];
+    { name: '감가', value: totals.depreciation, color: colors.chart1 },
+    { name: '수수료', value: totals.commission, color: colors.chart2 },
+    { name: '연료', value: totals.fuel, color: colors.chart3 },
+    { name: '주차', value: totals.parking, color: colors.chart4 },
+    { name: '운반', value: totals.transport, color: colors.chart5 },
+    { name: '점검', value: totals.inspection, color: colors.chart6 },
+    { name: '보험', value: totals.insurance, color: colors.chart7 },
+    { name: '세금', value: totals.tax, color: colors.chart8 },
+    { name: '수리', value: totals.repair, color: colors.chart9 },
+    { name: 'EV충전', value: totals.chargeEv, color: colors.chart10 },
+    { name: '세차', value: totals.wash, color: colors.chart11 },
+    { name: '유지', value: totals.maintenance, color: colors.chart12 },
+    { name: '통신', value: totals.communication, color: colors.chart13 },
+  ].filter((d) => d.value > 0);
 
   if (data.length === 0 || total === 0) {
     return (
@@ -99,7 +151,7 @@ export function CostBreakdownDonut({ data }: CostBreakdownDonutProps) {
                   <Cell key={entry.name} fill={entry.color} />
                 ))}
               </Pie>
-              <Legend />
+              <Legend wrapperStyle={{ fontSize: '11px' }} />
               <Tooltip
                 formatter={(value, name) => {
                   const numValue = Number(value);

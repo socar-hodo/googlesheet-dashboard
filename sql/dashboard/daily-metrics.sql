@@ -2,7 +2,7 @@
 -- params: {start_date}, {end_date}
 -- 출력: date, revenue/profit/usage_hours/usage_count/utilization_rate
 --      + revenue breakdown (rental/pf/driving/call/other)
---      + cost breakdown (transport/fuel/parking/inspection/depreciation/commission)
+--      + cost breakdown 13종 (운반/연료/주차/점검/감가/수수료/세차/유지/수리/보험/세금/통신/EV충전)
 
 WITH profit AS (
   SELECT
@@ -26,7 +26,17 @@ WITH profit AS (
       COALESCE(cost_commission_admin, 0)
       + COALESCE(cost_commission_pg, 0)
       + COALESCE(cost_commission_callcenter, 0)
-    ) AS commission_cost
+    ) AS commission_cost,
+    SUM(cost_wash) AS wash_cost,
+    SUM(cost_maintenance) AS maintenance_cost,
+    SUM(cost_repair_vehicle) AS repair_cost,
+    SUM(cost_insurance) AS insurance_cost,
+    SUM(cost_tax_vehicle) AS tax_cost,
+    SUM(
+      COALESCE(cost_communication_mobility, 0)
+      + COALESCE(cost_communication_telephone, 0)
+    ) AS communication_cost,
+    SUM(cost_charge_ev) AS charge_ev_cost
   FROM `socar-data.socar_biz_profit.profit_socar_car_daily`
   WHERE date BETWEEN '{start_date}' AND '{end_date}'
     AND car_sharing_type IN ('socar', 'zplus')
@@ -68,7 +78,14 @@ SELECT
   p.parking_cost,
   p.inspection_cost,
   p.depreciation_cost,
-  p.commission_cost
+  p.commission_cost,
+  p.wash_cost,
+  p.maintenance_cost,
+  p.repair_cost,
+  p.insurance_cost,
+  p.tax_cost,
+  p.communication_cost,
+  p.charge_ev_cost
 FROM profit p
 LEFT JOIN operation o USING (date)
 ORDER BY p.date

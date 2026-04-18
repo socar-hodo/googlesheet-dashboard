@@ -24,7 +24,17 @@ WITH profit AS (
       COALESCE(cost_commission_admin, 0)
       + COALESCE(cost_commission_pg, 0)
       + COALESCE(cost_commission_callcenter, 0)
-    ) AS commission_cost
+    ) AS commission_cost,
+    SUM(cost_wash) AS wash_cost,
+    SUM(cost_maintenance) AS maintenance_cost,
+    SUM(cost_repair_vehicle) AS repair_cost,
+    SUM(cost_insurance) AS insurance_cost,
+    SUM(cost_tax_vehicle) AS tax_cost,
+    SUM(
+      COALESCE(cost_communication_mobility, 0)
+      + COALESCE(cost_communication_telephone, 0)
+    ) AS communication_cost,
+    SUM(cost_charge_ev) AS charge_ev_cost
   FROM `socar-data.socar_biz_profit.profit_socar_car_daily`
   WHERE date BETWEEN '{start_date}' AND '{end_date}'
     AND car_sharing_type IN ('socar', 'zplus')
@@ -51,6 +61,7 @@ merged AS (
     p.revenue, p.profit, p.usage_hours, p.usage_count, p.opr_day,
     p.rental_revenue, p.pf_revenue, p.driving_revenue, p.call_revenue, p.other_revenue,
     p.transport_cost, p.fuel_cost, p.parking_cost, p.inspection_cost, p.depreciation_cost, p.commission_cost,
+    p.wash_cost, p.maintenance_cost, p.repair_cost, p.insurance_cost, p.tax_cost, p.communication_cost, p.charge_ev_cost,
     o.op_min, o.dp_min
   FROM profit p
   LEFT JOIN operation o USING (date)
@@ -84,7 +95,14 @@ SELECT
   SUM(parking_cost) AS parking_cost,
   SUM(inspection_cost) AS inspection_cost,
   SUM(depreciation_cost) AS depreciation_cost,
-  SUM(commission_cost) AS commission_cost
+  SUM(commission_cost) AS commission_cost,
+  SUM(wash_cost) AS wash_cost,
+  SUM(maintenance_cost) AS maintenance_cost,
+  SUM(repair_cost) AS repair_cost,
+  SUM(insurance_cost) AS insurance_cost,
+  SUM(tax_cost) AS tax_cost,
+  SUM(communication_cost) AS communication_cost,
+  SUM(charge_ev_cost) AS charge_ev_cost
 FROM merged
 GROUP BY iso_year, iso_week, week_label
 ORDER BY iso_year, iso_week

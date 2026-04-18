@@ -92,15 +92,24 @@ export interface RevenueBreakdownRow {
   otherRevenue: number;   // 기타매출
 }
 
-/** 비용 분석 한 행 — 카테고리 합계 + 세부 드릴다운 포함 */
+/** 비용 분석 한 행 — 13개 카테고리 합계 + 운반비 드릴다운 */
 export interface CostBreakdownRow {
   date: string;                     // 일자 (ISO YYYY-MM-DD)
-  transportCost: number;            // 운반비 (카테고리 합계)
+  // 상위 13 카테고리
+  transportCost: number;            // 운반비 (cost_transport + cost_transport_mobility)
   fuelCost: number;                 // 유류비
-  parkingCost: number;              // 주차료
+  parkingCost: number;              // 주차료 (cost_parking_zone + cost_parking_etc)
   inspectionCost: number;           // 점검비
   depreciationCost: number;         // 감가상각비
-  commissionCost: number;           // 수수료
+  commissionCost: number;           // 수수료 (admin + pg + callcenter)
+  washCost: number;                 // 세차비
+  maintenanceCost: number;          // 유지비
+  repairCost: number;               // 수리비 (cost_repair_vehicle)
+  insuranceCost: number;            // 보험료
+  taxCost: number;                  // 차량세금
+  communicationCost: number;        // 통신비 (mobility + telephone)
+  chargeEvCost: number;             // 전기차 충전비
+  // 운반비 드릴다운 (COST-02) — 현재 미연결, 추후 _cost_transport_* 컬럼으로 매핑
   chargeTransportCost: number;      // 충전운반비 (드릴다운 세부)
   callTransportCost: number;        // 부름운반비 (드릴다운 세부)
   zoneOneWayTransportCost: number;  // 존편도운반비 (드릴다운 세부)
