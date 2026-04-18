@@ -11,10 +11,11 @@ export default function RelocationPage() {
             Relocation
           </p>
           <h2 className="text-3xl font-semibold tracking-[-0.05em] text-foreground">
-            재배치 조회 및 추천 결과
+            재배치 추천 — v1.3 Zone-level 이동 명령
           </h2>
           <p className="text-sm leading-6 text-muted-foreground">
-            가동률, 매출, 사전예약 흐름을 바탕으로 이동 우선순위와 추천 차량 후보를 비교합니다.
+            클러스터 탄력성(α) + 탁송비 실측 공식 기반 전국 재배치 시뮬레이션.
+            189 region2 클러스터 매칭 후 zone 단위 이동 명령을 생성하고 CSV로 배차팀에 전달할 수 있습니다.
           </p>
         </div>
       </section>
