@@ -6,11 +6,30 @@
 import type { UsageMatrixRow } from '@/types/dashboard';
 import { UsageMatrix } from './usage-matrix';
 
+interface DateRange {
+  start: string;
+  end: string;
+}
+
 interface UsageDurationSectionProps {
   matrixCurrent: UsageMatrixRow[];
   matrixPrevious: UsageMatrixRow[];
+  matrixCurrentRange?: DateRange;
+  matrixPreviousRange?: DateRange;
 }
 
-export function UsageDurationSection({ matrixCurrent, matrixPrevious }: UsageDurationSectionProps) {
-  return <UsageMatrix current={matrixCurrent} previous={matrixPrevious} />;
+export function UsageDurationSection({
+  matrixCurrent,
+  matrixPrevious,
+  matrixCurrentRange,
+  matrixPreviousRange,
+}: UsageDurationSectionProps) {
+  return (
+    <UsageMatrix
+      current={matrixCurrent}
+      previous={matrixPrevious}
+      currentRange={matrixCurrentRange}
+      previousRange={matrixPreviousRange}
+    />
+  );
 }

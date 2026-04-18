@@ -11,11 +11,18 @@ import { UsageTrendChart } from './usage-trend-chart';
 import { CustomerTypeSection } from './customer-type-section';
 import { UsageDurationSection } from './usage-duration-section';
 
+interface DateRange {
+  start: string;
+  end: string;
+}
+
 interface ChartsSectionProps {
   data: TeamDashboardData;
   tab: 'daily' | 'weekly';
   usageMatrixCurrent: UsageMatrixRow[];
   usageMatrixPrevious: UsageMatrixRow[];
+  usageMatrixCurrentRange?: DateRange;
+  usageMatrixPreviousRange?: DateRange;
 }
 
 // "2026. 2. 21" 또는 "2026-02-21" 모두 처리 → "2026-02-21" ISO 반환
@@ -32,6 +39,8 @@ export function ChartsSection({
   tab,
   usageMatrixCurrent,
   usageMatrixPrevious,
+  usageMatrixCurrentRange,
+  usageMatrixPreviousRange,
 }: ChartsSectionProps) {
   // Daily: ISO 날짜로 정규화 후 오름차순 정렬, 최근 30일 슬라이싱
   // Weekly: 전체 데이터 그대로
@@ -70,6 +79,8 @@ export function ChartsSection({
         <UsageDurationSection
           matrixCurrent={usageMatrixCurrent}
           matrixPrevious={usageMatrixPrevious}
+          matrixCurrentRange={usageMatrixCurrentRange}
+          matrixPreviousRange={usageMatrixPreviousRange}
         />
       </ChartErrorBoundary>
     </div>

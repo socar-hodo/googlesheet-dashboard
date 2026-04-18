@@ -15,11 +15,28 @@ import {
   type UsageMatrixRow,
 } from '@/types/dashboard';
 
+interface DateRange {
+  start: string;
+  end: string;
+}
+
 interface UsageMatrixProps {
   /** 현재 기간 데이터 (기간 셀렉터 적용 후) */
   current: UsageMatrixRow[];
   /** 직전 동일 길이 기간 데이터 (증감 계산용) */
   previous: UsageMatrixRow[];
+  /** 현재 기간 범위 (YYYY-MM-DD) — 툴팁/라벨 표시용 */
+  currentRange?: DateRange;
+  /** 직전 기간 범위 — 있으면 힌트에 구체 날짜 병기 */
+  previousRange?: DateRange;
+}
+
+function formatRangeShort(range: DateRange): string {
+  const [y1, m1, d1] = range.start.split('-');
+  const [y2, m2, d2] = range.end.split('-');
+  if (y1 === y2 && m1 === m2) return `${y1}-${m1}-${d1} ~ ${d2}`;
+  if (y1 === y2) return `${y1}-${m1}-${d1} ~ ${m2}-${d2}`;
+  return `${range.start} ~ ${range.end}`;
 }
 
 type DayFilter = 'all' | 'weekday' | 'weekend';
@@ -82,7 +99,7 @@ function aggregate(
   return { cellMap, totalNuse: tNuse, totalRevenue: tRev };
 }
 
-export function UsageMatrix({ current, previous }: UsageMatrixProps) {
+export function UsageMatrix({ current, previous, previousRange }: UsageMatrixProps) {
   const [dayFilter, setDayFilter] = useState<DayFilter>('all');
 
   const { curAgg, prevAgg } = useMemo(
@@ -125,7 +142,9 @@ export function UsageMatrix({ current, previous }: UsageMatrixProps) {
             <p className="mt-1 text-xs text-muted-foreground">
               가중평균 건당매출: <span className="font-semibold text-foreground">{weightedRevPerUse.toLocaleString()}원</span>
               {hasPrevious && (
-                <span className="ml-2 text-muted-foreground/70">· 증감은 직전 동일 길이 기간 대비</span>
+                <span className="ml-2 text-muted-foreground/70">
+                  · 증감은 {previousRange ? `${formatRangeShort(previousRange)} 대비` : '직전 동일 길이 기간 대비'}
+                </span>
               )}
             </p>
           </div>

@@ -143,7 +143,12 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
   /** 연령×이용시간 매트릭스 — 현재/직전 기간 데이터 분리.
    *  Daily: 선택 기간 + 직전 동일 길이 기간.
    *  Weekly(this-month/last-month): 월 1일~말일(현재는 오늘까지) + 직전 같은 길이 윈도우. */
-  const usageMatrixPeriods = useMemo<{ current: UsageMatrixRow[]; previous: UsageMatrixRow[] }>(() => {
+  const usageMatrixPeriods = useMemo<{
+    current: UsageMatrixRow[];
+    previous: UsageMatrixRow[];
+    currentRange?: DateRange;
+    previousRange?: DateRange;
+  }>(() => {
     if (tab === 'forecast') return { current: [], previous: [] };
     // 두 탭 모두 date 범위 기준 필터 — weekly는 월 1일부터 말일(또는 오늘)까지로 해석
     let rangeStart: string;
@@ -177,7 +182,12 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
     const prevEndStr = toLocalDateStr(prevEnd);
     const current = data.usageMatrix.filter((r) => r.date >= rangeStart && r.date <= rangeEnd);
     const previous = data.usageMatrix.filter((r) => r.date >= prevStartStr && r.date <= prevEndStr);
-    return { current, previous };
+    return {
+      current,
+      previous,
+      currentRange: { start: rangeStart, end: rangeEnd },
+      previousRange: { start: prevStartStr, end: prevEndStr },
+    };
   }, [tab, data, period, customRange]);
 
   const regionLabel = currentRegion1
@@ -319,6 +329,8 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
             tab={tab}
             usageMatrixCurrent={usageMatrixPeriods.current}
             usageMatrixPrevious={usageMatrixPeriods.previous}
+            usageMatrixCurrentRange={usageMatrixPeriods.currentRange}
+            usageMatrixPreviousRange={usageMatrixPeriods.previousRange}
           />
 
           <section>
