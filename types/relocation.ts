@@ -1,4 +1,4 @@
-// v1.3 zone-simulator Macro API schema.
+// v1.4 zone-simulator Macro API schema.
 // Source: zone-simulator /api/optimize (mode=macro) response.
 
 export interface OptimizeMacroRequest {
@@ -7,6 +7,10 @@ export interface OptimizeMacroRequest {
   max_pct_per_region: number;
   min_cars_per_region: number;
   top_n: number;
+  // v1.4 — 보수 기본값 + 지역 제외
+  alpha_scale: number;
+  churn_penalty: number;
+  exclude_regions: string[];
 }
 
 export interface ZoneSummary {
@@ -56,13 +60,17 @@ export interface OptimizeMacroResponse {
   move_orders: MoveOrder[];
 }
 
-/** 파라미터 기본값 (zone-simulator와 동기화) */
+/** 파라미터 기본값 (zone-simulator v1.4 와 동기화) */
 export const RELOCATION_DEFAULTS: OptimizeMacroRequest = {
   mode: "macro",
   total_transfer: 500,
   max_pct_per_region: 0.20,
   min_cars_per_region: 5,
   top_n: 30,
+  // v1.4 보수 기본값
+  alpha_scale: 0.7,
+  churn_penalty: 0.05,
+  exclude_regions: [],
 };
 
 /** CSV 컬럼 헤더 (배차팀 전달용) */
@@ -70,4 +78,14 @@ export const MOVE_ORDER_CSV_HEADERS = [
   "순위", "출발존ID", "출발존명", "출발지역1", "출발지역2",
   "도착존ID", "도착존명", "도착지역1", "도착지역2",
   "대수", "거리km", "탁송비", "연이득",
+] as const;
+
+/** 광역시도 17개 (region exclude filter용) */
+export const REGION1_OPTIONS = [
+  "서울특별시", "경기도", "인천광역시",
+  "부산광역시", "대구광역시", "울산광역시",
+  "광주광역시", "대전광역시", "세종특별자치시",
+  "강원특별자치도", "충청북도", "충청남도",
+  "전북특별자치도", "전라남도", "경상북도",
+  "경상남도", "제주특별자치도",
 ] as const;
