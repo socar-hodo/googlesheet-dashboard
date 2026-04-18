@@ -133,57 +133,6 @@ export function filterDailyByPeriod(records: DailyRecord[], range: DateRange): D
 }
 
 /**
- * 증감 비교용 직전 기간을 반환한다.
- * - this-week  → 전주 (월-일, 7일)
- * - this-month → 전월 (1일-말일)
- * - last-week  → 전전주 (월-일)
- * - last-month → 전전월 (1일-말일)
- * - custom     → 같은 길이의 바로 직전 기간
- */
-export function getPreviousRange(
-  period: PeriodKey,
-  currentRange: DateRange,
-  today: Date = new Date(),
-): DateRange {
-  const year = today.getFullYear();
-  const month = today.getMonth();
-
-  switch (period) {
-    case 'this-week':
-      return getDateRange('last-week', today);
-
-    case 'this-month':
-      return getDateRange('last-month', today);
-
-    case 'last-week': {
-      const monday = getMonday(today);
-      const twoWeeksAgoMonday = new Date(monday);
-      twoWeeksAgoMonday.setDate(monday.getDate() - 14);
-      const twoWeeksAgoSunday = new Date(monday);
-      twoWeeksAgoSunday.setDate(monday.getDate() - 8);
-      return { start: toISODate(twoWeeksAgoMonday), end: toISODate(twoWeeksAgoSunday) };
-    }
-
-    case 'last-month': {
-      const firstDay = new Date(year, month - 2, 1);
-      const lastDay = new Date(year, month - 1, 0);
-      return { start: toISODate(firstDay), end: toISODate(lastDay) };
-    }
-
-    case 'custom': {
-      const startDate = new Date(currentRange.start + 'T00:00:00');
-      const endDate = new Date(currentRange.end + 'T00:00:00');
-      const lengthDays = Math.round((endDate.getTime() - startDate.getTime()) / 86400000) + 1;
-      const prevEnd = new Date(startDate);
-      prevEnd.setDate(prevEnd.getDate() - 1);
-      const prevStart = new Date(prevEnd);
-      prevStart.setDate(prevStart.getDate() - (lengthDays - 1));
-      return { start: toISODate(prevStart), end: toISODate(prevEnd) };
-    }
-  }
-}
-
-/**
  * 주차 문자열에서 월 숫자를 파싱한다.
  * 예: "2월 3주차" → 2, "3주차" → null
  */
