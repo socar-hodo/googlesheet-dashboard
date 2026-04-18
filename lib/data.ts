@@ -31,6 +31,7 @@ import {
 import {
   loadUsageMatrixSql,
   buildMatrixResponse as buildUsageMatrix,
+  buildUsageMatrixPeriodMap,
 } from "./usage-matrix";
 import { mockTeamDashboardData } from "./mock-data";
 
@@ -216,6 +217,9 @@ export async function getTeamDashboardData(
       ? buildCustomerTypeWeekly(customerWeeklyRows)
       : [];
     const usageMatrix = usageMatrixRows ? buildUsageMatrix(usageMatrixRows) : [];
+    // 경량화: 표준 4개 기간(this-week, last-week, this-month, last-month)별 pre-agg 맵 생성.
+    // 최대 4 × 2 × 60 = 480 cells ≈ 40KB (원본 raw rows 대비 85%+ 축소).
+    const usageMatrixPeriodMap = buildUsageMatrixPeriodMap(usageMatrix);
     const forecastDaily = forecastRows ? buildForecastRows(forecastRows) : [];
     const regionRanking = regionRankingRows
       ? buildRegionRanking(regionRankingRows)
@@ -229,7 +233,7 @@ export async function getTeamDashboardData(
       weekly,
       customerTypeDaily,
       customerTypeWeekly,
-      usageMatrix,
+      usageMatrixPeriodMap,
       revenueBreakdownDaily,
       revenueBreakdownWeekly,
       costBreakdownDaily,

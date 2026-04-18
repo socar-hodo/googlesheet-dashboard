@@ -3,8 +3,8 @@
 // DashboardContent — 기간 필터 상태 + URL 기반 지역 선택을 소유
 // 전체 데이터를 수신하여 선택된 기간·지역에 맞게 필터링 후 하위 컴포넌트에 전달
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useState, useCallback, useMemo } from 'react';
-import type { TeamDashboardData } from '@/types/dashboard';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import type { TeamDashboardData, UsageMatrixPeriodBundle } from '@/types/dashboard';
 import { aggregateKpi } from '@/lib/kpi-utils';
 import {
   type PeriodKey,
@@ -164,9 +164,25 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
     }
   }, [data, tab, period, customRange]);
 
-  /** 연령×이용시간 매트릭스 — 현재/직전 기간 데이터 분리.
-   *  Daily: 선택 기간 + 직전 동일 길이 기간.
-   *  Weekly(this-month/last-month): 월 1일~말일(현재는 오늘까지) + 직전 같은 길이 윈도우. */
+  /** 연령×이용시간 매트릭스 — 표준 4기간은 SSR에서 사전 집계된 맵 조회, custom만 API로 lazy-fetch. */
+  const [customMatrixBundle, setCustomMatrixBundle] = useState<UsageMatrixPeriodBundle | null>(null);
+
+  useEffect(() => {
+    if (period !== 'custom' || !customRange) {
+      setCustomMatrixBundle(null);
+      return;
+    }
+    const params = new URLSearchParams({ start: customRange.start, end: customRange.end });
+    if (currentRegion1) params.set('region1', currentRegion1);
+    if (currentRegion2) params.set('region2', currentRegion2);
+    const controller = new AbortController();
+    fetch(`/api/dashboard/usage-matrix?${params.toString()}`, { signal: controller.signal })
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((b: UsageMatrixPeriodBundle) => setCustomMatrixBundle(b))
+      .catch(() => setCustomMatrixBundle(null));
+    return () => controller.abort();
+  }, [period, customRange, currentRegion1, currentRegion2]);
+
   const usageMatrixPeriods = useMemo<{
     current: UsageMatrixRow[];
     previous: UsageMatrixRow[];
@@ -174,45 +190,19 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
     previousRange?: DateRange;
   }>(() => {
     if (tab === 'forecast') return { current: [], previous: [] };
-    // 두 탭 모두 date 범위 기준 필터 — weekly는 월 1일부터 말일(또는 오늘)까지로 해석
-    let rangeStart: string;
-    let rangeEnd: string;
-    if (tab === 'daily') {
-      const range = getDateRange(period, undefined, customRange);
-      rangeStart = range.start;
-      rangeEnd = range.end;
-    } else {
-      // weekly: this-month or last-month의 월 범위로 변환
-      const today = new Date();
-      const weeklyPeriod = period === 'last-month' ? 'last-month' : 'this-month';
-      const y = today.getFullYear();
-      const m = today.getMonth(); // 0-indexed
-      if (weeklyPeriod === 'this-month') {
-        rangeStart = toLocalDateStr(new Date(y, m, 1));
-        rangeEnd = toLocalDateStr(today);
-      } else {
-        rangeStart = toLocalDateStr(new Date(y, m - 1, 1));
-        rangeEnd = toLocalDateStr(new Date(y, m, 0)); // 전월 말일
-      }
+    if (period === 'custom') {
+      return customMatrixBundle ?? { current: [], previous: [] };
     }
-    const startDate = new Date(rangeStart + 'T00:00:00');
-    const endDate = new Date(rangeEnd + 'T00:00:00');
-    const lengthDays = Math.round((endDate.getTime() - startDate.getTime()) / 86400000) + 1;
-    const prevEnd = new Date(startDate);
-    prevEnd.setDate(prevEnd.getDate() - 1);
-    const prevStart = new Date(prevEnd);
-    prevStart.setDate(prevStart.getDate() - (lengthDays - 1));
-    const prevStartStr = toLocalDateStr(prevStart);
-    const prevEndStr = toLocalDateStr(prevEnd);
-    const current = data.usageMatrix.filter((r) => r.date >= rangeStart && r.date <= rangeEnd);
-    const previous = data.usageMatrix.filter((r) => r.date >= prevStartStr && r.date <= prevEndStr);
+    // 표준 키(this-week/last-week/this-month/last-month) — 맵에서 즉시 조회.
+    // Weekly 탭은 this-month/last-month만 쓰므로 동일 맵 키와 자연스럽게 매치.
+    const bundle = data.usageMatrixPeriodMap[period];
     return {
-      current,
-      previous,
-      currentRange: { start: rangeStart, end: rangeEnd },
-      previousRange: { start: prevStartStr, end: prevEndStr },
+      current: bundle.current,
+      previous: bundle.previous,
+      currentRange: bundle.currentRange,
+      previousRange: bundle.previousRange,
     };
-  }, [tab, data, period, customRange]);
+  }, [tab, data.usageMatrixPeriodMap, period, customMatrixBundle]);
 
   const regionLabel = currentRegion1
     ? currentRegion2

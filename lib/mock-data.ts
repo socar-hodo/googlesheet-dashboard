@@ -12,6 +12,7 @@ import type {
   CostBreakdownRow,
   ForecastRow,
 } from "@/types/dashboard";
+import { buildUsageMatrixPeriodMap } from "./usage-matrix";
 
 const MOCK_CAR_COUNT = 200;
 
@@ -238,7 +239,7 @@ export const mockTeamDashboardData: TeamDashboardData = {
   weekly: mockWeeklyRecords,
   customerTypeDaily: generateCustomerTypeDaily(),
   customerTypeWeekly: generateCustomerTypeWeekly(),
-  usageMatrix: generateUsageMatrix(),
+  usageMatrixPeriodMap: buildUsageMatrixPeriodMap(generateUsageMatrix()),
   revenueBreakdownDaily: [] as RevenueBreakdownRow[],
   revenueBreakdownWeekly: [] as RevenueBreakdownRow[],
   costBreakdownDaily: [] as CostBreakdownRow[],

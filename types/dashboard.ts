@@ -59,6 +59,18 @@ export interface UsageMatrixRow {
   revenue: number;         // 매출 (원)
 }
 
+/** 기간별 사전 집계된 매트릭스 번들 — current/previous 쌍과 날짜 범위 포함 */
+export interface UsageMatrixPeriodBundle {
+  current: UsageMatrixRow[];   // 5 ages × 6 durations × 2 dayTypes 최대 60행 (date=range.start로 세팅)
+  previous: UsageMatrixRow[];  // 직전 동일 길이 기간 집계
+  currentRange: { start: string; end: string };
+  previousRange: { start: string; end: string };
+}
+
+/** 표준 기간 4종 pre-agg 맵 (this-week, last-week, this-month, last-month). custom은 API로 처리. */
+export type UsageMatrixPeriodKey = 'this-week' | 'last-week' | 'this-month' | 'last-month';
+export type UsageMatrixPeriodMap = Record<UsageMatrixPeriodKey, UsageMatrixPeriodBundle>;
+
 /** 연령 그룹 키 → 한글 라벨 (ROAS와 동일 매핑) */
 export const AGE_GROUP_LABELS: Record<string, string> = {
   "01_21-22": "21~22세",
@@ -124,7 +136,7 @@ export interface TeamDashboardData {
   // Phase 9 신규 추가 — 고객유형/매출세분화/비용분석 데이터 레이어
   customerTypeDaily: CustomerTypeRow[];
   customerTypeWeekly: CustomerTypeRow[];
-  usageMatrix: UsageMatrixRow[]; // 연령×이용시간×날짜 크로스탭 — 클라이언트에서 기간 필터
+  usageMatrixPeriodMap: UsageMatrixPeriodMap; // 기간별 (ageGroup×durationGroup×dayType) 사전 집계 페이로드
   revenueBreakdownDaily: RevenueBreakdownRow[];
   revenueBreakdownWeekly: RevenueBreakdownRow[];
   costBreakdownDaily: CostBreakdownRow[];
