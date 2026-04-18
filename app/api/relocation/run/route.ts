@@ -1,26 +1,72 @@
-import { NextRequest, NextResponse } from "next/server";
-import { validateParams, runRelocation } from "@/lib/relocation";
+import { NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-utils";
-import type { RelocationParams } from "@/types/relocation";
+import { callOptimize } from "@/lib/zone-simulator-client";
+import {
+  RELOCATION_DEFAULTS,
+  type OptimizeMacroRequest,
+} from "@/types/relocation";
 
-export const POST = withAuth(async (req: NextRequest) => {
-  const body = await req.json();
-  const params: RelocationParams = {
-    region1:    body.region1    ?? "전체",
-    pastDays:   Number(body.pastDays   ?? 14) as RelocationParams["pastDays"],   // 허용값 검증은 validateParams()에서
-    futureDays: Number(body.futureDays ?? 7)  as RelocationParams["futureDays"], // 허용값 검증은 validateParams()에서
-    weights: {
-      utilization:    Number(body.weights?.utilization    ?? 0.4),
-      revenue:        Number(body.weights?.revenue        ?? 0.4),
-      prereservation: Number(body.weights?.prereservation ?? 0.2),
-    },
-  };
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-  const errors = validateParams(params);
-  if (errors.length > 0) {
-    return NextResponse.json({ errors }, { status: 400 });
+export const POST = withAuth(async (req) => {
+  let body: Partial<OptimizeMacroRequest>;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "invalid JSON" }, { status: 400 });
   }
 
-  const result = await runRelocation(params);
-  return NextResponse.json(result);
+  const payload: OptimizeMacroRequest = {
+    mode: "macro",
+    total_transfer: Number.isFinite(body.total_transfer)
+      ? Number(body.total_transfer)
+      : RELOCATION_DEFAULTS.total_transfer,
+    max_pct_per_region: Number.isFinite(body.max_pct_per_region)
+      ? Number(body.max_pct_per_region)
+      : RELOCATION_DEFAULTS.max_pct_per_region,
+    min_cars_per_region: Number.isFinite(body.min_cars_per_region)
+      ? Number(body.min_cars_per_region)
+      : RELOCATION_DEFAULTS.min_cars_per_region,
+    top_n: Number.isFinite(body.top_n)
+      ? Number(body.top_n)
+      : RELOCATION_DEFAULTS.top_n,
+  };
+
+  if (payload.total_transfer < 0 || payload.total_transfer > 10000) {
+    return NextResponse.json(
+      { error: "total_transfer는 0-10000 범위여야 합니다." },
+      { status: 422 }
+    );
+  }
+  if (payload.max_pct_per_region <= 0 || payload.max_pct_per_region > 1) {
+    return NextResponse.json(
+      { error: "max_pct_per_region는 0-1 범위여야 합니다." },
+      { status: 422 }
+    );
+  }
+  if (payload.min_cars_per_region < 0) {
+    return NextResponse.json(
+      { error: "min_cars_per_region는 0 이상이어야 합니다." },
+      { status: 422 }
+    );
+  }
+  if (payload.top_n < 1 || payload.top_n > 200) {
+    return NextResponse.json(
+      { error: "top_n은 1-200 범위여야 합니다." },
+      { status: 422 }
+    );
+  }
+
+  try {
+    const data = await callOptimize(payload);
+    return NextResponse.json(data);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[POST /api/relocation/run] upstream error:", msg);
+    return NextResponse.json(
+      { error: "backend 오류", detail: msg.slice(0, 200) },
+      { status: 502 }
+    );
+  }
 });
