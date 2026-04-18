@@ -37,6 +37,39 @@ export interface CustomerTypeRow {
   oneWayCount: number;     // 편도_건수
 }
 
+/** 이용시간 구간 UI 메타 — 순서·레이블·key 고정 */
+export const USAGE_DURATION_BUCKETS = [
+  { key: "under4h",     label: "~4h" },
+  { key: "from4to8h",   label: "4h+" },
+  { key: "from8to12h",  label: "8h+" },
+  { key: "from12to24h", label: "12h+" },
+  { key: "from24to48h", label: "1d+" },
+  { key: "over48h",     label: "2d+" },
+] as const;
+
+export type UsageDurationBucketKey = typeof USAGE_DURATION_BUCKETS[number]["key"];
+
+/** 연령대×이용시간 매트릭스 한 행 — BQ 원본 형태 (날짜 차원 포함) */
+export interface UsageMatrixRow {
+  date: string;            // YYYY-MM-DD (클라이언트에서 기간 재필터)
+  ageGroup: string;        // "01_21-22" 등
+  durationGroup: UsageDurationBucketKey; // under4h, from4to8h, ...
+  dayType: 'weekday' | 'weekend';
+  nuse: number;            // 이용건수
+  revenue: number;         // 매출 (원)
+}
+
+/** 연령 그룹 키 → 한글 라벨 (ROAS와 동일 매핑) */
+export const AGE_GROUP_LABELS: Record<string, string> = {
+  "01_21-22": "21~22세",
+  "02_23-26": "23~26세",
+  "03_27-30": "27~30세",
+  "04_31-40": "31~40세",
+  "05_41+":   "41세 이상",
+};
+
+export const AGE_GROUP_ORDER = ["01_21-22", "02_23-26", "03_27-30", "04_31-40", "05_41+"] as const;
+
 /** 매출 세분화 한 행 — [d] raw / [w] raw 시트 */
 export interface RevenueBreakdownRow {
   date: string;           // 일자 (ISO YYYY-MM-DD)
@@ -91,6 +124,7 @@ export interface TeamDashboardData {
   // Phase 9 신규 추가 — 고객유형/매출세분화/비용분석 데이터 레이어
   customerTypeDaily: CustomerTypeRow[];
   customerTypeWeekly: CustomerTypeRow[];
+  usageMatrix: UsageMatrixRow[]; // 연령×이용시간×날짜 크로스탭 — 클라이언트에서 기간 필터
   revenueBreakdownDaily: RevenueBreakdownRow[];
   revenueBreakdownWeekly: RevenueBreakdownRow[];
   costBreakdownDaily: CostBreakdownRow[];

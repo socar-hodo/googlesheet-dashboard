@@ -17,6 +17,7 @@ import {
   DEFAULT_WEEKLY_PERIOD,
   DAILY_PERIODS,
 } from '@/lib/period-utils';
+import type { UsageMatrixRow } from '@/types/dashboard';
 import { DashboardHeader } from './dashboard-header';
 import { KpiCards } from './kpi-cards';
 import { ChartsSection } from './charts/charts-section';
@@ -120,16 +121,64 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
       const filteredCustomerTypeDaily = data.customerTypeDaily.filter(
         (r) => r.date !== undefined && r.date >= range.start && r.date <= range.end,
       );
-      return { ...data, daily: filtered, customerTypeDaily: filteredCustomerTypeDaily };
+      return {
+        ...data,
+        daily: filtered,
+        customerTypeDaily: filteredCustomerTypeDaily,
+      };
     } else {
       const weeklyPeriod = (period === 'last-month' ? 'last-month' : 'this-month') as
         | 'this-month'
         | 'last-month';
       const filtered = filterWeeklyByPeriod(data.weekly, weeklyPeriod);
       const filteredCustomerTypeWeekly = filterCustomerTypeWeekly(data.customerTypeWeekly, weeklyPeriod);
-      return { ...data, weekly: filtered, customerTypeWeekly: filteredCustomerTypeWeekly };
+      return {
+        ...data,
+        weekly: filtered,
+        customerTypeWeekly: filteredCustomerTypeWeekly,
+      };
     }
   }, [data, tab, period, customRange]);
+
+  /** 연령×이용시간 매트릭스 — 현재/직전 기간 데이터 분리.
+   *  Daily: 선택 기간 + 직전 동일 길이 기간.
+   *  Weekly(this-month/last-month): 월 1일~말일(현재는 오늘까지) + 직전 같은 길이 윈도우. */
+  const usageMatrixPeriods = useMemo<{ current: UsageMatrixRow[]; previous: UsageMatrixRow[] }>(() => {
+    if (tab === 'forecast') return { current: [], previous: [] };
+    // 두 탭 모두 date 범위 기준 필터 — weekly는 월 1일부터 말일(또는 오늘)까지로 해석
+    let rangeStart: string;
+    let rangeEnd: string;
+    if (tab === 'daily') {
+      const range = getDateRange(period, undefined, customRange);
+      rangeStart = range.start;
+      rangeEnd = range.end;
+    } else {
+      // weekly: this-month or last-month의 월 범위로 변환
+      const today = new Date();
+      const weeklyPeriod = period === 'last-month' ? 'last-month' : 'this-month';
+      const y = today.getFullYear();
+      const m = today.getMonth(); // 0-indexed
+      if (weeklyPeriod === 'this-month') {
+        rangeStart = toLocalDateStr(new Date(y, m, 1));
+        rangeEnd = toLocalDateStr(today);
+      } else {
+        rangeStart = toLocalDateStr(new Date(y, m - 1, 1));
+        rangeEnd = toLocalDateStr(new Date(y, m, 0)); // 전월 말일
+      }
+    }
+    const startDate = new Date(rangeStart + 'T00:00:00');
+    const endDate = new Date(rangeEnd + 'T00:00:00');
+    const lengthDays = Math.round((endDate.getTime() - startDate.getTime()) / 86400000) + 1;
+    const prevEnd = new Date(startDate);
+    prevEnd.setDate(prevEnd.getDate() - 1);
+    const prevStart = new Date(prevEnd);
+    prevStart.setDate(prevStart.getDate() - (lengthDays - 1));
+    const prevStartStr = toLocalDateStr(prevStart);
+    const prevEndStr = toLocalDateStr(prevEnd);
+    const current = data.usageMatrix.filter((r) => r.date >= rangeStart && r.date <= rangeEnd);
+    const previous = data.usageMatrix.filter((r) => r.date >= prevStartStr && r.date <= prevEndStr);
+    return { current, previous };
+  }, [tab, data, period, customRange]);
 
   const regionLabel = currentRegion1
     ? currentRegion2
@@ -265,7 +314,12 @@ export function DashboardContent({ data, tab, initialPeriod }: DashboardContentP
             )}
           </section>
 
-          <ChartsSection data={filteredData} tab={tab} />
+          <ChartsSection
+            data={filteredData}
+            tab={tab}
+            usageMatrixCurrent={usageMatrixPeriods.current}
+            usageMatrixPrevious={usageMatrixPeriods.previous}
+          />
 
           <section>
             <h2 className="mb-4 text-lg font-semibold text-foreground">

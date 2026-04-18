@@ -186,3 +186,4 @@ export function filterCustomerTypeWeekly(
 
   return rows.filter((r) => r.week !== undefined && parseWeekMonth(r.week) === targetMonth);
 }
+

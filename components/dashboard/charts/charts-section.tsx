@@ -2,17 +2,20 @@
 
 // components/dashboard/charts/charts-section.tsx
 
-import type { TeamDashboardData, DailyRecord, WeeklyRecord } from '@/types/dashboard';
+import type { TeamDashboardData, DailyRecord, WeeklyRecord, UsageMatrixRow } from '@/types/dashboard';
 import { ChartErrorBoundary } from './chart-error-boundary';
 import { RevenueTrendChart } from './revenue-trend-chart';
 import { ProfitTrendChart } from './profit-trend-chart';
 import { UtilizationTrendChart } from './utilization-trend-chart';
 import { UsageTrendChart } from './usage-trend-chart';
 import { CustomerTypeSection } from './customer-type-section';
+import { UsageDurationSection } from './usage-duration-section';
 
 interface ChartsSectionProps {
   data: TeamDashboardData;
   tab: 'daily' | 'weekly';
+  usageMatrixCurrent: UsageMatrixRow[];
+  usageMatrixPrevious: UsageMatrixRow[];
 }
 
 // "2026. 2. 21" 또는 "2026-02-21" 모두 처리 → "2026-02-21" ISO 반환
@@ -24,7 +27,12 @@ function normalizeDate(date: string): string {
   return date;
 }
 
-export function ChartsSection({ data, tab }: ChartsSectionProps) {
+export function ChartsSection({
+  data,
+  tab,
+  usageMatrixCurrent,
+  usageMatrixPrevious,
+}: ChartsSectionProps) {
   // Daily: ISO 날짜로 정규화 후 오름차순 정렬, 최근 30일 슬라이싱
   // Weekly: 전체 데이터 그대로
   const records: DailyRecord[] | WeeklyRecord[] = tab === 'daily'
@@ -57,6 +65,13 @@ export function ChartsSection({ data, tab }: ChartsSectionProps) {
         weekly={data.customerTypeWeekly}
         tab={tab}
       />
+      <h2 className="text-lg font-semibold text-foreground">이용시간 구간 분석</h2>
+      <ChartErrorBoundary title="이용시간 구간 분석">
+        <UsageDurationSection
+          matrixCurrent={usageMatrixCurrent}
+          matrixPrevious={usageMatrixPrevious}
+        />
+      </ChartErrorBoundary>
     </div>
   );
 }

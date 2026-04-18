@@ -28,6 +28,10 @@ import {
   buildDailyResponse as buildCustomerTypeDaily,
   buildWeeklyResponse as buildCustomerTypeWeekly,
 } from "./customer-type";
+import {
+  loadUsageMatrixSql,
+  buildMatrixResponse as buildUsageMatrix,
+} from "./usage-matrix";
 import { mockTeamDashboardData } from "./mock-data";
 
 // 기본 조회 기간: 최근 90일 (어제까지)
@@ -147,6 +151,10 @@ export async function getTeamDashboardData(
       loadCustomerTypeSql("weekly.sql"),
       params,
     );
+    const usageMatrixSql = replaceSqlParams(
+      loadUsageMatrixSql("matrix.sql"),
+      params,
+    );
     const regionRankingSql = replaceSqlParams(
       loadDashboardSql("region-ranking.sql"),
       {
@@ -171,6 +179,7 @@ export async function getTeamDashboardData(
       forecastRows,
       customerDailyRows,
       customerWeeklyRows,
+      usageMatrixRows,
       regionRankingRows,
       forecastRankingRows,
       regionOptions,
@@ -180,6 +189,7 @@ export async function getTeamDashboardData(
       runParameterizedQuery(forecastSql),
       runParameterizedQuery(customerDailySql),
       runParameterizedQuery(customerWeeklySql),
+      runParameterizedQuery(usageMatrixSql),
       runParameterizedQuery(regionRankingSql),
       runParameterizedQuery(forecastRankingSql),
       getCachedRegionOptions(),
@@ -205,6 +215,7 @@ export async function getTeamDashboardData(
     const customerTypeWeekly = customerWeeklyRows
       ? buildCustomerTypeWeekly(customerWeeklyRows)
       : [];
+    const usageMatrix = usageMatrixRows ? buildUsageMatrix(usageMatrixRows) : [];
     const forecastDaily = forecastRows ? buildForecastRows(forecastRows) : [];
     const regionRanking = regionRankingRows
       ? buildRegionRanking(regionRankingRows)
@@ -218,6 +229,7 @@ export async function getTeamDashboardData(
       weekly,
       customerTypeDaily,
       customerTypeWeekly,
+      usageMatrix,
       revenueBreakdownDaily,
       revenueBreakdownWeekly,
       costBreakdownDaily,
