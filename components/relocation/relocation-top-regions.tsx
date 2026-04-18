@@ -43,16 +43,16 @@ export function RelocationTopRegions({ increase, decrease }: Props) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <Card>
-        <CardHeader className="pb-3"><CardTitle className="text-base">증설 Top {increase.length}</CardTitle></CardHeader>
+        <CardHeader className="pb-3"><CardTitle className="text-base">증차 Top {increase.length}</CardTitle></CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
-          {increase.length === 0 ? <p className="text-sm text-muted-foreground col-span-full">증설 대상 없음</p> :
+          {increase.length === 0 ? <p className="text-sm text-muted-foreground col-span-full">증차 대상 없음</p> :
             increase.map((r) => <RegionCard key={`${r.region1}-${r.region2}`} r={r} direction="+" />)}
         </CardContent>
       </Card>
       <Card>
-        <CardHeader className="pb-3"><CardTitle className="text-base">감축 Top {decrease.length}</CardTitle></CardHeader>
+        <CardHeader className="pb-3"><CardTitle className="text-base">감차 Top {decrease.length}</CardTitle></CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
-          {decrease.length === 0 ? <p className="text-sm text-muted-foreground col-span-full">감축 대상 없음</p> :
+          {decrease.length === 0 ? <p className="text-sm text-muted-foreground col-span-full">감차 대상 없음</p> :
             decrease.map((r) => <RegionCard key={`${r.region1}-${r.region2}`} r={r} direction="-" />)}
         </CardContent>
       </Card>
