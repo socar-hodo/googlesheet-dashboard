@@ -161,14 +161,20 @@ export function CostBreakdownTrend({ data, tab }: CostBreakdownTrendProps) {
                 tickLine={false}
               />
               <Tooltip content={CustomTooltip} />
-              <Legend wrapperStyle={{ fontSize: '11px' }} />
+              <Legend
+                wrapperStyle={{ fontSize: '11px' }}
+                formatter={(value) => (
+                  <span style={{ color: colors.axis }}>{value}</span>
+                )}
+              />
+              {/* 색 매핑은 도넛과 동일 — 연료(chart7 teal)·보험(chart3 dark-blue) 스왑으로 블루 계열 blob 완화 */}
               <Bar dataKey="감가" stackId="a" fill={colors.chart1} />
               <Bar dataKey="수수료" stackId="a" fill={colors.chart2} />
-              <Bar dataKey="연료" stackId="a" fill={colors.chart3} />
+              <Bar dataKey="연료" stackId="a" fill={colors.chart7} />
               <Bar dataKey="주차" stackId="a" fill={colors.chart4} />
               <Bar dataKey="운반" stackId="a" fill={colors.chart5} />
               <Bar dataKey="점검" stackId="a" fill={colors.chart6} />
-              <Bar dataKey="보험" stackId="a" fill={colors.chart7} />
+              <Bar dataKey="보험" stackId="a" fill={colors.chart3} />
               <Bar dataKey="세금" stackId="a" fill={colors.chart8} />
               <Bar dataKey="수리" stackId="a" fill={colors.chart9} />
               <Bar dataKey="EV충전" stackId="a" fill={colors.chart10} />

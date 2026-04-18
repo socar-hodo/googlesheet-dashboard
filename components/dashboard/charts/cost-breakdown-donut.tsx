@@ -89,22 +89,25 @@ export function CostBreakdownDonut({ data }: CostBreakdownDonutProps) {
     totals.maintenance +
     totals.communication;
 
-  // 색 매핑은 카테고리별 고정 (도넛 조각 순서가 크기순으로 바뀌어도 같은 카테고리는 같은 색)
-  const pieData = [
+  // 색 매핑은 카테고리별 고정. 최상위 2개(연료/감가)가 모두 블루 계열이라 시각적 구분이 약한 문제 해결을 위해
+  // 연료는 chart7(teal)로 스왑. 보험은 원래 할당이던 chart7 대신 chart3(다크블루)을 받는다.
+  const palette = [
     { name: '감가', value: totals.depreciation, color: colors.chart1 },
     { name: '수수료', value: totals.commission, color: colors.chart2 },
-    { name: '연료', value: totals.fuel, color: colors.chart3 },
+    { name: '연료', value: totals.fuel, color: colors.chart7 },
     { name: '주차', value: totals.parking, color: colors.chart4 },
     { name: '운반', value: totals.transport, color: colors.chart5 },
     { name: '점검', value: totals.inspection, color: colors.chart6 },
-    { name: '보험', value: totals.insurance, color: colors.chart7 },
+    { name: '보험', value: totals.insurance, color: colors.chart3 },
     { name: '세금', value: totals.tax, color: colors.chart8 },
     { name: '수리', value: totals.repair, color: colors.chart9 },
     { name: 'EV충전', value: totals.chargeEv, color: colors.chart10 },
     { name: '세차', value: totals.wash, color: colors.chart11 },
     { name: '유지', value: totals.maintenance, color: colors.chart12 },
     { name: '통신', value: totals.communication, color: colors.chart13 },
-  ].filter((d) => d.value > 0);
+  ];
+  // 값 0 카테고리 제거 후 내림차순 정렬 — 큰 조각부터 렌더되어 시계 방향으로 크기 순서 인식이 직관적
+  const pieData = palette.filter((d) => d.value > 0).sort((a, b) => b.value - a.value);
 
   if (data.length === 0 || total === 0) {
     return (
@@ -151,7 +154,12 @@ export function CostBreakdownDonut({ data }: CostBreakdownDonutProps) {
                   <Cell key={entry.name} fill={entry.color} />
                 ))}
               </Pie>
-              <Legend wrapperStyle={{ fontSize: '11px' }} />
+              <Legend
+                wrapperStyle={{ fontSize: '11px' }}
+                formatter={(value) => (
+                  <span style={{ color: colors.axis }}>{value}</span>
+                )}
+              />
               <Tooltip
                 formatter={(value, name) => {
                   const numValue = Number(value);
