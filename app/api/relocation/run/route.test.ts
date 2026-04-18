@@ -64,4 +64,45 @@ describe("POST /api/relocation/run", () => {
     const res = await POST(makeReq({ mode: "macro", total_transfer: 100 }));
     expect(res.status).toBe(502);
   });
+
+  it("기본 요청 시 alpha_scale=0.7, churn_penalty=0.05 forwarding", async () => {
+    vi.mocked(callOptimize).mockResolvedValue({
+      mode: "macro", params: {} as never,
+      summary: { actual_transfer: 0, delta_rev_yr: 0, by_cluster: {}, total_cost_est: 0, net_gain_yr: 0 },
+      suggestions: { increase: [], decrease: [] }, move_orders: [],
+    });
+    await POST(makeReq({ mode: "macro", total_transfer: 100 }));
+    expect(vi.mocked(callOptimize)).toHaveBeenCalledWith(
+      expect.objectContaining({ alpha_scale: 0.7, churn_penalty: 0.05 })
+    );
+  });
+
+  it("?raw=1 시 alpha_scale=1.0, churn_penalty=0 forwarding", async () => {
+    vi.mocked(callOptimize).mockResolvedValue({
+      mode: "macro", params: {} as never,
+      summary: { actual_transfer: 0, delta_rev_yr: 0, by_cluster: {}, total_cost_est: 0, net_gain_yr: 0 },
+      suggestions: { increase: [], decrease: [] }, move_orders: [],
+    });
+    const req = new NextRequest("http://localhost:3000/api/relocation/run?raw=1", {
+      method: "POST",
+      body: JSON.stringify({ mode: "macro", total_transfer: 100 }),
+      headers: { "content-type": "application/json" },
+    });
+    await POST(req);
+    expect(vi.mocked(callOptimize)).toHaveBeenCalledWith(
+      expect.objectContaining({ alpha_scale: 1.0, churn_penalty: 0.0 })
+    );
+  });
+
+  it("exclude_regions body forwarding", async () => {
+    vi.mocked(callOptimize).mockResolvedValue({
+      mode: "macro", params: {} as never,
+      summary: { actual_transfer: 0, delta_rev_yr: 0, by_cluster: {}, total_cost_est: 0, net_gain_yr: 0 },
+      suggestions: { increase: [], decrease: [] }, move_orders: [],
+    });
+    await POST(makeReq({ mode: "macro", exclude_regions: ["서울특별시", "제주특별자치도"] }));
+    expect(vi.mocked(callOptimize)).toHaveBeenCalledWith(
+      expect.objectContaining({ exclude_regions: ["서울특별시", "제주특별자치도"] })
+    );
+  });
 });
