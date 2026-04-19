@@ -11,10 +11,6 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export const POST = withAuth(async (req: NextRequest) => {
-  // v1.4: URL에서 ?raw=1 감지
-  const url = new URL(req.url);
-  const isRawMode = url.searchParams.get("raw") === "1";
-
   let body: Partial<OptimizeMacroRequest>;
   try {
     body = await req.json();
@@ -36,17 +32,12 @@ export const POST = withAuth(async (req: NextRequest) => {
     top_n: Number.isFinite(body.top_n)
       ? Number(body.top_n)
       : RELOCATION_DEFAULTS.top_n,
-    // v1.4: raw 모드면 v1.3 낙관 (alpha_scale=1.0, churn=0) 복원
-    alpha_scale: isRawMode
-      ? 1.0
-      : Number.isFinite(body.alpha_scale)
-        ? Number(body.alpha_scale)
-        : RELOCATION_DEFAULTS.alpha_scale,
-    churn_penalty: isRawMode
-      ? 0.0
-      : Number.isFinite(body.churn_penalty)
-        ? Number(body.churn_penalty)
-        : RELOCATION_DEFAULTS.churn_penalty,
+    alpha_scale: Number.isFinite(body.alpha_scale)
+      ? Number(body.alpha_scale)
+      : RELOCATION_DEFAULTS.alpha_scale,
+    churn_penalty: Number.isFinite(body.churn_penalty)
+      ? Number(body.churn_penalty)
+      : RELOCATION_DEFAULTS.churn_penalty,
     exclude_regions: Array.isArray(body.exclude_regions) ? body.exclude_regions : [],
   };
 

@@ -66,7 +66,7 @@ describe("POST /api/relocation/run", () => {
     expect(res.status).toBe(502);
   });
 
-  it("기본 요청 시 alpha_scale=0.7, churn_penalty=0.05 forwarding", async () => {
+  it("기본 요청 시 v1.5 기본값 alpha_scale=1.0, churn_penalty=0.02 forwarding", async () => {
     vi.mocked(callOptimize).mockResolvedValue({
       mode: "macro", params: {} as never,
       summary: { actual_transfer: 0, delta_rev_yr: 0, by_cluster: {}, total_cost_est: 0, net_gain_yr: 0 },
@@ -74,24 +74,19 @@ describe("POST /api/relocation/run", () => {
     });
     await POST(makeReq({ mode: "macro", total_transfer: 100 }));
     expect(vi.mocked(callOptimize)).toHaveBeenCalledWith(
-      expect.objectContaining({ alpha_scale: 0.7, churn_penalty: 0.05 })
+      expect.objectContaining({ alpha_scale: 1.0, churn_penalty: 0.02 })
     );
   });
 
-  it("?raw=1 시 alpha_scale=1.0, churn_penalty=0 forwarding", async () => {
+  it("body에 명시적 alpha_scale/churn 전달 시 그대로 forwarding", async () => {
     vi.mocked(callOptimize).mockResolvedValue({
       mode: "macro", params: {} as never,
       summary: { actual_transfer: 0, delta_rev_yr: 0, by_cluster: {}, total_cost_est: 0, net_gain_yr: 0 },
       suggestions: { increase: [], decrease: [] }, move_orders: [],
     });
-    const req = new NextRequest("http://localhost:3000/api/relocation/run?raw=1", {
-      method: "POST",
-      body: JSON.stringify({ mode: "macro", total_transfer: 100 }),
-      headers: { "content-type": "application/json" },
-    });
-    await POST(req);
+    await POST(makeReq({ mode: "macro", total_transfer: 100, alpha_scale: 1.3, churn_penalty: 0.0 }));
     expect(vi.mocked(callOptimize)).toHaveBeenCalledWith(
-      expect.objectContaining({ alpha_scale: 1.0, churn_penalty: 0.0 })
+      expect.objectContaining({ alpha_scale: 1.3, churn_penalty: 0.0 })
     );
   });
 

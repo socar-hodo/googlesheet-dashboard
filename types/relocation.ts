@@ -60,16 +60,16 @@ export interface OptimizeMacroResponse {
   move_orders: MoveOrder[];
 }
 
-/** 파라미터 기본값 (zone-simulator v1.4 와 동기화) */
+/** 파라미터 기본값 (zone-simulator v1.5 와 동기화) */
 export const RELOCATION_DEFAULTS: OptimizeMacroRequest = {
   mode: "macro",
   total_transfer: 500,
   max_pct_per_region: 0.20,
   min_cars_per_region: 5,
   top_n: 30,
-  // v1.4 보수 기본값
-  alpha_scale: 0.7,
-  churn_penalty: 0.05,
+  // v1.5: FE 실측 α 단일화 (0.46), scale 불필요
+  alpha_scale: 1.0,
+  churn_penalty: 0.02,
   exclude_regions: [],
 };
 
