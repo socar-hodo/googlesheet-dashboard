@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,9 +19,6 @@ import {
 } from "@/types/relocation";
 
 export function RelocationForm() {
-  const searchParams = useSearchParams();
-  const isRawMode = searchParams.get("raw") === "1";
-
   const [params, setParams] = useState({
     total_transfer: String(RELOCATION_DEFAULTS.total_transfer),
     max_pct_per_region: String(RELOCATION_DEFAULTS.max_pct_per_region),
@@ -38,14 +34,13 @@ export function RelocationForm() {
     setLoading(true);
     setResult(null);
     try {
-      const endpoint = isRawMode ? "/api/relocation/run?raw=1" : "/api/relocation/run";
       // include → exclude 변환: 선택 없음/전체 선택 = 전국 (exclude 비움),
       // 부분 선택 = 나머지 지역 모두 exclude
       const excludeRegions =
         includedRegions.length === 0 || includedRegions.length === REGION1_OPTIONS.length
           ? []
           : REGION1_OPTIONS.filter((r) => !includedRegions.includes(r));
-      const res = await fetch(endpoint, {
+      const res = await fetch("/api/relocation/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -129,16 +124,9 @@ export function RelocationForm() {
 
       {/* 우측 결과 영역 */}
       <div className="space-y-6">
-        {/* 모드 배너 */}
-        {isRawMode ? (
-          <div className="rounded-lg border-2 border-amber-400 bg-amber-50 p-3 text-sm dark:bg-amber-950/40">
-            ⚠️ <b>Raw 모드</b>: α × 1.0, 이탈 페널티 0. 이론 상한이며 실제 기대치가 아닙니다.
-          </div>
-        ) : (
-          <div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
-            📐 보수 기준 (α × 0.7 + 이탈 페널티 5%). 이론 상한은 URL에 <code>?raw=1</code> 추가.
-          </div>
-        )}
+        <div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
+          📐 v1.5 — FE 실측 α (0.46 단일) 기준. 재배치는 한계 개선 도구로, 순이득 10억대 수준을 기대값으로 삼습니다.
+        </div>
 
         {loading ? (
           <div className="space-y-6">
@@ -165,9 +153,7 @@ export function RelocationForm() {
                 좌측 파라미터를 확인하고 <b>시뮬레이션 실행</b>을 누르세요.
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                {isRawMode
-                  ? "Raw 모드: v1.3 이론 상한 (~+88억)"
-                  : "기본 보수: +40~60억 순이득 범위 예상"}
+                기본 500대 기준 약 +10억/yr 순이득 예상
               </p>
             </CardContent>
           </Card>

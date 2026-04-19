@@ -15,8 +15,8 @@ const REQ: OptimizeMacroRequest = {
   max_pct_per_region: 0.2,
   min_cars_per_region: 5,
   top_n: 10,
-  alpha_scale: 0.7,
-  churn_penalty: 0.05,
+  alpha_scale: 1.0,
+  churn_penalty: 0.02,
   exclude_regions: [],
 };
 
